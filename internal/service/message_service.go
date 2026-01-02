@@ -63,3 +63,24 @@ func (s *MessageService) GetMessagesByChatID(chatID uuid.UUID) ([]model.Message,
 
 	return s.repo.GetMessagesByChatID(chatID)
 }
+
+func (s *MessageService) MarkChatAsRead(chatID, userID uuid.UUID) error {
+	if err := s.repo.MarkAsRead(chatID, userID); err != nil {
+		return err
+	}
+
+	// Уведомляем участников чата, что сообщения прочитаны
+	members, _ := s.chatRepo.GetChatMembers(chatID)
+	for _, memberID := range members {
+		if memberID != userID {
+			s.hub.SendToUser(memberID, websocket.Message{
+				Type: "messages_read",
+				Content: map[string]interface{}{
+					"chat_id":   chatID,
+					"reader_id": userID,
+				},
+			})
+		}
+	}
+	return nil
+}

@@ -25,6 +25,13 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
+	val, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"ошибка": "неавторизован"})
+		return
+	}
+	m.SenderID = val.(uuid.UUID)
+
 	if err := h.messageService.SendMessage(&m); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"ошибка": err.Error()})
 		return
@@ -41,6 +48,14 @@ func (h *MessageHandler) GetMessages(c *gin.Context) {
 		return
 	}
 
+	val, _ := c.Get("userID")
+	userID := val.(uuid.UUID)
+
+	// 1. Помечаем как прочитанные
+	// Мы делаем это ПЕРЕД получением, чтобы в ответе эти сообщения могли уже иметь статус прочитанных (по желанию)
+	_ = h.messageService.MarkChatAsRead(chatID, userID)
+
+	// 2. Получаем историю сообщений
 	messages, err := h.messageService.GetMessagesByChatID(chatID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"ошибка": err.Error()})
@@ -48,4 +63,17 @@ func (h *MessageHandler) GetMessages(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, messages)
+}
+
+func (h *MessageHandler) MarkAsRead(c *gin.Context) {
+	chatID, _ := uuid.Parse(c.Param("chat_id"))
+	val, _ := c.Get("userID")
+	userID := val.(uuid.UUID)
+
+	if err := h.messageService.MarkChatAsRead(chatID, userID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }

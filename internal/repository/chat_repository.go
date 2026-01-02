@@ -16,13 +16,36 @@ func NewChatRepository(db *sql.DB) *ChatRepository {
 	return &ChatRepository{db: db}
 }
 
-func (r *ChatRepository) GetUserChats(userID uuid.UUID) ([]model.Chat, error) {
-
-	query := `select c.id, c.type, c.created_at
-	from chats c
-	left join chat_members cm on c.id = cm.chat_id
-	where cm.user_id = $1
-	order by c.created_at DESC`
+func (r *ChatRepository) GetUserChats(userID uuid.UUID) ([]model.ChatListItem, error) {
+	query := `
+		SELECT 
+			c.id, 
+			c.type, 
+			COALESCE(c.name, u.username) as name,
+			COALESCE(m.content, '') as last_message,
+			COALESCE(m.created_at, c.created_at) as last_message_time,
+			u.id as interlocutor_id
+		FROM chats c
+		JOIN chat_members cm ON c.id = cm.chat_id
+		-- Джойним собеседника только если это приватный чат
+		LEFT JOIN users u ON c.type = 'private' AND EXISTS (
+			SELECT 1 FROM chat_members cm2 
+			WHERE cm2.chat_id = c.id AND cm2.user_id != $1
+		) AND u.id = (
+			SELECT user_id FROM chat_members cm2 
+			WHERE cm2.chat_id = c.id AND cm2.user_id != $1 
+			LIMIT 1
+		)
+		-- Получаем последнее сообщение
+		LEFT JOIN LATERAL (
+			SELECT content, created_at 
+			FROM messages 
+			WHERE chat_id = c.id 
+			ORDER BY created_at DESC 
+			LIMIT 1
+		) m ON true
+		WHERE cm.user_id = $1
+		ORDER BY last_message_time DESC`
 
 	rows, err := r.db.Query(query, userID)
 	if err != nil {
@@ -30,16 +53,15 @@ func (r *ChatRepository) GetUserChats(userID uuid.UUID) ([]model.Chat, error) {
 	}
 	defer rows.Close()
 
-	var chats []model.Chat
+	var chats []model.ChatListItem
 	for rows.Next() {
-		var chat model.Chat
-		if err := rows.Scan(&chat.ID, &chat.Type, &chat.CreatedAt); err != nil {
+		var chat model.ChatListItem
+		if err := rows.Scan(&chat.ID, &chat.Type, &chat.Name, &chat.LastMessage, &chat.LastMessageTime, &chat.InterlocutorID); err != nil {
 			return nil, err
 		}
 		chats = append(chats, chat)
 	}
 	return chats, nil
-
 }
 
 func (r *ChatRepository) CreatePrivateChat(
@@ -87,6 +109,37 @@ func (r *ChatRepository) CreatePrivateChat(
 	}
 
 	// 5. Фиксация изменений
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return &chat, nil
+}
+
+func (r *ChatRepository) CreateGroupChat(name string, userIDs []uuid.UUID) (*model.Chat, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	var chat model.Chat
+	chat.Type = model.TypeGroup
+	chat.Name = name
+
+	query := `INSERT INTO chats(type, name) VALUES ($1, $2) RETURNING id, created_at`
+	err = tx.QueryRow(query, chat.Type, chat.Name).Scan(&chat.ID, &chat.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	memberQuery := `INSERT INTO chat_members(chat_id, user_id) VALUES ($1, $2)`
+	for _, uID := range userIDs {
+		if _, err = tx.Exec(memberQuery, chat.ID, uID); err != nil {
+			return nil, err
+		}
+	}
+
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}

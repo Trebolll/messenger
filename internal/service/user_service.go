@@ -67,6 +67,13 @@ func (s *UserService) LoginUser(email, password string) (*model.User, error) {
 	return user, nil
 }
 
+func (s *UserService) SearchUsers(username string) ([]model.User, error) {
+	if len(username) < 3 {
+		return nil, errors.New("поисковый запрос должен содержать не менее 3 символов")
+	}
+	return s.repo.SearchByUsername(username)
+}
+
 func hash(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err

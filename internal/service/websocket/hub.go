@@ -54,15 +54,19 @@ func (h *Hub) Run() {
 			h.Clients[client.UserID] = client
 			h.mu.Unlock()
 			log.Printf("Client registered: %s", client.UserID)
+			h.broadcastStatus(client.UserID, true)
 
 		case client := <-h.Unregister:
 			h.mu.Lock()
 			if _, ok := h.Clients[client.UserID]; ok {
 				delete(h.Clients, client.UserID)
 				close(client.Send)
+				h.mu.Unlock()
+				log.Printf("Client unregistered: %s", client.UserID)
+				h.broadcastStatus(client.UserID, false)
+			} else {
+				h.mu.Unlock()
 			}
-			h.mu.Unlock()
-			log.Printf("Client unregistered: %s", client.UserID)
 
 		case message := <-h.Broadcast:
 			data, err := json.Marshal(message)
@@ -82,6 +86,25 @@ func (h *Hub) Run() {
 			h.mu.RUnlock()
 		}
 	}
+}
+
+func (h *Hub) broadcastStatus(userID uuid.UUID, online bool) {
+	msg := Message{
+		Type: "user_status",
+		Content: map[string]interface{}{
+			"user_id": userID,
+			"online":  online,
+		},
+	}
+	h.Broadcast <- msg
+}
+
+// Проверить, онлайн ли пользователь
+func (h *Hub) IsUserOnline(userID uuid.UUID) bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	_, ok := h.Clients[userID]
+	return ok
 }
 
 // Отправить сообщение конкретному пользователю

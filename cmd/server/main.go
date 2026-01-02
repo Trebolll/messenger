@@ -39,7 +39,7 @@ func main() {
 	userHandler := handler.NewUserHandler(userService)
 
 	chatRepository := repository.NewChatRepository(database)
-	chatService := service.NewChatService(chatRepository, userRepository)
+	chatService := service.NewChatService(chatRepository, userRepository, hub)
 	chatHandler := handler.NewChatHandler(chatService)
 
 	messageRepository := repository.NewMessageRepository(database)
@@ -57,10 +57,13 @@ func main() {
 	api.Use(middleware.AuthMiddleware("your_secret_key"))
 	{
 		api.POST("/chats/private", chatHandler.CreatePrivateChat)
+		api.POST("/chats/group", chatHandler.CreateGroupChat)
 		api.POST("/messages", messageHandler.SendMessage)
 		api.GET("/chats/:chat_id/messages", messageHandler.GetMessages)
 		api.GET("/ws", wsHandler.HandleWebSocket)
 		api.GET("/chats", chatHandler.GetUserChats)
+		api.GET("/users/search", userHandler.SearchUsers)
+		api.POST("/chats/:chat_id/read", messageHandler.MarkAsRead)
 	}
 
 	log.Printf("Server started at port 8080")

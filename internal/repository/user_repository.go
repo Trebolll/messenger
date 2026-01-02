@@ -50,6 +50,25 @@ func (r *UserRepository) GetByUsername(username string) (*model.User, error) {
 	return &u, nil
 }
 
+func (r *UserRepository) SearchByUsername(username string) ([]model.User, error) {
+	query := `SELECT id, username, email FROM users WHERE username ILIKE $1 LIMIT 10`
+	rows, err := r.db.Query(query, "%"+username+"%")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []model.User
+	for rows.Next() {
+		var u model.User
+		if err := rows.Scan(&u.ID, &u.Username, &u.Email); err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	return users, nil
+}
+
 func (r *UserRepository) VerifyPassword(email, password string) (*model.User, error) {
 	user, err := r.GetByEmail(email)
 	if err != nil || user == nil {
