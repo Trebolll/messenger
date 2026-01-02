@@ -1,0 +1,58 @@
+package handler
+
+import (
+	"messenger/internal/service"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+type ChatHandler struct {
+	chatService *service.ChatService
+}
+
+func NewChatHandler(chatService *service.ChatService) *ChatHandler {
+	return &ChatHandler{chatService: chatService}
+}
+
+type CreatePrivateChatRequest struct {
+	UserID0 uuid.UUID `json:"user_id_0" binding:"required"`
+	UserID1 uuid.UUID `json:"user_id_1" binding:"required"`
+}
+
+func (h *ChatHandler) CreatePrivateChat(c *gin.Context) {
+	var req CreatePrivateChatRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ошибка": "недействительный текст запроса"})
+		return
+	}
+
+	chat, err := h.chatService.CreatePrivateChat(req.UserID0, req.UserID1)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"ошибка": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, chat)
+}
+
+func (h *ChatHandler) GetUserChats(c *gin.Context) {
+	// Получаем userID из контекста (который установил JWT middleware)
+	val, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	userID, ok := val.(uuid.UUID)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+
+	chats, _ := h.chatService.GetUserChats(userID)
+
+	c.JSON(http.StatusOK, chats)
+}

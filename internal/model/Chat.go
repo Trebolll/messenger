@@ -8,7 +8,7 @@ import (
 
 type Chat struct {
 	ID        uuid.UUID
-	Type      string
+	Type      TypeChat
 	Name      string
 	CreatedAt time.Time
 }
