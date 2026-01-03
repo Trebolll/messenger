@@ -20,5 +20,5 @@ type ChatListItem struct {
 	LastMessage     string     `json:"last_message"`
 	LastMessageTime time.Time  `json:"last_message_time"`
 	IsOnline        bool       `json:"is_online"`
-	InterlocutorID  *uuid.UUID `json:"-"` // ID собеседника для проверки онлайна
+	InterlocutorID  *uuid.UUID `json:"interlocutor_id"` // ID собеседника для проверки онлайна
 }

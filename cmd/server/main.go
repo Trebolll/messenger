@@ -49,6 +49,17 @@ func main() {
 	wsHandler := handler.NewWebSocketHandler(hub, "your_secret_key")
 
 	r := gin.Default()
+	r.LoadHTMLGlob("web/*.html")
+	r.Static("/web", "./web")
+
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(200, "index.html", nil)
+	})
+
+	r.GET("/chat", func(c *gin.Context) {
+		// Placeholder for chat page
+		c.String(200, "Welcome to the Chat!")
+	})
 
 	r.POST("/api/register", userHandler.Register)
 	r.POST("/api/login", userHandler.Login)

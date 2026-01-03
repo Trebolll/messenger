@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpha Messenger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; overflow: hidden; }
+        .gradient-bg { background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%); }
+        .modal-enter-active { transition: opacity 300ms, transform 300ms cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .spinner { border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 2px solid #fff; width: 16px; height: 16px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .chat-list-item:hover { background-color: #f8fafc; cursor: pointer; }
+        .chat-list-item.active { background-color: #eff6ff; border-right: 3px solid #3b82f6; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .message-bubble { max-width: 80%; }
+        .message-sent { background-color: #3b82f6; color: white; border-radius: 1.5rem 1.5rem 0 1.5rem; }
+        .message-received { background-color: #f1f5f9; color: #1e293b; border-radius: 1.5rem 1.5rem 1.5rem 0; }
+    </style>
+</head>
+<body class="bg-white min-h-screen text-gray-900">
+    <div id="app" class="h-screen w-full relative">
+        
+        <!-- 1. Landing Page Section -->
+        <div id="landing-page" class="h-full w-full gradient-bg flex flex-col fade-in">
+            <header class="container mx-auto px-6 py-8 flex justify-between items-center relative z-10">
+                <div class="flex items-center space-x-2">
+                    <span class="text-4xl font-bold text-blue-600">λ</span>
+                    <span class="text-2xl font-bold tracking-tight text-gray-900">Alpha</span>
+                </div>
+            </header>
+            <main class="flex-grow flex items-center justify-center relative overflow-hidden">
+                <div class="container mx-auto px-6 text-center relative z-10">
+                    <div class="mb-4">
+                        <h1 class="text-6xl font-extrabold text-gray-900 mb-4 tracking-tight">Alpha</h1>
+                        <p class="text-xl text-gray-600 font-light">Новый взгляд на общение. Просто. Быстро. Без лишнего.</p>
+                    </div>
+                    <div class="text-9xl text-blue-600/10 font-light select-none -mb-8">λ</div>
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12">
+                        <button onclick="openAuthModal('register')" class="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white font-semibold rounded-2xl shadow-lg hover:bg-blue-700 transition duration-300 text-center">Регистрация</button>
+                        <button onclick="openAuthModal('login')" class="w-full sm:w-auto px-8 py-4 bg-white text-blue-600 border-2 border-blue-600 font-semibold rounded-2xl hover:bg-blue-50 transition duration-300 text-center">Вход</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- 2. Main Chat Interface Section (Hidden by default) -->
+        <div id="main-chat" class="h-full w-full flex hidden fade-in bg-white">
+            <!-- Left Column: Chat List -->
+            <div class="w-80 border-r border-gray-200 flex flex-col h-full bg-gray-50/50">
+                <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-white">
+                    <div class="flex items-center gap-3">
+                        <div id="current-user-avatar" class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">U</div>
+                        <span id="current-user-name" class="font-semibold text-gray-800">User</span>
+                    </div>
+                    <button onclick="openNewChatMenu()" class="p-2 hover:bg-gray-100 rounded-full transition text-gray-500">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    </button>
+                </div>
+                <div class="p-4">
+                    <div class="relative">
+                        <input type="text" id="chat-search" placeholder="Поиск чатов..." class="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-100 outline-none text-sm transition">
+                        <svg class="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                </div>
+                <div id="chats-list" class="flex-grow overflow-y-auto scrollbar-hide">
+                    <!-- Chats will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Central Column: Messages -->
+            <div class="flex-grow flex flex-col h-full bg-white relative">
+                <div id="no-chat-selected" class="absolute inset-0 flex items-center justify-center bg-white z-10">
+                    <div class="text-center">
+                        <div class="text-6xl mb-4 opacity-20">λ</div>
+                        <h3 class="text-xl font-medium text-gray-400">Выберите чат для начала общения</h3>
+                    </div>
+                </div>
+
+                <!-- Chat Header -->
+                <div id="chat-header" class="p-4 border-b border-gray-200 flex items-center justify-between bg-white z-20">
+                    <div class="flex items-center gap-3">
+                        <div id="active-chat-avatar" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600">?</div>
+                        <div>
+                            <h3 id="active-chat-name" class="font-bold text-gray-900 leading-tight">Чат</h3>
+                            <p id="active-chat-status" class="text-xs text-gray-400"></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleInfoPanel()" class="p-2 hover:bg-gray-100 rounded-full transition text-gray-400">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Messages Area -->
+                <div id="messages-container" class="flex-grow overflow-y-auto p-6 space-y-4 bg-gray-50/30 scrollbar-hide">
+                    <!-- Messages will be rendered here -->
+                </div>
+
+                <!-- Input Area -->
+                <div class="p-4 border-t border-gray-200 bg-white">
+                    <form id="message-form" class="flex items-end gap-3" onsubmit="handleSendMessage(event)">
+                        <button type="button" class="p-3 text-gray-400 hover:text-blue-600 transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                        </button>
+                        <div class="flex-grow">
+                            <textarea id="message-input" rows="1" placeholder="Напишите сообщение..." class="w-full px-4 py-3 bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-blue-100 outline-none text-sm transition resize-none max-h-32"></textarea>
+                        </div>
+                        <button type="submit" class="p-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition shadow-md">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column: Info Panel -->
+            <div id="info-panel" class="w-80 border-l border-gray-200 hidden flex flex-col h-full bg-white fade-in">
+                <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                    <h3 class="font-bold text-gray-900">Информация</h3>
+                    <button onclick="toggleInfoPanel()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="p-8 flex flex-col items-center text-center">
+                    <div id="info-avatar" class="w-24 h-24 rounded-full bg-blue-50 flex items-center justify-center text-3xl font-bold text-blue-600 mb-4">?</div>
+                    <h4 id="info-name" class="text-xl font-bold text-gray-900">Name</h4>
+                    <p id="info-status" class="text-sm text-gray-500 mb-6">был(а) недавно</p>
+                    
+                    <div class="w-full space-y-4 text-left">
+                        <button onclick="handleLogout()" class="w-full flex items-center gap-3 p-3 text-red-500 hover:bg-red-50 rounded-xl transition font-medium">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            Выйти из аккаунта
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modals Overlay -->
+        <div id="auth-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+            <div id="auth-modal" class="bg-white w-full max-w-md rounded-3xl shadow-2xl relative overflow-hidden transform scale-95 transition-all duration-300">
+                <button onclick="closeAuthModal()" class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                
+                <div id="login-form-container" class="p-8 sm:p-12">
+                    <div class="text-center mb-8"><span class="text-3xl font-bold text-blue-600 mb-2 block">λ</span><h2 class="text-2xl font-bold text-gray-900">Войти в Alpha</h2></div>
+                    <form onsubmit="app.auth(event, 'login')" class="space-y-4">
+                        <div id="login-error" class="hidden text-red-500 text-sm bg-red-50 p-3 rounded-xl border border-red-100"></div>
+                        <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none" placeholder="Email">
+                        <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none" placeholder="Пароль">
+                        <button type="submit" class="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition">Войти</button>
+                    </form>
+                    <p class="mt-8 text-center text-gray-500 text-sm">Нет аккаунта? <button onclick="switchForm('register')" class="text-blue-600 font-semibold hover:underline">Зарегистрироваться</button></p>
+                </div>
+
+                <div id="register-form-container" class="p-8 sm:p-12 hidden">
+                    <div class="text-center mb-8"><span class="text-3xl font-bold text-blue-600 mb-2 block">λ</span><h2 class="text-2xl font-bold text-gray-900">Создать аккаунт</h2></div>
+                    <form onsubmit="app.auth(event, 'register')" class="space-y-4">
+                        <div id="register-error" class="hidden text-red-500 text-sm bg-red-50 p-3 rounded-xl border border-red-100"></div>
+                        <input type="text" name="username" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none" placeholder="Имя пользователя">
+                        <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none" placeholder="Email">
+                        <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none" placeholder="Пароль (мин. 6 символов)">
+                        <button type="submit" class="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition">Зарегистрироваться</button>
+                    </form>
+                    <p class="mt-8 text-center text-gray-500 text-sm">Уже есть аккаунт? <button onclick="switchForm('login')" class="text-blue-600 font-semibold hover:underline">Войти</button></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Chat Modal -->
+        <div id="new-chat-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+            <div id="new-chat-modal" class="bg-white w-full max-w-md rounded-3xl shadow-2xl relative transform scale-95 transition-all duration-300 p-8">
+                <button onclick="closeNewChatModal()" class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Начать общение</h2>
+                <div class="space-y-4">
+                    <input type="text" id="user-search-input" oninput="app.searchUsers(this.value)" class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none" placeholder="Поиск пользователя по имени или email...">
+                    <div id="search-results" class="max-h-60 overflow-y-auto space-y-2 scrollbar-hide">
+                        <!-- Search results will be here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications Container -->
+        <div id="notification-center" class="fixed top-6 right-6 z-[100] space-y-3 w-80"></div>
+    </div>
+
+    <!-- Application Script -->
+    <script src="/web/app.js"></script>
+    <script>
+        // Global UI helpers
+        function openAuthModal(type) {
+            const overlay = document.getElementById('auth-overlay');
+            const modal = document.getElementById('auth-modal');
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                overlay.classList.remove('opacity-0');
+                modal.classList.remove('scale-95');
+            }, 10);
+            switchForm(type);
+        }
+
+        function closeAuthModal() {
+            const overlay = document.getElementById('auth-overlay');
+            const modal = document.getElementById('auth-modal');
+            overlay.classList.add('opacity-0');
+            modal.classList.add('scale-95');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        function switchForm(type) {
+            document.getElementById('login-form-container').classList.toggle('hidden', type !== 'login');
+            document.getElementById('register-form-container').classList.toggle('hidden', type !== 'register');
+        }
+
+        function openNewChatMenu() {
+            const overlay = document.getElementById('new-chat-overlay');
+            const modal = document.getElementById('new-chat-modal');
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                overlay.classList.remove('opacity-0');
+                modal.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeNewChatModal() {
+            const overlay = document.getElementById('new-chat-overlay');
+            const modal = document.getElementById('new-chat-modal');
+            overlay.classList.add('opacity-0');
+            modal.classList.add('scale-95');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        function toggleInfoPanel() {
+            document.getElementById('info-panel').classList.toggle('hidden');
+        }
+
+        function handleSendMessage(e) {
+            e.preventDefault();
+            app.sendMessage();
+        }
+
+        function handleLogout() {
+            app.logout();
+        }
+    </script>
+</body>
+</html>

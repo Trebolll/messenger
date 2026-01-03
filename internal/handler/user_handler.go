@@ -58,17 +58,24 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{
+		"token": token,
+		"user":  user,
+	})
 }
 
 func (h *UserHandler) SearchUsers(c *gin.Context) {
-	username := c.Query("username")
-	if username == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username query parameter is required"})
+	query := c.Query("q")
+	if query == "" {
+		query = c.Query("username")
+	}
+
+	if query == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "search query parameter 'q' or 'username' is required"})
 		return
 	}
 
-	users, err := h.userService.SearchUsers(username)
+	users, err := h.userService.SearchUsers(query)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

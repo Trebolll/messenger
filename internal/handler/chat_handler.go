@@ -17,21 +17,28 @@ func NewChatHandler(chatService *service.ChatService) *ChatHandler {
 }
 
 type CreatePrivateChatRequest struct {
-	UserID0 uuid.UUID `json:"user_id_0" binding:"required"`
-	UserID1 uuid.UUID `json:"user_id_1" binding:"required"`
+	UserID uuid.UUID `json:"user_id" binding:"required"`
 }
 
 func (h *ChatHandler) CreatePrivateChat(c *gin.Context) {
 	var req CreatePrivateChatRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"ошибка": "недействительный текст запроса"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
-	chat, err := h.chatService.CreatePrivateChat(req.UserID0, req.UserID1)
+	// Получаем текущего пользователя из токена
+	val, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	currentUserID := val.(uuid.UUID)
+
+	chat, err := h.chatService.CreatePrivateChat(currentUserID, req.UserID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"ошибка": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

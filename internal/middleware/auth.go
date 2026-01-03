@@ -10,13 +10,20 @@ import (
 
 func AuthMiddleware(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		tokenString := ""
 		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
+
+		if authHeader != "" {
+			tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+		} else {
+			// Если заголовка нет, пробуем взять токен из параметров запроса (для WebSocket)
+			tokenString = c.Query("token")
+		}
+
+		if tokenString == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 			return
 		}
-
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
 		claims, err := utils.VerifyJWT(tokenString, secret)
 		if err != nil {
