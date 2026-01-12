@@ -6,8 +6,10 @@ class AlphaApp {
         this.socket = null;
         this.chats = [];
         this.messages = [];
+        this.theme = localStorage.getItem('alpha_theme') || 'light';
         
         this.init();
+        this.applyTheme();
     }
 
     init() {
@@ -30,6 +32,41 @@ class AlphaApp {
                 this.sendMessage();
             }
         });
+    }
+
+    // --- Theme Management ---
+    applyTheme() {
+        const body = document.body;
+        const indicator = document.getElementById('theme-indicator');
+        const dot = indicator ? indicator.querySelector('div') : null;
+        
+        if (this.theme === 'gray') {
+            body.classList.add('theme-gray');
+            if (indicator) {
+                indicator.classList.remove('bg-gray-300');
+                indicator.classList.add('bg-blue-500');
+            }
+            if (dot) {
+                dot.classList.remove('translate-x-0');
+                dot.classList.add('translate-x-5');
+            }
+        } else {
+            body.classList.remove('theme-gray');
+            if (indicator) {
+                indicator.classList.remove('bg-blue-500');
+                indicator.classList.add('bg-gray-300');
+            }
+            if (dot) {
+                dot.classList.remove('translate-x-5');
+                dot.classList.add('translate-x-0');
+            }
+        }
+    }
+
+    toggleTheme() {
+        this.theme = this.theme === 'light' ? 'gray' : 'light';
+        localStorage.setItem('alpha_theme', this.theme);
+        this.applyTheme();
     }
 
     // --- Routing ---
@@ -107,6 +144,7 @@ class AlphaApp {
             this.messages = res || [];
             this.renderMessages();
             this.scrollToBottom();
+            this.markChatAsRead(chatId);
         } catch (err) {
             this.notify('Ошибка загрузки сообщений', 'error');
         }
@@ -188,10 +226,26 @@ class AlphaApp {
                         this.messages.push(msg);
                         this.renderMessages();
                         this.scrollToBottom();
+                        
+                        // Если сообщение не от нас, помечаем как прочитанное
+                        if (String(msg.sender_id) !== String(this.currentUser?.id)) {
+                            this.markChatAsRead(this.activeChatId);
+                        }
                     } else {
                         console.log('No match or no active chat');
                     }
                     this.updateLastMessageInChatList(msg);
+                } else if (wrapper.type === 'messages_read') {
+                    const data = wrapper.content;
+                    if (this.activeChatId && String(data.chat_id) === String(this.activeChatId)) {
+                        this.messages = this.messages.map(m => {
+                            if (String(m.sender_id) !== String(data.reader_id)) {
+                                return { ...m, read_at: new Date().toISOString() };
+                            }
+                            return m;
+                        });
+                        this.renderMessages();
+                    }
                 } else if (wrapper.type === 'user_status') {
                     this.updateUserStatus(wrapper.content);
                 }
@@ -228,7 +282,7 @@ class AlphaApp {
             const infoStatusEl = document.getElementById('info-status');
             
             const statusText = status.online ? 'онлайн' : 'был(а) недавно';
-            const statusClass = status.online ? 'text-xs text-green-500' : 'text-xs text-gray-400';
+            const statusClass = status.online ? 'text-xs text-green-500' : 'text-xs text-custom-muted';
             
             if (statusEl) {
                 statusEl.textContent = statusText;
@@ -236,6 +290,7 @@ class AlphaApp {
             }
             if (infoStatusEl) {
                 infoStatusEl.textContent = statusText;
+                infoStatusEl.className = statusClass;
             }
         }
     }
@@ -249,30 +304,38 @@ class AlphaApp {
                     <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
                         ${(chat.name || 'Chat')[0].toUpperCase()}
                     </div>
-                    ${chat.is_online ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>' : ''}
+                    ${chat.is_online ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-custom rounded-full"></div>' : ''}
                 </div>
                 <div class="flex-grow overflow-hidden">
                     <div class="flex justify-between items-baseline">
-                        <h4 class="font-bold text-gray-900 truncate">${chat.name || 'Chat'}</h4>
-                        <span class="text-[10px] text-gray-400">12:45</span>
+                        <h4 class="font-bold text-custom-main truncate">${chat.name || 'Chat'}</h4>
+                        <span class="text-[10px] text-custom-muted">12:45</span>
                     </div>
-                    <p class="text-xs text-gray-500 truncate">${chat.last_message || 'Нет сообщений'}</p>
+                    <p class="text-xs text-custom-muted truncate">${chat.last_message || 'Нет сообщений'}</p>
                 </div>
             </div>
         `).join('');
     }
 
     renderMessages() {
-        // ... (без изменений, но для точности замены)
         const container = document.getElementById('messages-container');
         container.innerHTML = this.messages.map(msg => {
             const isMe = String(msg.sender_id) === String(this.currentUser?.id);
+            const isRead = msg.read_at !== null && msg.read_at !== undefined;
+            
             return `
                 <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
                     <div class="message-bubble p-4 ${isMe ? 'message-sent' : 'message-received'} shadow-sm">
                         <p class="text-sm">${this.escapeHtml(msg.content)}</p>
-                        <div class="text-[10px] ${isMe ? 'text-blue-100' : 'text-gray-400'} mt-1 text-right">
-                            ${new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        <div class="flex items-center justify-end gap-1 mt-1">
+                            <span class="text-[10px] ${isMe ? 'opacity-70' : 'text-custom-muted'}">
+                                ${new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </span>
+                            ${isMe ? `
+                                <span class="text-[10px] ${isRead ? 'text-white' : 'opacity-50'}">
+                                    ${isRead ? '✓✓' : '✓'}
+                                </span>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
@@ -289,7 +352,7 @@ class AlphaApp {
         
         const isOnline = chat.is_online;
         const statusText = isOnline ? 'онлайн' : 'был(а) недавно';
-        const statusClass = isOnline ? 'text-xs text-green-500' : 'text-xs text-gray-400';
+        const statusClass = isOnline ? 'text-xs text-green-500' : 'text-xs text-custom-muted';
         
         if (statusEl) {
             statusEl.textContent = statusText;
@@ -298,6 +361,7 @@ class AlphaApp {
         
         if (infoStatusEl) {
             infoStatusEl.textContent = statusText;
+            infoStatusEl.className = statusClass;
         }
 
         document.getElementById('active-chat-name').textContent = chat.name;
@@ -311,11 +375,11 @@ class AlphaApp {
     renderSearchResults(users) {
         const container = document.getElementById('search-results');
         container.innerHTML = users.map(user => `
-            <div onclick="app.createPrivateChat('${user.id}')" class="p-3 hover:bg-gray-50 rounded-xl cursor-pointer flex items-center gap-3 transition border border-transparent hover:border-gray-100">
+            <div onclick="app.createPrivateChat('${user.id}')" class="p-3 hover:bg-custom-sidebar rounded-xl cursor-pointer flex items-center gap-3 transition border border-transparent hover:border-custom">
                 <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold">${user.username[0].toUpperCase()}</div>
                 <div>
-                    <div class="font-bold text-gray-900 text-sm">${user.username}</div>
-                    <div class="text-xs text-gray-500">${user.email}</div>
+                    <div class="font-bold text-custom-main text-sm">${user.username}</div>
+                    <div class="text-xs text-custom-muted">${user.email}</div>
                 </div>
             </div>
         `).join('');
@@ -348,12 +412,20 @@ class AlphaApp {
         return result;
     }
 
+    async markChatAsRead(chatId) {
+        try {
+            await this.apiFetch(`/api/chats/${chatId}/read`, { method: 'POST' });
+        } catch (err) {
+            console.error('Error marking chat as read:', err);
+        }
+    }
+
     notify(text, type = 'info') {
         const center = document.getElementById('notification-center');
         const note = document.createElement('div');
         note.className = `p-4 rounded-2xl shadow-xl border text-sm font-medium fade-in ${
-            type === 'success' ? 'bg-green-50 border-green-100 text-green-600' : 
-            type === 'error' ? 'bg-red-50 border-red-100 text-red-600' : 'bg-white border-gray-100 text-gray-600'
+            type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-500' : 
+            type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-custom-main border-custom text-custom-main'
         }`;
         note.textContent = text;
         center.appendChild(note);

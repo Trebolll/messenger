@@ -20,9 +20,9 @@ func (r *MessageRepository) SendMessage(message *model.Message) error {
 		WITH inserted_msg AS (
 			INSERT INTO messages(chat_id, sender_id, content) 
 			VALUES ($1, $2, $3) 
-			RETURNING id, chat_id, sender_id, content, created_at
+			RETURNING id, chat_id, sender_id, content, created_at, read_at
 		)
-		SELECT m.id, m.chat_id, m.sender_id, u.username, m.content, m.created_at
+		SELECT m.id, m.chat_id, m.sender_id, u.username, m.content, m.created_at, m.read_at
 		FROM inserted_msg m
 		JOIN users u ON m.sender_id = u.id`
 
@@ -33,12 +33,13 @@ func (r *MessageRepository) SendMessage(message *model.Message) error {
 		&message.SenderName,
 		&message.Content,
 		&message.CreatedAt,
+		&message.ReadAt,
 	)
 }
 
 func (r *MessageRepository) GetMessagesByChatID(chatID uuid.UUID) ([]model.Message, error) {
 	query := `
-		SELECT m.id, m.chat_id, m.sender_id, u.username, m.content, m.created_at 
+		SELECT m.id, m.chat_id, m.sender_id, u.username, m.content, m.created_at, m.read_at 
 		FROM messages m
 		JOIN users u ON m.sender_id = u.id
 		WHERE m.chat_id = $1 
@@ -52,7 +53,7 @@ func (r *MessageRepository) GetMessagesByChatID(chatID uuid.UUID) ([]model.Messa
 	var messages []model.Message
 	for rows.Next() {
 		var m model.Message
-		if err := rows.Scan(&m.ID, &m.ChatID, &m.SenderID, &m.SenderName, &m.Content, &m.CreatedAt); err != nil {
+		if err := rows.Scan(&m.ID, &m.ChatID, &m.SenderID, &m.SenderName, &m.Content, &m.CreatedAt, &m.ReadAt); err != nil {
 			return nil, err
 		}
 		messages = append(messages, m)
