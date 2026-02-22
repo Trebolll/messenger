@@ -96,7 +96,11 @@ func (h *Hub) broadcastStatus(userID uuid.UUID, online bool) {
 			"online":  online,
 		},
 	}
-	h.Broadcast <- msg
+	select {
+	case h.Broadcast <- msg:
+	default:
+		log.Printf("broadcast channel full, dropping status message")
+	}
 }
 
 // Проверить, онлайн ли пользователь

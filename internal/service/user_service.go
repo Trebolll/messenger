@@ -3,17 +3,24 @@ package service
 import (
 	"errors"
 	"messenger/internal/model"
-	"messenger/internal/repository"
+	_ "messenger/internal/repository"
 	"regexp"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserService struct {
-	repo *repository.UserRepository
+type UserRepository interface {
+	GetByUsername(username string) (*model.User, error)
+	GetByEmail(email string) (*model.User, error)
+	Create(u *model.User) error
+	SearchByUsername(username string) ([]model.User, error)
 }
 
-func NewUserService(repo *repository.UserRepository) *UserService {
+type UserService struct {
+	repo UserRepository
+}
+
+func NewUserService(repo UserRepository) *UserService {
 	return &UserService{repo: repo}
 }
 

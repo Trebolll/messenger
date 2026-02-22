@@ -6,19 +6,33 @@ import (
 	"fmt"
 
 	"messenger/internal/model"
-	"messenger/internal/repository"
-	"messenger/internal/service/websocket"
+	_ "messenger/internal/service/websocket"
 
 	"github.com/google/uuid"
 )
 
-type ChatService struct {
-	repo     *repository.ChatRepository
-	userRepo *repository.UserRepository
-	hub      *websocket.Hub
+type ChatRepositoryForService interface {
+	CreatePrivateChat(initiatorID, targetUserID uuid.UUID) (*model.Chat, error)
+	CreateGroupChat(name string, memberIDs []uuid.UUID) (*model.Chat, error)
+	GetUserChats(userID uuid.UUID) ([]model.ChatListItem, error)
 }
 
-func NewChatService(repo *repository.ChatRepository, userRepo *repository.UserRepository, hub *websocket.Hub) *ChatService {
+type UserRepositoryForService interface {
+	GetById(id uuid.UUID) (*model.User, error)
+	GetByUsername(username string) (*model.User, error)
+}
+
+type HubForService interface {
+	IsUserOnline(userID uuid.UUID) bool
+}
+
+type ChatService struct {
+	repo     ChatRepositoryForService
+	userRepo UserRepositoryForService
+	hub      HubForService
+}
+
+func NewChatService(repo ChatRepositoryForService, userRepo UserRepositoryForService, hub HubForService) *ChatService {
 	return &ChatService{repo: repo, userRepo: userRepo, hub: hub}
 }
 
