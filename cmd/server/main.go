@@ -71,11 +71,12 @@ func main() {
 		api.POST("/chats/group", chatHandler.CreateGroupChat)
 		api.POST("/messages", messageHandler.SendMessage)
 		api.GET("/chats/:chat_id/messages", messageHandler.GetMessages)
-		api.GET("/ws", wsHandler.HandleWebSocket)
 		api.GET("/chats", chatHandler.GetUserChats)
 		api.GET("/users/search", userHandler.SearchUsers)
 		api.POST("/chats/:chat_id/read", messageHandler.MarkAsRead)
 	}
+
+	r.GET("/api/ws", wsHandler.HandleWebSocket)
 
 	log.Printf("Server started at port 8080")
 	if err := r.Run(":8080"); err != nil {

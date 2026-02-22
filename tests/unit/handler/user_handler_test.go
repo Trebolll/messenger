@@ -38,6 +38,14 @@ func (m *MockUserRepository) GetByEmail(email string) (*model.User, error) {
 	return args.Get(0).(*model.User), args.Error(1)
 }
 
+func (m *MockUserRepository) GetByUsernameAndEmail(username string, email string) (*model.User, error) {
+	args := m.Called(username, email)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.User), args.Error(1)
+}
+
 func (m *MockUserRepository) Create(u *model.User) error {
 	args := m.Called(u)
 	return args.Error(0)
@@ -66,8 +74,7 @@ func setupTestRouter(mockRepo *MockUserRepository) *gin.Engine {
 
 func TestRegisterSuccess(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	mockRepo.On("GetByUsername", "testuser").Return(nil, nil)
-	mockRepo.On("GetByEmail", "test@example.com").Return(nil, nil)
+	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com").Return(nil, nil)
 	mockRepo.On("Create", mock.MatchedBy(func(u *model.User) bool {
 		return u.Username == "testuser" && u.Email == "test@example.com"
 	})).Return(nil)
@@ -105,8 +112,7 @@ func TestRegisterInvalidJSON(t *testing.T) {
 
 func TestRegisterInvalidEmail(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	mockRepo.On("GetByUsername", "testuser").Return(nil, nil)
-	mockRepo.On("GetByEmail", "invalid-email").Return(nil, nil)
+	mockRepo.On("GetByUsernameAndEmail", "testuser", "invalid-email").Return(nil, nil)
 
 	router := setupTestRouter(mockRepo)
 	body := []byte(`{"username":"testuser","email":"invalid-email","password":"password123"}`)
@@ -124,8 +130,7 @@ func TestRegisterInvalidEmail(t *testing.T) {
 
 func TestRegisterUsernameTooShort(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	mockRepo.On("GetByUsername", "ab").Return(nil, nil)
-	mockRepo.On("GetByEmail", "test@example.com").Return(nil, nil)
+	mockRepo.On("GetByUsernameAndEmail", "ab", "test@example.com").Return(nil, nil)
 
 	router := setupTestRouter(mockRepo)
 	body := []byte(`{"username":"ab","email":"test@example.com","password":"password123"}`)
@@ -147,8 +152,7 @@ func TestRegisterUsernameTooLong(t *testing.T) {
 	for i := 0; i < 51; i++ {
 		longUsername += "a"
 	}
-	mockRepo.On("GetByUsername", longUsername).Return(nil, nil)
-	mockRepo.On("GetByEmail", "test@example.com").Return(nil, nil)
+	mockRepo.On("GetByUsernameAndEmail", longUsername, "test@example.com").Return(nil, nil)
 
 	router := setupTestRouter(mockRepo)
 	body := []byte(`{"username":"` + longUsername + `","email":"test@example.com","password":"password123"}`)
@@ -166,8 +170,7 @@ func TestRegisterUsernameTooLong(t *testing.T) {
 
 func TestRegisterPasswordTooShort(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	mockRepo.On("GetByUsername", "testuser").Return(nil, nil)
-	mockRepo.On("GetByEmail", "test@example.com").Return(nil, nil)
+	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com").Return(nil, nil)
 
 	router := setupTestRouter(mockRepo)
 	body := []byte(`{"username":"testuser","email":"test@example.com","password":"pass"}`)
@@ -190,7 +193,7 @@ func TestRegisterDuplicateUsername(t *testing.T) {
 		Email:    "existing@example.com",
 	}
 	mockRepo := new(MockUserRepository)
-	mockRepo.On("GetByUsername", "testuser").Return(existingUser, nil)
+	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com").Return(existingUser, nil)
 
 	router := setupTestRouter(mockRepo)
 	body := []byte(`{"username":"testuser","email":"test@example.com","password":"password123"}`)
@@ -213,8 +216,7 @@ func TestRegisterDuplicateEmail(t *testing.T) {
 		Email:    "test@example.com",
 	}
 	mockRepo := new(MockUserRepository)
-	mockRepo.On("GetByUsername", "testuser").Return(nil, nil)
-	mockRepo.On("GetByEmail", "test@example.com").Return(existingUser, nil)
+	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com").Return(existingUser, nil)
 
 	router := setupTestRouter(mockRepo)
 	body := []byte(`{"username":"testuser","email":"test@example.com","password":"password123"}`)
