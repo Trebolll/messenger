@@ -33,11 +33,18 @@ jobs:
       - name: Download dependencies
         run: go mod download
 
-      - name: Run tests
-        run: go test -v ./...
+      - name: Run tests with coverage
+        run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
 
       - name: Run vet
         run: go vet ./...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.out
+          flags: unittests
+          name: codecov-umbrella
 
       - name: Build
         run: go build -o messenger ./cmd/server
