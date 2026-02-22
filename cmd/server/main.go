@@ -13,9 +13,12 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+
+	godotenv.Load()
 
 	database, err := db.InitDB()
 
@@ -46,6 +49,9 @@ func main() {
 	messageService := service.NewMessageService(messageRepository, chatRepository, hub)
 	messageHandler := handler.NewMessageHandler(messageService)
 
+	aiService := service.NewAIService()
+	aiHandler := handler.NewAIHandler(aiService)
+
 	wsHandler := handler.NewWebSocketHandler(hub, "your_secret_key")
 
 	r := gin.Default()
@@ -74,6 +80,7 @@ func main() {
 		api.GET("/chats", chatHandler.GetUserChats)
 		api.GET("/users/search", userHandler.SearchUsers)
 		api.POST("/chats/:chat_id/read", messageHandler.MarkAsRead)
+		api.POST("/ai/suggest", aiHandler.Suggest)
 	}
 
 	r.GET("/api/ws", wsHandler.HandleWebSocket)
