@@ -6,7 +6,8 @@ class AlphaApp {
         this.socket = null;
         this.chats = [];
         this.messages = [];
-        this.theme = localStorage.getItem('alpha_theme') || 'light';
+        const userId = JSON.parse(localStorage.getItem('alpha_user') || 'null')?.id || 'default';
+        this.theme = localStorage.getItem(`alpha_theme_${userId}`) || 'light';
         
         this.init();
         this.applyTheme();
@@ -65,7 +66,8 @@ class AlphaApp {
 
     toggleTheme() {
         this.theme = this.theme === 'light' ? 'gray' : 'light';
-        localStorage.setItem('alpha_theme', this.theme);
+        const key = `alpha_theme_${this.currentUser?.id || 'default'}`;
+        localStorage.setItem(key, this.theme);
         this.applyTheme();
     }
 
@@ -179,14 +181,17 @@ class AlphaApp {
         const input = document.getElementById('message-input');
         const text = input.value.trim();
         if (!text || !this.activeChatId) return;
-
         input.value = '';
+
         try {
-            await this.apiFetch('/api/messages', {
+            const msg = await this.apiFetch('/api/messages', {
                 method: 'POST',
                 body: JSON.stringify({ chat_id: this.activeChatId, content: text })
             });
-            // Сообщение придет через WebSocket
+            // Добавляем своё сообщение сразу (WS придёт и продублирует — нужна защита от дублей)
+            this.messages.push(msg);
+            this.renderMessages();
+            this.scrollToBottom();
         } catch (err) {
             this.notify('Не удалось отправить сообщение', 'error');
         }
@@ -214,19 +219,24 @@ class AlphaApp {
             try {
                 const wrapper = JSON.parse(event.data);
                 console.log('Parsed wrapper:', wrapper);
-                
+
                 if (wrapper.type === 'new_message') {
                     const msg = wrapper.content;
                     console.log('New message content:', msg);
                     console.log('Current activeChatId:', this.activeChatId);
-                    
+
                     // Сравниваем ID как строки
                     if (this.activeChatId && String(msg.chat_id) === String(this.activeChatId)) {
                         console.log('Match found, adding message to UI');
-                        this.messages.push(msg);
-                        this.renderMessages();
-                        this.scrollToBottom();
-                        
+
+                        // Не добавлять если уже есть (защита от дублей при собственной отправке)
+                        const already = this.messages.find(m => m.id === msg.id);
+                        if (!already) {
+                            this.messages.push(msg);
+                            this.renderMessages();
+                            this.scrollToBottom();
+                        }
+
                         // Если сообщение не от нас, помечаем как прочитанное
                         if (String(msg.sender_id) !== String(this.currentUser?.id)) {
                             this.markChatAsRead(this.activeChatId);
@@ -395,6 +405,8 @@ class AlphaApp {
         if (chat) {
             chat.last_message = msg.content;
             this.renderChats();
+        } else {
+            this.loadChats();
         }
     }
 

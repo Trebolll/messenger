@@ -40,6 +40,19 @@ func (r *UserRepository) GetById(id uuid.UUID) (*model.User, error) {
 	return u, nil
 }
 
+func (r *UserRepository) GetByUsernameAndEmail(username string, email string) (*model.User, error) {
+	var u model.User
+	query := `SELECT id, username, email FROM users WHERE username = $1 OR email = $2 LIMIT 1`
+	err := r.db.QueryRow(query, username, email).Scan(&u.ID, &u.Username, &u.Email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &u, nil
+}
+
 func (r *UserRepository) GetByUsername(username string) (*model.User, error) {
 	var u model.User
 	query := `SELECT id, username, email FROM users WHERE username = $1`

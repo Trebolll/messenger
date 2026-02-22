@@ -40,9 +40,9 @@ type Hub struct {
 func NewHub() *Hub {
 	return &Hub{
 		Clients:    make(map[uuid.UUID]*Client),
-		Register:   make(chan *Client),
-		Unregister: make(chan *Client),
-		Broadcast:  make(chan Message),
+		Register:   make(chan *Client, 256),
+		Unregister: make(chan *Client, 256),
+		Broadcast:  make(chan Message, 256),
 	}
 }
 

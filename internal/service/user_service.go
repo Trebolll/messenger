@@ -10,7 +10,7 @@ import (
 )
 
 type UserRepository interface {
-	GetByUsername(username string) (*model.User, error)
+	GetByUsernameAndEmail(username string, email string) (*model.User, error)
 	GetByEmail(email string) (*model.User, error)
 	Create(u *model.User) error
 	SearchByUsername(username string) ([]model.User, error)
@@ -34,14 +34,9 @@ func (s *UserService) CreateUser(u *model.User) error {
 		return errors.New("имя пользователя должно содержать от 3 до 50 символов")
 	}
 
-	existingUser, _ := s.repo.GetByUsername(u.Username)
+	existingUser, _ := s.repo.GetByUsernameAndEmail(u.Username, u.Email)
 	if existingUser != nil {
-		return errors.New("пользователь с таким именем пользователя уже существует")
-	}
-
-	existingEmail, _ := s.repo.GetByEmail(u.Email)
-	if existingEmail != nil {
-		return errors.New("пользователь с таким адресом электронной почты уже существует")
+		return errors.New("пользователь с таким именем или таким адресом электронной почты пользователя уже существует")
 	}
 
 	if len(u.Password) < 6 {
@@ -82,7 +77,7 @@ func (s *UserService) SearchUsers(username string) ([]model.User, error) {
 }
 
 func hash(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 	return string(bytes), err
 }
 
