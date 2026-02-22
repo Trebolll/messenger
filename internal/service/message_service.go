@@ -3,19 +3,34 @@ package service
 import (
 	"errors"
 	"messenger/internal/model"
-	"messenger/internal/repository"
 	"messenger/internal/service/websocket"
 
 	"github.com/google/uuid"
 )
 
-type MessageService struct {
-	repo     *repository.MessageRepository
-	chatRepo *repository.ChatRepository
-	hub      *websocket.Hub
+type MessageRepository interface {
+	SendMessage(message *model.Message) error
+	GetMessagesByChatID(chatID uuid.UUID) ([]model.Message, error)
+	MarkAsRead(chatID, userID uuid.UUID) error
 }
 
-func NewMessageService(repo *repository.MessageRepository, chatRepo *repository.ChatRepository, hub *websocket.Hub) *MessageService {
+type ChatRepository interface {
+	IsChatMember(chatID, userID uuid.UUID) (bool, error)
+	GetChatMembers(chatID uuid.UUID) ([]uuid.UUID, error)
+	Exists(chatID uuid.UUID) (bool, error)
+}
+
+type Hub interface {
+	SendToUser(userID uuid.UUID, msg websocket.Message)
+}
+
+type MessageService struct {
+	repo     MessageRepository
+	chatRepo ChatRepository
+	hub      Hub
+}
+
+func NewMessageService(repo MessageRepository, chatRepo ChatRepository, hub Hub) *MessageService {
 	return &MessageService{
 		repo:     repo,
 		chatRepo: chatRepo,

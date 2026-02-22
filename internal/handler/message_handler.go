@@ -66,12 +66,22 @@ func (h *MessageHandler) GetMessages(c *gin.Context) {
 }
 
 func (h *MessageHandler) MarkAsRead(c *gin.Context) {
-	chatID, _ := uuid.Parse(c.Param("chat_id"))
-	val, _ := c.Get("userID")
+	chatIDStr := c.Param("chat_id")
+	chatID, err := uuid.Parse(chatIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ошибка": "неверный идентификатор чата"})
+		return
+	}
+
+	val, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"ошибка": "неавторизован"})
+		return
+	}
 	userID := val.(uuid.UUID)
 
 	if err := h.messageService.MarkChatAsRead(chatID, userID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"ошибка": err.Error()})
 		return
 	}
 
