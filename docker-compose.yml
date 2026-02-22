@@ -1,11 +1,41 @@
 version: '3.8'
 
 services:
+
   postgres:
-    image: 'postgres:latest'
-    ports:
-      - "5432:5432"
+    image: postgres:16-alpine
+    container_name: messenger-db
     environment:
-      POSTGRES_DB: postgres
+      POSTGRES_DB: messenger
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+    container_name: messenger-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: messenger
+      JWT_SECRET: change-this-in-production
+      PORT: 8080
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
