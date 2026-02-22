@@ -342,7 +342,7 @@ class AlphaApp {
                                 ${new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                             </span>
                             ${isMe ? `
-                                <span class="text-[10px] ${isRead ? 'text-white' : 'opacity-50'}">
+                                <span class="text-[10px] ${isRead ? 'text-white' : 'opacity-50'}" style="display: inline-block; letter-spacing: -0.5em;">
                                     ${isRead ? '✓✓' : '✓'}
                                 </span>
                             ` : ''}
@@ -456,6 +456,69 @@ class AlphaApp {
         div.textContent = text;
         return div.innerHTML;
     }
+}
+
+let aiLastResult = null;
+
+function toggleAiPanel() {
+    const panel = document.getElementById('ai-panel');
+    panel.classList.toggle('hidden');
+}
+
+async function aiAction(type) {
+    const text = document.getElementById('message-input').value.trim();
+    if (!text) return;
+
+    const loading = document.getElementById('ai-loading');
+    const result = document.getElementById('ai-result');
+    const applyBtn = document.getElementById('ai-apply-btn');
+
+    loading.classList.remove('hidden');
+    result.classList.add('hidden');
+    applyBtn.classList.add('hidden');
+    aiLastResult = null;
+
+    try {
+        // Токен берём так же, как в других запросах в app.js
+        const token = localStorage.getItem('alpha_token');
+
+        const response = await fetch('/api/ai/suggest', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ text, action: type })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка сервера');
+        }
+
+        aiLastResult = data.result;
+        result.textContent = data.result;
+        result.classList.remove('hidden');
+
+        if (!data.is_advice) {
+            applyBtn.classList.remove('hidden');
+        }
+    } catch (err) {
+        result.textContent = 'Ошибка: ' + err.message;
+        result.classList.remove('hidden');
+    } finally {
+        loading.classList.add('hidden');
+    }
+}
+
+function applyAiResult() {
+    if (!aiLastResult) return;
+    document.getElementById('message-input').value = aiLastResult;
+    document.getElementById('ai-panel').classList.add('hidden');
+    document.getElementById('ai-result').classList.add('hidden');
+    document.getElementById('ai-apply-btn').classList.add('hidden');
+    aiLastResult = null;
 }
 
 // Global App Instance
