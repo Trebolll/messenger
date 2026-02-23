@@ -96,7 +96,7 @@ func isValidEmail(email string) bool {
 	return emailRegex.MatchString(email)
 }
 
-func (s *UserService) UpdateProfile(userID interface{}, phone *string, fullName *string, birthDate *string, location *string, status *string) (*model.User, error) {
+func (s *UserService) UpdateProfile(userID interface{}, phone *string, fullName *string, username *string, birthDate *string, location *string, status *string) (*model.User, error) {
 	var id uuid.UUID
 	switch v := userID.(type) {
 	case string:
@@ -123,6 +123,9 @@ func (s *UserService) UpdateProfile(userID interface{}, phone *string, fullName 
 	}
 	if fullName != nil {
 		existing.FullName = *fullName
+	}
+	if username != nil && len(*username) >= 3 {
+		existing.Username = *username
 	}
 	if location != nil {
 		existing.Location = *location

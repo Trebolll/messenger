@@ -120,8 +120,8 @@ func (r *UserRepository) VerifyPassword(email, password string) (*model.User, er
 }
 
 func (r *UserRepository) UpdateProfile(u *model.User) error {
-	query := `UPDATE users SET phone = $1, full_name = $2, birth_date = $3, location = $4, status = $5 WHERE id = $6`
-	_, err := r.db.Exec(query, u.Phone, u.FullName, u.BirthDate, u.Location, u.Status, u.ID)
+	query := `UPDATE users SET phone = $1, full_name = $2, birth_date = $3, location = $4, status = $5, username = $6 WHERE id = $7`
+	_, err := r.db.Exec(query, u.Phone, u.FullName, u.BirthDate, u.Location, u.Status, u.Username, u.ID)
 	return err
 }
 

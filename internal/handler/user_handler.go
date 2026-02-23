@@ -94,6 +94,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	var req struct {
 		Phone     *string `json:"phone"`
 		FullName  *string `json:"full_name"`
+		Username  *string `json:"username"`
 		BirthDate *string `json:"birth_date"`
 		Location  *string `json:"location"`
 		Status    *string `json:"status"`
@@ -104,7 +105,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	user, err := h.userService.UpdateProfile(userID, req.Phone, req.FullName, req.BirthDate, req.Location, req.Status)
+	user, err := h.userService.UpdateProfile(userID, req.Phone, req.FullName, req.Username, req.BirthDate, req.Location, req.Status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
