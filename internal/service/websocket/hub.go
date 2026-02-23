@@ -54,7 +54,7 @@ func (h *Hub) Run() {
 			h.Clients[client.UserID] = client
 			h.mu.Unlock()
 			log.Printf("Client registered: %s", client.UserID)
-			h.broadcastStatus(client.UserID, true)
+			h.broadcastStatus(client.UserID, true, "")
 
 		case client := <-h.Unregister:
 			h.mu.Lock()
@@ -63,7 +63,7 @@ func (h *Hub) Run() {
 				close(client.Send)
 				h.mu.Unlock()
 				log.Printf("Client unregistered: %s", client.UserID)
-				h.broadcastStatus(client.UserID, false)
+				h.broadcastStatus(client.UserID, false, "")
 			} else {
 				h.mu.Unlock()
 			}
@@ -88,12 +88,13 @@ func (h *Hub) Run() {
 	}
 }
 
-func (h *Hub) broadcastStatus(userID uuid.UUID, online bool) {
+func (h *Hub) broadcastStatus(userID uuid.UUID, online bool, status string) {
 	msg := Message{
 		Type: "user_status",
 		Content: map[string]interface{}{
 			"user_id": userID,
 			"online":  online,
+			"status":  status,
 		},
 	}
 	select {
@@ -101,6 +102,14 @@ func (h *Hub) broadcastStatus(userID uuid.UUID, online bool) {
 	default:
 		log.Printf("broadcast channel full, dropping status message")
 	}
+}
+
+// BroadcastStatusUpdate — вызывается когда пользователь меняет статус через API
+func (h *Hub) BroadcastStatusUpdate(userID uuid.UUID, status string) {
+	h.mu.RLock()
+	_, online := h.Clients[userID]
+	h.mu.RUnlock()
+	h.broadcastStatus(userID, online, status)
 }
 
 // Проверить, онлайн ли пользователь
@@ -129,7 +138,7 @@ func (h *Hub) SendToUser(userID uuid.UUID, message Message) {
 		default:
 			close(client.Send)
 			h.mu.Lock()
-			delete(h.Clients, userID)
+			delete(h.Clients, client.UserID)
 			h.mu.Unlock()
 		}
 	}

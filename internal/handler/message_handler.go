@@ -87,3 +87,35 @@ func (h *MessageHandler) MarkAsRead(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
+
+func (h *MessageHandler) EditMessage(c *gin.Context) {
+	messageIDStr := c.Param("message_id")
+	messageID, err := uuid.Parse(messageIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "неверный ID сообщения"})
+		return
+	}
+
+	val, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "неавторизован"})
+		return
+	}
+	senderID := val.(uuid.UUID)
+
+	var req struct {
+		Content string `json:"content" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "содержимое обязательно"})
+		return
+	}
+
+	msg, err := h.messageService.EditMessage(messageID, senderID, req.Content)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, msg)
+}

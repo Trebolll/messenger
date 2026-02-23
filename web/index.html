@@ -32,9 +32,141 @@
         .chat-list-item.active { background-color: var(--bg-item-active); border-right: 3px solid var(--accent-color); }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        .message-bubble { max-width: 80%; }
-        .message-sent { background-color: var(--message-sent-bg); color: var(--message-sent-text); border-radius: 1.5rem 1.5rem 0 1.5rem; }
-        .message-received { background-color: var(--message-received-bg); color: var(--message-received-text); border-radius: 1.5rem 1.5rem 1.5rem 0; }
+        .message-bubble { max-width: 75%; }
+
+        /* ── Появление сообщений ───────────────────────────────────────── */
+        @keyframes msgSlideRight {
+            from { opacity: 0; transform: translateX(-18px) translateY(6px) scale(0.96); }
+            to   { opacity: 1; transform: translateX(0) translateY(0) scale(1); }
+        }
+        @keyframes msgSlideLeft {
+            from { opacity: 0; transform: translateX(18px) translateY(6px) scale(0.96); }
+            to   { opacity: 1; transform: translateX(0) translateY(0) scale(1); }
+        }
+        .msg-anim-received {
+            animation: msgSlideRight 0.32s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+        }
+        .msg-anim-sent {
+            animation: msgSlideLeft 0.32s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+        }
+
+        /* ── Пузырьки ──────────────────────────────────────────────────── */
+        .message-sent {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: #ffffff;
+            border-radius: 1.25rem 1.25rem 0.25rem 1.25rem;
+            box-shadow: 0 4px 16px rgba(37,99,235,0.25), 0 1px 3px rgba(37,99,235,0.15);
+            transition: box-shadow 0.2s;
+        }
+        .message-sent:hover {
+            box-shadow: 0 6px 20px rgba(37,99,235,0.35), 0 2px 6px rgba(37,99,235,0.2);
+        }
+        body.theme-gray .message-sent {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 4px 16px rgba(37,99,235,0.3);
+        }
+        .message-received {
+            background-color: var(--message-received-bg);
+            color: var(--message-received-text);
+            border-radius: 1.25rem 1.25rem 1.25rem 0.25rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s;
+        }
+        .message-received:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        body.theme-gray .message-received {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        /* ── Инлайн-редактирование ─────────────────────────────────────── */
+        .edit-inline-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 200px;
+        }
+        .edit-inline-textarea {
+            background: rgba(255,255,255,0.15);
+            border: 1.5px solid rgba(255,255,255,0.4);
+            border-radius: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            color: inherit;
+            outline: none;
+            resize: none;
+            width: 100%;
+            transition: border-color 0.2s, background 0.2s;
+            backdrop-filter: blur(4px);
+            line-height: 1.5;
+        }
+        .edit-inline-textarea:focus {
+            border-color: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.22);
+        }
+        .message-received .edit-inline-textarea {
+            background: rgba(59,130,246,0.08);
+            border-color: rgba(59,130,246,0.3);
+            color: var(--text-main);
+        }
+        .message-received .edit-inline-textarea:focus {
+            border-color: rgba(59,130,246,0.6);
+            background: rgba(59,130,246,0.12);
+        }
+        .edit-inline-actions {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+        .edit-btn-confirm {
+            display: flex; align-items: center; gap: 4px;
+            padding: 0.3rem 0.75rem;
+            font-size: 0.75rem; font-weight: 600;
+            border-radius: 0.6rem;
+            border: none; cursor: pointer;
+            background: rgba(255,255,255,0.25);
+            color: #fff;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .edit-btn-confirm:hover { background: rgba(255,255,255,0.38); transform: scale(1.04); }
+        .edit-btn-confirm:active { transform: scale(0.96); }
+        .edit-btn-cancel {
+            display: flex; align-items: center; gap: 4px;
+            padding: 0.3rem 0.65rem;
+            font-size: 0.75rem;
+            border-radius: 0.6rem;
+            border: none; cursor: pointer;
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.7);
+            transition: background 0.2s, transform 0.15s;
+        }
+        .edit-btn-cancel:hover { background: rgba(255,255,255,0.2); transform: scale(1.04); }
+        .edit-btn-cancel:active { transform: scale(0.96); }
+        .message-received .edit-btn-confirm {
+            background: #3b82f6; color: #fff;
+        }
+        .message-received .edit-btn-confirm:hover { background: #2563eb; }
+        .message-received .edit-btn-cancel {
+            background: rgba(0,0,0,0.06); color: var(--text-muted);
+        }
+        .message-received .edit-btn-cancel:hover { background: rgba(0,0,0,0.1); }
+
+        /* ── Метка "изменено" ──────────────────────────────────────────── */
+        .msg-edited-label {
+            font-size: 0.65rem;
+            opacity: 0.5;
+            font-style: italic;
+            letter-spacing: 0.01em;
+        }
+
+        /* ── Контекстное меню ──────────────────────────────────────────── */
+        #msg-context-menu {
+            animation: menuPop 0.18s cubic-bezier(0.34,1.56,0.64,1) both;
+        }
+        @keyframes menuPop {
+            from { opacity: 0; transform: scale(0.88) translateY(-4px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
         .bg-custom-main { background-color: var(--bg-main); }
         .bg-custom-sidebar { background-color: var(--bg-sidebar); }
         .text-custom-main { color: var(--text-main); }
@@ -181,8 +313,21 @@
             opacity: 1;
         }
 
-        /* Input area — z-index 8, выше canvas */
-        .input-area { position: relative; z-index: 9; }
+        /* ══ Paperclip unbend animation ══ */
+        #attach-btn {
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+        #attach-btn:hover { color: #3b82f6; }
+        #clip-svg {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        #attach-btn:hover  #clip-svg { transform: scale(1.1);  }
+        #attach-btn:active #clip-svg { transform: scale(0.92); }
+        #clip-body, #clip-hook {
+            transform-box: fill-box;
+            transform-origin: center;
+        }
 
         /* ══ Theme button animation ══ */
         .theme-btn {
@@ -232,39 +377,113 @@
         }
 
         /* ══ Profile Modal ══ */
+        /* Profile modal — светлая тема */
         .profile-modal {
-            background: rgba(15, 23, 42, 0.55);
+            background: rgba(255,255,255,0.7);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
-            border: 1.5px solid rgba(59,130,246,0.3);
-            box-shadow: 0 0 0 1px rgba(59,130,246,0.1), 0 24px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+            border: 1.5px solid rgba(59,130,246,0.25);
+            box-shadow: 0 0 0 1px rgba(59,130,246,0.08), 0 24px 60px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+        /* Тёмная тема */
+        body.theme-gray .profile-modal {
+            background: rgba(17,24,39,0.7);
+            border-color: rgba(96,165,250,0.25);
+            box-shadow: 0 0 0 1px rgba(96,165,250,0.08), 0 24px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03);
         }
         .profile-field { display: flex; flex-direction: column; gap: 4px; }
         .profile-label {
             font-size: 0.7rem; font-weight: 500;
-            color: rgba(147,197,253,0.8);
+            color: #3b82f6;
             text-transform: uppercase; letter-spacing: 0.05em;
             padding-left: 4px;
         }
+        body.theme-gray .profile-label { color: rgba(147,197,253,0.8); }
         .profile-input {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(59,130,246,0.25);
+            background: rgba(241,245,249,0.8);
+            border: 1px solid rgba(59,130,246,0.2);
             border-radius: 0.75rem;
             padding: 0.6rem 0.85rem;
             font-size: 0.875rem;
-            color: #e2e8f0;
+            color: #1e293b;
             outline: none;
             transition: border-color 0.2s, background 0.2s;
             width: 100%;
         }
-        .profile-input::placeholder { color: rgba(148,163,184,0.4); }
-        .profile-input:focus { border-color: rgba(96,165,250,0.6); background: rgba(255,255,255,0.09); }
+        body.theme-gray .profile-input {
+            background: rgba(255,255,255,0.06);
+            color: #e2e8f0;
+        }
+        .profile-input::placeholder { color: rgba(100,116,139,0.5); }
+        body.theme-gray .profile-input::placeholder { color: rgba(148,163,184,0.4); }
+        .profile-input:focus { border-color: rgba(59,130,246,0.5); background: rgba(239,246,255,0.9); }
+        body.theme-gray .profile-input:focus { background: rgba(255,255,255,0.09); }
         .profile-input:disabled { opacity: 0.4; cursor: not-allowed; }
         .profile-verify-block {
-            background: rgba(59,130,246,0.07);
-            border: 1px solid rgba(59,130,246,0.2);
+            background: rgba(59,130,246,0.05);
+            border: 1px solid rgba(59,130,246,0.15);
             border-radius: 0.75rem;
             padding: 0.75rem;
+            margin-top: 0.25rem;
+        }
+        body.theme-gray .profile-verify-block {
+            background: rgba(59,130,246,0.08);
+            border-color: rgba(59,130,246,0.2);
+        }
+
+        /* Status display in right info panel */
+        .info-status-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.75rem; font-weight: 500;
+        }
+        .info-status-badge .dot {
+            width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+        }
+        .info-status-badge.online  .dot { background: #10b981; }
+        .info-status-badge.offline .dot { background: #94a3b8; }
+        .info-status-badge.online  { color: #10b981; }
+        .info-status-badge.offline { color: #94a3b8; }
+
+        /* Status dot in chat header */
+        .status-dot {
+            display: inline-block; width: 8px; height: 8px;
+            border-radius: 50%; margin-right: 4px; vertical-align: middle;
+        }
+        .status-dot.available { background: #10b981; }
+        .status-dot.busy      { background: #ef4444; }
+        .status-dot.away      { background: #f59e0b; }
+        .status-dot.invisible { background: #94a3b8; }
+        .status-dot.offline   { background: #94a3b8; }
+
+        /* Цвет точки статуса */
+        #my-status-dot { background: #10b981; }
+        /* ══ Avatar Viewer ══ */
+        #avatar-viewer-overlay {
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        #avatar-viewer-circle {
+            width: 220px; height: 220px;
+            border-radius: 50%;
+            background: var(--bg-sidebar);
+            border: 3px solid rgba(59,130,246,0.3);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 5rem; font-weight: 700; color: #3b82f6;
+            box-shadow: 0 0 60px rgba(59,130,246,0.2);
+            animation: avatarPop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes avatarPop {
+            from { transform: scale(0.6); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+        #avatar-viewer-name {
+            font-size: 1.25rem; font-weight: 700;
+            color: #fff; margin-top: 1.25rem;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+        }
+        #avatar-viewer-status {
+            font-size: 0.8rem; color: rgba(255,255,255,0.5);
             margin-top: 0.25rem;
         }
     </style>
@@ -306,10 +525,16 @@
         <div class="w-80 border-r border-custom flex flex-col h-full bg-custom-sidebar" style="position:relative;z-index:2;">
             <div class="p-4 border-b border-custom flex items-center justify-between bg-custom-main">
                 <div class="flex items-center gap-3">
-                    <button onclick="openProfileModal()" class="flex items-center gap-2 group" title="Редактировать профиль">
-                        <div id="current-user-avatar" class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold transition group-hover:ring-2 group-hover:ring-blue-400 group-hover:ring-offset-2">U</div>
-                        <span id="current-user-name" class="font-semibold text-custom-main group-hover:text-blue-600 transition">User</span>
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button onclick="openMyAvatarViewer()" class="relative group" title="Посмотреть аватар">
+                            <div id="current-user-avatar" class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold transition group-hover:ring-2 group-hover:ring-blue-400 group-hover:ring-offset-2">U</div>
+                            <div id="my-status-dot" class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                        </button>
+                        <div class="flex flex-col">
+                            <span id="current-user-name" class="font-semibold text-custom-main leading-tight cursor-pointer hover:text-blue-600 transition" onclick="openProfileModal()">User</span>
+                            <span class="text-xs text-green-500 mt-0.5">онлайн</span>
+                        </div>
+                    </div>
                     <button id="theme-btn" onclick="handleToggleTheme()" title="Сменить тему" class="theme-btn p-1.5 rounded-full transition">
                             <span class="theme-icon-wrap">
                                 <svg class="theme-icon theme-moon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
@@ -344,15 +569,12 @@
 
             <div id="chat-header" class="p-4 border-b border-custom flex items-center justify-between bg-custom-main" style="position:relative;z-index:2;">
                 <div class="flex items-center gap-3">
-                    <div id="active-chat-avatar" class="w-10 h-10 rounded-full bg-custom-sidebar flex items-center justify-center font-bold text-custom-muted">?</div>
+                    <div id="active-chat-avatar" onclick="openAvatarViewer()" class="w-10 h-10 rounded-full bg-custom-sidebar flex items-center justify-center font-bold text-custom-muted cursor-pointer hover:ring-2 hover:ring-blue-400 hover:ring-offset-2 transition">?</div>
                     <div>
-                        <h3 id="active-chat-name" class="font-bold text-custom-main leading-tight">Чат</h3>
+                        <h3 id="active-chat-name" onclick="toggleInfoPanel()" class="font-bold text-custom-main leading-tight cursor-pointer hover:text-blue-600 transition">Чат</h3>
                         <p id="active-chat-status" class="text-xs text-custom-muted"></p>
                     </div>
                 </div>
-                <button onclick="toggleInfoPanel()" class="p-2 hover:bg-custom-sidebar rounded-full transition text-custom-muted">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                </button>
             </div>
 
             <div id="messages-container" class="flex-grow overflow-y-auto p-6 space-y-4 bg-custom-sidebar/30 scrollbar-hide" style="position:relative;z-index:2;"></div>
@@ -375,9 +597,14 @@
                 </div>
 
                 <form id="message-form" class="flex items-end gap-3" onsubmit="handleSendMessage(event)">
-                    <button type="button" class="p-3 text-custom-muted hover:text-blue-600 transition" style="position:relative;z-index:20;">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                    <button type="button" id="attach-btn" class="p-3" style="position:relative;z-index:20;" title="Прикрепить файл">
+                        <svg id="clip-svg" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" overflow="visible">
+                            <!-- Тело скрепки: большая дуга + нижний загиб -->
+                            <path id="clip-body" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"
+                                  d="M6.1 17.1 a5 5 0 0 0 7.07 0 l8.1-8.1 a3 3 0 0 0-4.24-4.24 L8.2 13.6 a1 1 0 0 0 1.41 1.41 l7.07-7.07"/>
+                            <!-- Верхний крюк — он разгибается -->
+                            <path id="clip-hook" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"
+                                  d="M17.67 7.93 L19.8 5.8"/>
                         </svg>
                     </button>
 
@@ -427,8 +654,12 @@
             </div>
             <div class="p-8 flex flex-col items-center text-center">
                 <div id="info-avatar" class="w-24 h-24 rounded-full bg-blue-50 flex items-center justify-center text-3xl font-bold text-blue-600 mb-4">?</div>
-                <h4 id="info-name" class="text-xl font-bold text-custom-main">Name</h4>
-                <p id="info-status" class="text-sm text-custom-muted mb-6">был(а) недавно</p>
+                <h4 id="info-name" class="text-xl font-bold text-custom-main mb-2">Name</h4>
+                <div id="info-status-badge" class="info-status-badge offline mb-2">
+                    <span class="dot"></span>
+                    <span id="info-status-text">офлайн</span>
+                </div>
+                <p id="info-user-status" class="text-xs text-custom-muted italic mb-6"></p>
                 <div class="w-full space-y-4 text-left"></div>
             </div>
         </div>
@@ -516,6 +747,14 @@
                     <input type="email" id="profile-email" class="profile-input" placeholder="you@example.com" disabled>
                     <p class="text-blue-300/50 text-xs mt-1 pl-1">Изменение email недоступно</p>
                 </div>
+                <div class="profile-field">
+                    <label class="profile-label">
+                        <svg class="w-3.5 h-3.5 inline mr-1 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
+                        Статус
+                    </label>
+                    <input type="text" id="profile-status-text" class="profile-input" placeholder="Настроение, цитата..." maxlength="100">
+                    <p class="text-blue-300/50 text-xs mt-1 pl-1">Виден собеседникам в правой панели</p>
+                </div>
 
                 <!-- Верификация -->
                 <div class="profile-verify-block">
@@ -534,85 +773,23 @@
             </button>
         </div>
     </div>
+    <!-- Avatar Viewer -->
+    <div id="avatar-viewer-overlay" class="fixed inset-0 z-[200] hidden flex items-center justify-center" onclick="closeAvatarViewer()">
+        <div class="flex flex-col items-center select-none">
+            <div id="avatar-viewer-circle">?</div>
+            <p id="avatar-viewer-name"></p>
+            <p id="avatar-viewer-status"></p>
+        </div>
+    </div>
+
     <div id="notification-center" class="fixed top-6 right-6 z-[100] space-y-3 w-80"></div>
 </div>
 
+<script src="/web/api.js"></script>
+<script src="/web/websocket.js"></script>
+<script src="/web/render.js"></script>
 <script src="/web/app.js"></script>
 <script src="/web/neural-ai-btn.js"></script>
-
-<script>
-    function openAuthModal(type) {
-        const overlay = document.getElementById('auth-overlay'), modal = document.getElementById('auth-modal');
-        overlay.classList.remove('hidden');
-        setTimeout(() => { overlay.classList.remove('opacity-0'); modal.classList.remove('scale-95'); }, 10);
-        switchForm(type);
-    }
-    function closeAuthModal() {
-        const overlay = document.getElementById('auth-overlay'), modal = document.getElementById('auth-modal');
-        overlay.classList.add('opacity-0'); modal.classList.add('scale-95');
-        setTimeout(() => overlay.classList.add('hidden'), 300);
-    }
-    function switchForm(type) {
-        document.getElementById('login-form-container').classList.toggle('hidden', type !== 'login');
-        document.getElementById('register-form-container').classList.toggle('hidden', type !== 'register');
-    }
-    function openNewChatMenu() {
-        const overlay = document.getElementById('new-chat-overlay'), modal = document.getElementById('new-chat-modal');
-        overlay.classList.remove('hidden');
-        setTimeout(() => { overlay.classList.remove('opacity-0'); modal.classList.remove('scale-95'); }, 10);
-    }
-    function closeNewChatModal() {
-        const overlay = document.getElementById('new-chat-overlay'), modal = document.getElementById('new-chat-modal');
-        overlay.classList.add('opacity-0'); modal.classList.add('scale-95');
-        setTimeout(() => overlay.classList.add('hidden'), 300);
-    }
-    function toggleInfoPanel() { document.getElementById('info-panel').classList.toggle('hidden'); }
-    function handleSendMessage(e) {
-        e.preventDefault();
-        animateSendButton();
-        app.sendMessage();
-    }
-    function handleLogout() { app.logout(); }
-    function openProfileModal() {
-        const overlay = document.getElementById('profile-overlay');
-        const modal   = document.getElementById('profile-modal');
-        // Заполняем текущие данные
-        const user = app.currentUser;
-        if (user) {
-            document.getElementById('profile-username').value = user.username || '';
-            document.getElementById('profile-email').value    = user.email    || '';
-            const av = document.getElementById('profile-avatar');
-            av.textContent = (user.username || 'U')[0].toUpperCase();
-        }
-        overlay.classList.remove('hidden');
-        setTimeout(() => { overlay.classList.remove('opacity-0'); modal.classList.remove('scale-95'); }, 10);
-    }
-    function closeProfileModal() {
-        const overlay = document.getElementById('profile-overlay');
-        const modal   = document.getElementById('profile-modal');
-        overlay.classList.add('opacity-0'); modal.classList.add('scale-95');
-        setTimeout(() => overlay.classList.add('hidden'), 300);
-    }
-    function triggerAvatarUpload() {
-        document.getElementById('avatar-upload').click();
-    }
-    function saveProfile() {
-        // Заглушка — покажем уведомление
-        app.notify('Профиль обновлён ✓', 'success');
-        closeProfileModal();
-    }
-    // Закрытие по клику на фон
-    document.getElementById('profile-overlay').addEventListener('click', function(e) {
-        if (e.target === this) closeProfileModal();
-    });
-
-    function handleToggleTheme() {
-        const btn = document.getElementById('theme-btn');
-        btn.classList.add('animating');
-        setTimeout(() => btn.classList.remove('animating'), 600);
-        app.toggleTheme();
-    }
-
-</script>
+<script src="/web/ui.js"></script>
 </body>
 </html>

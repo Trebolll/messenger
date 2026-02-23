@@ -7,9 +7,15 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	Username  string    `json:"username"`
-	Email     string    `json:"email"`
-	Password  string    `json:"password,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        uuid.UUID  `json:"id"`
+	Username  string     `json:"username"`
+	Email     string     `json:"email"`
+	Phone     string     `json:"phone"`
+	FullName  string     `json:"full_name"`
+	Password  string     `json:"password,omitempty"`
+	BirthDate *time.Time `json:"birth_date"`
+	Location  string     `json:"location"`
+	Status    string     `json:"status"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }

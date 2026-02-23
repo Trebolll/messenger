@@ -24,18 +24,40 @@ func (r *UserRepository) Create(u *model.User) error {
 
 func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
 	u := new(model.User)
-	err := r.db.QueryRow("SELECT id, username, email, password FROM users WHERE email = $1", email).Scan(&u.ID, &u.Username, &u.Email, &u.Password)
+	var phone, fullName, location, status sql.NullString
+	var birthDate sql.NullTime
+	err := r.db.QueryRow(
+		"SELECT id, username, email, password, phone, full_name, birth_date, location, status FROM users WHERE email = $1", email,
+	).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &phone, &fullName, &birthDate, &location, &status)
 	if err != nil {
 		return nil, err
+	}
+	u.Phone = phone.String
+	u.FullName = fullName.String
+	u.Location = location.String
+	u.Status = status.String
+	if birthDate.Valid {
+		u.BirthDate = &birthDate.Time
 	}
 	return u, nil
 }
 
 func (r *UserRepository) GetById(id uuid.UUID) (*model.User, error) {
 	u := new(model.User)
-	err := r.db.QueryRow("SELECT id, username, email FROM users WHERE id = $1", id).Scan(&u.ID, &u.Username, &u.Email)
+	var phone, fullName, location, status sql.NullString
+	var birthDate sql.NullTime
+	err := r.db.QueryRow(
+		"SELECT id, username, email, phone, full_name, birth_date, location, status FROM users WHERE id = $1", id,
+	).Scan(&u.ID, &u.Username, &u.Email, &phone, &fullName, &birthDate, &location, &status)
 	if err != nil {
 		return nil, err
+	}
+	u.Phone = phone.String
+	u.FullName = fullName.String
+	u.Location = location.String
+	u.Status = status.String
+	if birthDate.Valid {
+		u.BirthDate = &birthDate.Time
 	}
 	return u, nil
 }
@@ -54,13 +76,22 @@ func (r *UserRepository) GetByUsernameAndEmail(username string, email string) (*
 }
 
 func (r *UserRepository) GetByUsername(username string) (*model.User, error) {
-	var u model.User
-	query := `SELECT id, username, email FROM users WHERE username = $1`
-	err := r.db.QueryRow(query, username).Scan(&u.ID, &u.Username, &u.Email)
+	u := new(model.User)
+	var phone, fullName, location, status sql.NullString
+	var birthDate sql.NullTime
+	query := `SELECT id, username, email, phone, full_name, birth_date, location, status FROM users WHERE username = $1`
+	err := r.db.QueryRow(query, username).Scan(&u.ID, &u.Username, &u.Email, &phone, &fullName, &birthDate, &location, &status)
 	if err != nil {
 		return nil, err
 	}
-	return &u, nil
+	u.Phone = phone.String
+	u.FullName = fullName.String
+	u.Location = location.String
+	u.Status = status.String
+	if birthDate.Valid {
+		u.BirthDate = &birthDate.Time
+	}
+	return u, nil
 }
 
 func (r *UserRepository) SearchByUsername(username string) ([]model.User, error) {
@@ -88,13 +119,27 @@ func (r *UserRepository) VerifyPassword(email, password string) (*model.User, er
 		return nil, errors.New("пользователь не найден")
 	}
 
-	// Сравниваем хеши
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
 		return nil, errors.New("неверный пароль")
 	}
 
-	// Очищаем пароль из объекта
 	user.Password = ""
 	return user, nil
+}
+
+func (r *UserRepository) UpdateProfile(u *model.User) error {
+	query := `UPDATE users SET phone = $1, full_name = $2, birth_date = $3, location = $4, status = $5, username = $6 WHERE id = $7`
+	_, err := r.db.Exec(query, u.Phone, u.FullName, u.BirthDate, u.Location, u.Status, u.Username, u.ID)
+	return err
+}
+
+func (r *UserRepository) UpdateStatus(id uuid.UUID, status string) (*model.User, error) {
+	query := `UPDATE users SET status = $1 WHERE id = $2`
+	_, err := r.db.Exec(query, status, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.GetById(id)
 }

@@ -39,7 +39,7 @@ func main() {
 
 	userRepository := repository.NewUserRepository(database)
 	userService := service.NewUserService(userRepository)
-	userHandler := handler.NewUserHandler(userService)
+	userHandler := handler.NewUserHandler(userService, hub)
 
 	chatRepository := repository.NewChatRepository(database)
 	chatService := service.NewChatService(chatRepository, userRepository, hub)
@@ -76,9 +76,12 @@ func main() {
 		api.POST("/chats/private", chatHandler.CreatePrivateChat)
 		api.POST("/chats/group", chatHandler.CreateGroupChat)
 		api.POST("/messages", messageHandler.SendMessage)
+		api.PUT("/messages/:message_id", messageHandler.EditMessage)
 		api.GET("/chats/:chat_id/messages", messageHandler.GetMessages)
 		api.GET("/chats", chatHandler.GetUserChats)
 		api.GET("/users/search", userHandler.SearchUsers)
+		api.PUT("/users/profile", userHandler.UpdateProfile)
+		api.PUT("/users/status", userHandler.UpdateStatus)
 		api.POST("/chats/:chat_id/read", messageHandler.MarkAsRead)
 		api.POST("/ai/suggest", aiHandler.Suggest)
 	}
