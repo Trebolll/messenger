@@ -278,30 +278,57 @@ class AlphaApp {
     }
 
     updateUserStatus(status) {
-        // Обновляем статус в локальном списке чатов
+        // Парсим кастомный статус (формат "key:text" или просто "text")
+        const customStatus = status.status || '';
+        const statusInfo = this._parseStatus(customStatus, status.online);
+
+        // Обновляем в локальном списке чатов
         const chat = this.chats.find(c => String(c.interlocutor_id) === String(status.user_id));
         if (chat) {
             chat.is_online = status.online;
+            chat.user_status = customStatus;
             this.renderChats();
         }
 
-        // Если это активный чат, обновляем заголовок
+        // Если это активный чат — обновляем хедер
         const activeChat = this.chats.find(c => String(c.id) === String(this.activeChatId));
         if (activeChat && String(activeChat.interlocutor_id) === String(status.user_id)) {
-            const statusEl = document.getElementById('active-chat-status');
-            const infoStatusEl = document.getElementById('info-status');
-            
-            const statusText = status.online ? 'онлайн' : 'был(а) недавно';
-            const statusClass = status.online ? 'text-xs text-green-500' : 'text-xs text-custom-muted';
-            
-            if (statusEl) {
-                statusEl.textContent = statusText;
-                statusEl.className = statusClass;
-            }
-            if (infoStatusEl) {
-                infoStatusEl.textContent = statusText;
-                infoStatusEl.className = statusClass;
-            }
+            this._renderStatusElements(statusInfo);
+        }
+    }
+
+    // Парсит строку статуса в { dot, text, cssClass }
+    _parseStatus(statusStr, online) {
+        if (!online) {
+            return { dot: 'offline', text: 'был(а) недавно', cssClass: 'text-xs text-custom-muted' };
+        }
+        if (!statusStr) {
+            return { dot: 'available', text: 'онлайн', cssClass: 'text-xs text-green-500' };
+        }
+        const parts = statusStr.split(':');
+        const key = parts[0];
+        const text = parts.length > 1 ? parts.slice(1).join(':').trim() : parts[0];
+        const map = {
+            available: { dot: 'available', cssClass: 'text-xs text-green-500' },
+            busy:      { dot: 'busy',      cssClass: 'text-xs text-red-500' },
+            away:      { dot: 'away',      cssClass: 'text-xs text-yellow-500' },
+            invisible: { dot: 'invisible', cssClass: 'text-xs text-custom-muted' },
+        };
+        const info = map[key] || { dot: 'available', cssClass: 'text-xs text-blue-500' };
+        return { ...info, text };
+    }
+
+    _renderStatusElements(statusInfo) {
+        const dot = `<span class="status-dot ${statusInfo.dot}"></span>`;
+        const statusEl = document.getElementById('active-chat-status');
+        const infoStatusEl = document.getElementById('info-status');
+        if (statusEl) {
+            statusEl.innerHTML = dot + statusInfo.text;
+            statusEl.className = statusInfo.cssClass;
+        }
+        if (infoStatusEl) {
+            infoStatusEl.innerHTML = dot + statusInfo.text;
+            infoStatusEl.className = statusInfo.cssClass;
         }
     }
 
@@ -314,7 +341,14 @@ class AlphaApp {
                     <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
                         ${(chat.name || 'Chat')[0].toUpperCase()}
                     </div>
-                    ${chat.is_online ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-custom rounded-full"></div>' : ''}
+                    ${(function() {
+                        if (!chat.is_online) return '';
+                        const s = chat.user_status || '';
+                        const k = s.split(':')[0];
+                        const colors = { available:'bg-green-500', busy:'bg-red-500', away:'bg-yellow-400', invisible:'bg-slate-400' };
+                        const color = colors[k] || 'bg-green-500';
+                        return '<div class="absolute bottom-0 right-0 w-3 h-3 ' + color + ' border-2 border-white rounded-full"></div>';
+                    })()}
                 </div>
                 <div class="flex-grow overflow-hidden">
                     <div class="flex justify-between items-baseline">
@@ -357,22 +391,8 @@ class AlphaApp {
         const chat = this.chats.find(c => String(c.id) === String(this.activeChatId));
         if (!chat) return;
         
-        const statusEl = document.getElementById('active-chat-status');
-        const infoStatusEl = document.getElementById('info-status');
-        
-        const isOnline = chat.is_online;
-        const statusText = isOnline ? 'онлайн' : 'был(а) недавно';
-        const statusClass = isOnline ? 'text-xs text-green-500' : 'text-xs text-custom-muted';
-        
-        if (statusEl) {
-            statusEl.textContent = statusText;
-            statusEl.className = statusClass;
-        }
-        
-        if (infoStatusEl) {
-            infoStatusEl.textContent = statusText;
-            infoStatusEl.className = statusClass;
-        }
+        const statusInfo = this._parseStatus(chat.user_status || '', chat.is_online);
+        this._renderStatusElements(statusInfo);
 
         document.getElementById('active-chat-name').textContent = chat.name;
         document.getElementById('active-chat-avatar').textContent = chat.name[0].toUpperCase();

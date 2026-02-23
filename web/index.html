@@ -232,41 +232,126 @@
         }
 
         /* ══ Profile Modal ══ */
+        /* Profile modal — светлая тема */
         .profile-modal {
-            background: rgba(15, 23, 42, 0.55);
+            background: rgba(255,255,255,0.7);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
-            border: 1.5px solid rgba(59,130,246,0.3);
-            box-shadow: 0 0 0 1px rgba(59,130,246,0.1), 0 24px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+            border: 1.5px solid rgba(59,130,246,0.25);
+            box-shadow: 0 0 0 1px rgba(59,130,246,0.08), 0 24px 60px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+        /* Тёмная тема */
+        body.theme-gray .profile-modal {
+            background: rgba(17,24,39,0.7);
+            border-color: rgba(96,165,250,0.25);
+            box-shadow: 0 0 0 1px rgba(96,165,250,0.08), 0 24px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03);
         }
         .profile-field { display: flex; flex-direction: column; gap: 4px; }
         .profile-label {
             font-size: 0.7rem; font-weight: 500;
-            color: rgba(147,197,253,0.8);
+            color: #3b82f6;
             text-transform: uppercase; letter-spacing: 0.05em;
             padding-left: 4px;
         }
+        body.theme-gray .profile-label { color: rgba(147,197,253,0.8); }
         .profile-input {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(59,130,246,0.25);
+            background: rgba(241,245,249,0.8);
+            border: 1px solid rgba(59,130,246,0.2);
             border-radius: 0.75rem;
             padding: 0.6rem 0.85rem;
             font-size: 0.875rem;
-            color: #e2e8f0;
+            color: #1e293b;
             outline: none;
             transition: border-color 0.2s, background 0.2s;
             width: 100%;
         }
-        .profile-input::placeholder { color: rgba(148,163,184,0.4); }
-        .profile-input:focus { border-color: rgba(96,165,250,0.6); background: rgba(255,255,255,0.09); }
+        body.theme-gray .profile-input {
+            background: rgba(255,255,255,0.06);
+            color: #e2e8f0;
+        }
+        .profile-input::placeholder { color: rgba(100,116,139,0.5); }
+        body.theme-gray .profile-input::placeholder { color: rgba(148,163,184,0.4); }
+        .profile-input:focus { border-color: rgba(59,130,246,0.5); background: rgba(239,246,255,0.9); }
+        body.theme-gray .profile-input:focus { background: rgba(255,255,255,0.09); }
         .profile-input:disabled { opacity: 0.4; cursor: not-allowed; }
         .profile-verify-block {
-            background: rgba(59,130,246,0.07);
-            border: 1px solid rgba(59,130,246,0.2);
+            background: rgba(59,130,246,0.05);
+            border: 1px solid rgba(59,130,246,0.15);
             border-radius: 0.75rem;
             padding: 0.75rem;
             margin-top: 0.25rem;
         }
+        body.theme-gray .profile-verify-block {
+            background: rgba(59,130,246,0.08);
+            border-color: rgba(59,130,246,0.2);
+        }
+
+        /* Status pill selector */
+        .status-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+        .status-pill {
+            padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 500;
+            cursor: pointer; border: 1.5px solid transparent;
+            transition: all 0.2s; user-select: none;
+        }
+        .status-pill:hover { transform: scale(1.04); }
+        .status-pill.active { box-shadow: 0 0 0 2px rgba(59,130,246,0.3); }
+        .sp-available  { background: rgba(16,185,129,0.12); color: #059669; border-color: rgba(16,185,129,0.3); }
+        .sp-available.active { background: rgba(16,185,129,0.25); border-color: #059669; }
+        .sp-busy       { background: rgba(239,68,68,0.1);  color: #dc2626; border-color: rgba(239,68,68,0.25); }
+        .sp-busy.active { background: rgba(239,68,68,0.2); border-color: #dc2626; }
+        .sp-away       { background: rgba(245,158,11,0.1); color: #d97706; border-color: rgba(245,158,11,0.25); }
+        .sp-away.active { background: rgba(245,158,11,0.2); border-color: #d97706; }
+        .sp-invisible  { background: rgba(100,116,139,0.1); color: #64748b; border-color: rgba(100,116,139,0.25); }
+        .sp-invisible.active { background: rgba(100,116,139,0.2); border-color: #64748b; }
+
+        /* Status dot in chat header */
+        .status-dot {
+            display: inline-block; width: 8px; height: 8px;
+            border-radius: 50%; margin-right: 4px; vertical-align: middle;
+        }
+        .status-dot.available { background: #10b981; }
+        .status-dot.busy      { background: #ef4444; }
+        .status-dot.away      { background: #f59e0b; }
+        .status-dot.invisible { background: #94a3b8; }
+        .status-dot.offline   { background: #94a3b8; }
+
+        /* ── Status picker ── */
+        .status-picker {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: -8px;
+            background: var(--bg-main);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            padding: 4px 0;
+            z-index: 100;
+            min-width: 160px;
+            animation: pickerIn 0.15s ease;
+        }
+        body.theme-gray .status-picker {
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        }
+        @keyframes pickerIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .status-picker-item {
+            display: flex; align-items: center;
+            width: 100%; padding: 6px 12px;
+            font-size: 0.75rem;
+            color: var(--text-main);
+            background: none; border: none; cursor: pointer;
+            text-align: left;
+            transition: background 0.15s;
+        }
+        .status-picker-item:hover { background: var(--bg-item-hover); }
+
+        /* Цвет точки статуса */
+        #my-status-dot.available { background: #10b981; }
+        #my-status-dot.busy      { background: #ef4444; }
+        #my-status-dot.away      { background: #f59e0b; }
+        #my-status-dot.invisible { background: #94a3b8; }
     </style>
 </head>
 <body class="bg-custom-main min-h-screen text-custom-main">
@@ -306,10 +391,35 @@
         <div class="w-80 border-r border-custom flex flex-col h-full bg-custom-sidebar" style="position:relative;z-index:2;">
             <div class="p-4 border-b border-custom flex items-center justify-between bg-custom-main">
                 <div class="flex items-center gap-3">
-                    <button onclick="openProfileModal()" class="flex items-center gap-2 group" title="Редактировать профиль">
-                        <div id="current-user-avatar" class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold transition group-hover:ring-2 group-hover:ring-blue-400 group-hover:ring-offset-2">U</div>
-                        <span id="current-user-name" class="font-semibold text-custom-main group-hover:text-blue-600 transition">User</span>
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button onclick="openProfileModal()" class="relative group" title="Редактировать профиль">
+                            <div id="current-user-avatar" class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold transition group-hover:ring-2 group-hover:ring-blue-400 group-hover:ring-offset-2">U</div>
+                            <div id="my-status-dot" class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                        </button>
+                        <div class="flex flex-col">
+                            <span id="current-user-name" class="font-semibold text-custom-main leading-tight cursor-pointer hover:text-blue-600 transition" onclick="openProfileModal()">User</span>
+                            <!-- Быстрый выбор статуса -->
+                            <div class="relative">
+                                <button id="status-picker-btn" onclick="toggleStatusPicker()" class="flex items-center gap-1 text-xs text-custom-muted hover:text-custom-main transition mt-0.5">
+                                    <span id="my-status-text">онлайн</span>
+                                    <svg class="w-2.5 h-2.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                </button>
+                                <div id="status-picker" class="status-picker hidden">
+                                    <button onclick="setMyStatus('available','Доступен')"   class="status-picker-item"><span class="w-2 h-2 rounded-full bg-green-500 inline-block mr-2"></span>Доступен</button>
+                                    <button onclick="setMyStatus('busy','Занят')"           class="status-picker-item"><span class="w-2 h-2 rounded-full bg-red-500 inline-block mr-2"></span>Занят</button>
+                                    <button onclick="setMyStatus('away','Отошёл')"          class="status-picker-item"><span class="w-2 h-2 rounded-full bg-yellow-400 inline-block mr-2"></span>Отошёл</button>
+                                    <button onclick="setMyStatus('invisible','Невидимый')"  class="status-picker-item"><span class="w-2 h-2 rounded-full bg-slate-400 inline-block mr-2"></span>Невидимый</button>
+                                    <div class="border-t border-custom my-1"></div>
+                                    <div class="px-3 py-1">
+                                        <input id="status-custom-input" type="text" maxlength="60"
+                                               placeholder="Свой статус..."
+                                               class="w-full text-xs bg-transparent outline-none text-custom-main placeholder-custom-muted"
+                                               onkeydown="if(event.key==='Enter') setMyStatus('available', this.value)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <button id="theme-btn" onclick="handleToggleTheme()" title="Сменить тему" class="theme-btn p-1.5 rounded-full transition">
                             <span class="theme-icon-wrap">
                                 <svg class="theme-icon theme-moon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
@@ -576,13 +686,27 @@
     function openProfileModal() {
         const overlay = document.getElementById('profile-overlay');
         const modal   = document.getElementById('profile-modal');
-        // Заполняем текущие данные
         const user = app.currentUser;
         if (user) {
-            document.getElementById('profile-username').value = user.username || '';
-            document.getElementById('profile-email').value    = user.email    || '';
+            document.getElementById('profile-username').value = user.username  || '';
+            document.getElementById('profile-email').value    = user.email     || '';
+            document.getElementById('profile-fullname').value = user.full_name || '';
+            document.getElementById('profile-phone').value    = user.phone     || '';
             const av = document.getElementById('profile-avatar');
             av.textContent = (user.username || 'U')[0].toUpperCase();
+            // Восстанавливаем статус
+            if (user.status) {
+                const parts = user.status.split(':');
+                const key = parts[0];
+                const text = parts.length > 1 ? parts.slice(1).join(':') : parts[0];
+                document.getElementById('profile-status-text').value = text;
+                const pill = document.querySelector(".sp-" + key);
+                if (pill) {
+                    document.querySelectorAll('.status-pill').forEach(p => p.classList.remove('active'));
+                    pill.classList.add('active');
+                    currentStatusKey = key;
+                }
+            }
         }
         overlay.classList.remove('hidden');
         setTimeout(() => { overlay.classList.remove('opacity-0'); modal.classList.remove('scale-95'); }, 10);
@@ -596,12 +720,63 @@
     function triggerAvatarUpload() {
         document.getElementById('avatar-upload').click();
     }
-    function saveProfile() {
-        // Заглушка — покажем уведомление
-        app.notify('Профиль обновлён ✓', 'success');
-        closeProfileModal();
+    let currentStatusKey = '';
+
+    function selectStatus(key, el) {
+        // Снимаем active со всех
+        document.querySelectorAll('.status-pill').forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
+        currentStatusKey = key;
+        // Ставим текст если поле пустое
+        const textMap = { available: 'Доступен', busy: 'Занят', away: 'Отошёл', invisible: 'Невидимый' };
+        const input = document.getElementById('profile-status-text');
+        if (!input.value || Object.values(textMap).includes(input.value)) {
+            input.value = textMap[key];
+        }
     }
+
+    async function saveProfile() {
+        const statusText = document.getElementById('profile-status-text').value.trim();
+        const fullname   = document.getElementById('profile-fullname').value.trim();
+        const phone      = document.getElementById('profile-phone').value.trim();
+
+        try {
+            // Сохраняем статус если он есть
+            if (statusText) {
+                const statusVal = currentStatusKey ? `${currentStatusKey}:${statusText}` : statusText;
+                await app.apiFetch('/api/users/status', {
+                    method: 'PUT',
+                    body: JSON.stringify({ status: statusVal })
+                });
+                // Обновляем локально
+                if (app.currentUser) {
+                    app.currentUser.status = statusVal;
+                    localStorage.setItem('alpha_user', JSON.stringify(app.currentUser));
+                }
+            }
+            // Сохраняем профиль
+            const profileBody = {};
+            if (fullname) profileBody.full_name = fullname;
+            if (phone)    profileBody.phone = phone;
+            if (Object.keys(profileBody).length > 0) {
+                const updated = await app.apiFetch('/api/users/profile', {
+                    method: 'PUT',
+                    body: JSON.stringify(profileBody)
+                });
+                app.currentUser = { ...app.currentUser, ...updated };
+                localStorage.setItem('alpha_user', JSON.stringify(app.currentUser));
+            }
+            app.notify('Профиль обновлён ✓', 'success');
+            closeProfileModal();
+        } catch(err) {
+            app.notify('Ошибка сохранения: ' + err.message, 'error');
+        }
+    }
+
     // Закрытие по клику на фон
+    // Восстановить статус после инициализации app
+    setTimeout(restoreMyStatus, 500);
+
     document.getElementById('profile-overlay').addEventListener('click', function(e) {
         if (e.target === this) closeProfileModal();
     });

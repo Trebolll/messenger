@@ -7,7 +7,13 @@ id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), -- Используем UUID v4
 username VARCHAR(50) UNIQUE NOT NULL,
 email VARCHAR(100) UNIQUE NOT NULL,
 password TEXT NOT NULL,
-created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+phone VARCHAR(20),
+full_name VARCHAR(255),
+birth_date DATE,
+location VARCHAR(255),
+status VARCHAR(255),
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+updated_at TIMESTAMP
 );
 
 -- Создание таблицы чатов
