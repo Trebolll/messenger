@@ -35,6 +35,14 @@ func (m *MockMessageRepository) MarkAsRead(chatID, userID uuid.UUID) error {
 	return args.Error(0)
 }
 
+func (m *MockMessageRepository) EditMessage(messageID, senderID uuid.UUID, content string) (*model.Message, error) {
+	args := m.Called(messageID, senderID, content)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.Message), args.Error(1)
+}
+
 type MockChatRepository struct {
 	mock.Mock
 }

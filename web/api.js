@@ -122,3 +122,10 @@ async function apiSaveProfile({ fullname, phone, username, statusText }) {
     // Обновляем сайдбар сразу
     loadUserData();
 }
+
+async function apiEditMessage(messageId, content) {
+    return await apiFetch(`/api/messages/${messageId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ content }),
+    });
+}

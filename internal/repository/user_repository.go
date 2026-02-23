@@ -76,13 +76,22 @@ func (r *UserRepository) GetByUsernameAndEmail(username string, email string) (*
 }
 
 func (r *UserRepository) GetByUsername(username string) (*model.User, error) {
-	var u model.User
-	query := `SELECT id, username, email FROM users WHERE username = $1`
-	err := r.db.QueryRow(query, username).Scan(&u.ID, &u.Username, &u.Email, &u.Phone, &u.FullName, &u.BirthDate, &u.Location, &u.Status)
+	u := new(model.User)
+	var phone, fullName, location, status sql.NullString
+	var birthDate sql.NullTime
+	query := `SELECT id, username, email, phone, full_name, birth_date, location, status FROM users WHERE username = $1`
+	err := r.db.QueryRow(query, username).Scan(&u.ID, &u.Username, &u.Email, &phone, &fullName, &birthDate, &location, &status)
 	if err != nil {
 		return nil, err
 	}
-	return &u, nil
+	u.Phone = phone.String
+	u.FullName = fullName.String
+	u.Location = location.String
+	u.Status = status.String
+	if birthDate.Valid {
+		u.BirthDate = &birthDate.Time
+	}
+	return u, nil
 }
 
 func (r *UserRepository) SearchByUsername(username string) ([]model.User, error) {

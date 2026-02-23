@@ -59,11 +59,32 @@ func (m *MockUserRepository) SearchByUsername(username string) ([]model.User, er
 	return args.Get(0).([]model.User), args.Error(1)
 }
 
+func (m *MockUserRepository) GetById(id uuid.UUID) (*model.User, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.User), args.Error(1)
+}
+
+func (m *MockUserRepository) UpdateProfile(u *model.User) error {
+	args := m.Called(u)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) UpdateStatus(id uuid.UUID, status string) (*model.User, error) {
+	args := m.Called(id, status)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.User), args.Error(1)
+}
+
 func setupTestRouter(mockRepo *MockUserRepository) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	userService := service.NewUserService(mockRepo)
-	userHandler := handler.NewUserHandler(userService)
+	userHandler := handler.NewUserHandler(userService, nil)
 
 	router.POST("/register", userHandler.Register)
 	router.POST("/login", userHandler.Login)

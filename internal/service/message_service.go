@@ -12,6 +12,7 @@ type MessageRepository interface {
 	SendMessage(message *model.Message) error
 	GetMessagesByChatID(chatID uuid.UUID) ([]model.Message, error)
 	MarkAsRead(chatID, userID uuid.UUID) error
+	EditMessage(messageID, senderID uuid.UUID, content string) (*model.Message, error)
 }
 
 type ChatRepository interface {
@@ -31,15 +32,10 @@ type MessageService struct {
 }
 
 func NewMessageService(repo MessageRepository, chatRepo ChatRepository, hub Hub) *MessageService {
-	return &MessageService{
-		repo:     repo,
-		chatRepo: chatRepo,
-		hub:      hub,
-	}
+	return &MessageService{repo: repo, chatRepo: chatRepo, hub: hub}
 }
 
 func (s *MessageService) SendMessage(message *model.Message) error {
-
 	isMember, err := s.chatRepo.IsChatMember(message.ChatID, message.SenderID)
 	if err != nil {
 		return err
@@ -48,12 +44,10 @@ func (s *MessageService) SendMessage(message *model.Message) error {
 		return errors.New("доступ запрещен: вы не являетесь участником этого чата")
 	}
 
-	err = s.repo.SendMessage(message)
-	if err != nil {
+	if err = s.repo.SendMessage(message); err != nil {
 		return err
 	}
 
-	// Уведомляем участников чата
 	members, err := s.chatRepo.GetChatMembers(message.ChatID)
 	if err != nil {
 		return err
@@ -75,8 +69,31 @@ func (s *MessageService) GetMessagesByChatID(chatID uuid.UUID) ([]model.Message,
 	if !exists {
 		return nil, errors.New("чат не существует")
 	}
-
 	return s.repo.GetMessagesByChatID(chatID)
+}
+
+func (s *MessageService) EditMessage(messageID, senderID uuid.UUID, content string) (*model.Message, error) {
+	if content == "" {
+		return nil, errors.New("содержимое сообщения не может быть пустым")
+	}
+
+	msg, err := s.repo.EditMessage(messageID, senderID, content)
+	if err != nil {
+		return nil, err
+	}
+
+	// Уведомляем всех участников чата об изменении через WebSocket
+	members, err := s.chatRepo.GetChatMembers(msg.ChatID)
+	if err != nil {
+		return nil, err
+	}
+	for _, userID := range members {
+		s.hub.SendToUser(userID, websocket.Message{
+			Type:    "message_edited",
+			Content: msg,
+		})
+	}
+	return msg, nil
 }
 
 func (s *MessageService) MarkChatAsRead(chatID, userID uuid.UUID) error {
@@ -84,7 +101,6 @@ func (s *MessageService) MarkChatAsRead(chatID, userID uuid.UUID) error {
 		return err
 	}
 
-	// Уведомляем участников чата, что сообщения прочитаны
 	members, _ := s.chatRepo.GetChatMembers(chatID)
 	for _, memberID := range members {
 		if memberID != userID {

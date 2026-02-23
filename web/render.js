@@ -25,19 +25,39 @@ function renderChats() {
 function renderMessages() {
     const app       = window.app;
     const container = document.getElementById('messages-container');
-    container.innerHTML = app.messages.map(msg => {
-        const isMe   = String(msg.sender_id) === String(app.currentUser?.id);
-        const isRead = msg.read_at !== null && msg.read_at !== undefined;
+
+    // Запоминаем какие id уже отрисованы чтобы анимировать только новые
+    const existing = new Set(
+        [...container.querySelectorAll('[data-msg-id]')].map(el => el.dataset.msgId)
+    );
+
+    container.innerHTML = app.messages.map((msg, idx) => {
+        const isMe     = String(msg.sender_id) === String(app.currentUser?.id);
+        const isRead   = msg.read_at   != null;
+        const isEdited = msg.edited_at != null;
+        const isNew    = !existing.has(String(msg.id));
+
+        // Задержка каскадом только при первичной загрузке (все новые)
+        const delay = (existing.size === 0 && isNew)
+            ? `animation-delay:${Math.min(idx * 35, 400)}ms`
+            : '';
+
+        const animClass = isNew ? (isMe ? 'msg-anim-sent' : 'msg-anim-received') : '';
+
         return `
-            <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
-                <div class="message-bubble p-4 ${isMe ? 'message-sent' : 'message-received'} shadow-sm">
-                    <p class="text-sm">${escapeHtml(msg.content)}</p>
-                    <div class="flex items-center justify-end gap-1 mt-1">
-                        <span class="text-[10px] ${isMe ? 'opacity-70' : 'text-custom-muted'}">
+            <div class="flex ${isMe ? 'justify-end' : 'justify-start'} ${animClass}"
+                 style="${delay}"
+                 data-msg-id="${msg.id}"
+                 oncontextmenu="showMessageMenu(event, '${msg.id}', ${isMe})">
+                <div class="message-bubble p-3.5 ${isMe ? 'message-sent' : 'message-received'}">
+                    <p class="text-sm leading-relaxed" id="msg-content-${msg.id}">${escapeHtml(msg.content)}</p>
+                    <div class="flex items-center justify-end gap-1.5 mt-1.5">
+                        ${isEdited ? `<span class="msg-edited-label">изменено</span>` : ''}
+                        <span class="text-[10px] ${isMe ? 'opacity-60' : 'text-custom-muted'}">
                             ${new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                         ${isMe ? `
-                            <span class="text-[10px] ${isRead ? 'text-white' : 'opacity-50'}" style="display:inline-block;letter-spacing:-0.5em;">
+                            <span class="text-[11px] ${isRead ? 'opacity-90' : 'opacity-40'}" style="letter-spacing:-0.5em;display:inline-block;">
                                 ${isRead ? '✓✓' : '✓'}
                             </span>
                         ` : ''}

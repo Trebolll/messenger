@@ -32,9 +32,141 @@
         .chat-list-item.active { background-color: var(--bg-item-active); border-right: 3px solid var(--accent-color); }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        .message-bubble { max-width: 80%; }
-        .message-sent { background-color: var(--message-sent-bg); color: var(--message-sent-text); border-radius: 1.5rem 1.5rem 0 1.5rem; }
-        .message-received { background-color: var(--message-received-bg); color: var(--message-received-text); border-radius: 1.5rem 1.5rem 1.5rem 0; }
+        .message-bubble { max-width: 75%; }
+
+        /* ── Появление сообщений ───────────────────────────────────────── */
+        @keyframes msgSlideRight {
+            from { opacity: 0; transform: translateX(-18px) translateY(6px) scale(0.96); }
+            to   { opacity: 1; transform: translateX(0) translateY(0) scale(1); }
+        }
+        @keyframes msgSlideLeft {
+            from { opacity: 0; transform: translateX(18px) translateY(6px) scale(0.96); }
+            to   { opacity: 1; transform: translateX(0) translateY(0) scale(1); }
+        }
+        .msg-anim-received {
+            animation: msgSlideRight 0.32s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+        }
+        .msg-anim-sent {
+            animation: msgSlideLeft 0.32s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+        }
+
+        /* ── Пузырьки ──────────────────────────────────────────────────── */
+        .message-sent {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: #ffffff;
+            border-radius: 1.25rem 1.25rem 0.25rem 1.25rem;
+            box-shadow: 0 4px 16px rgba(37,99,235,0.25), 0 1px 3px rgba(37,99,235,0.15);
+            transition: box-shadow 0.2s;
+        }
+        .message-sent:hover {
+            box-shadow: 0 6px 20px rgba(37,99,235,0.35), 0 2px 6px rgba(37,99,235,0.2);
+        }
+        body.theme-gray .message-sent {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 4px 16px rgba(37,99,235,0.3);
+        }
+        .message-received {
+            background-color: var(--message-received-bg);
+            color: var(--message-received-text);
+            border-radius: 1.25rem 1.25rem 1.25rem 0.25rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s;
+        }
+        .message-received:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        body.theme-gray .message-received {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        /* ── Инлайн-редактирование ─────────────────────────────────────── */
+        .edit-inline-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 200px;
+        }
+        .edit-inline-textarea {
+            background: rgba(255,255,255,0.15);
+            border: 1.5px solid rgba(255,255,255,0.4);
+            border-radius: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            color: inherit;
+            outline: none;
+            resize: none;
+            width: 100%;
+            transition: border-color 0.2s, background 0.2s;
+            backdrop-filter: blur(4px);
+            line-height: 1.5;
+        }
+        .edit-inline-textarea:focus {
+            border-color: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.22);
+        }
+        .message-received .edit-inline-textarea {
+            background: rgba(59,130,246,0.08);
+            border-color: rgba(59,130,246,0.3);
+            color: var(--text-main);
+        }
+        .message-received .edit-inline-textarea:focus {
+            border-color: rgba(59,130,246,0.6);
+            background: rgba(59,130,246,0.12);
+        }
+        .edit-inline-actions {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+        .edit-btn-confirm {
+            display: flex; align-items: center; gap: 4px;
+            padding: 0.3rem 0.75rem;
+            font-size: 0.75rem; font-weight: 600;
+            border-radius: 0.6rem;
+            border: none; cursor: pointer;
+            background: rgba(255,255,255,0.25);
+            color: #fff;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .edit-btn-confirm:hover { background: rgba(255,255,255,0.38); transform: scale(1.04); }
+        .edit-btn-confirm:active { transform: scale(0.96); }
+        .edit-btn-cancel {
+            display: flex; align-items: center; gap: 4px;
+            padding: 0.3rem 0.65rem;
+            font-size: 0.75rem;
+            border-radius: 0.6rem;
+            border: none; cursor: pointer;
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.7);
+            transition: background 0.2s, transform 0.15s;
+        }
+        .edit-btn-cancel:hover { background: rgba(255,255,255,0.2); transform: scale(1.04); }
+        .edit-btn-cancel:active { transform: scale(0.96); }
+        .message-received .edit-btn-confirm {
+            background: #3b82f6; color: #fff;
+        }
+        .message-received .edit-btn-confirm:hover { background: #2563eb; }
+        .message-received .edit-btn-cancel {
+            background: rgba(0,0,0,0.06); color: var(--text-muted);
+        }
+        .message-received .edit-btn-cancel:hover { background: rgba(0,0,0,0.1); }
+
+        /* ── Метка "изменено" ──────────────────────────────────────────── */
+        .msg-edited-label {
+            font-size: 0.65rem;
+            opacity: 0.5;
+            font-style: italic;
+            letter-spacing: 0.01em;
+        }
+
+        /* ── Контекстное меню ──────────────────────────────────────────── */
+        #msg-context-menu {
+            animation: menuPop 0.18s cubic-bezier(0.34,1.56,0.64,1) both;
+        }
+        @keyframes menuPop {
+            from { opacity: 0; transform: scale(0.88) translateY(-4px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
         .bg-custom-main { background-color: var(--bg-main); }
         .bg-custom-sidebar { background-color: var(--bg-sidebar); }
         .text-custom-main { color: var(--text-main); }
@@ -181,8 +313,21 @@
             opacity: 1;
         }
 
-        /* Input area — z-index 8, выше canvas */
-        .input-area { position: relative; z-index: 9; }
+        /* ══ Paperclip unbend animation ══ */
+        #attach-btn {
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+        #attach-btn:hover { color: #3b82f6; }
+        #clip-svg {
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        #attach-btn:hover  #clip-svg { transform: scale(1.1);  }
+        #attach-btn:active #clip-svg { transform: scale(0.92); }
+        #clip-body, #clip-hook {
+            transform-box: fill-box;
+            transform-origin: center;
+        }
 
         /* ══ Theme button animation ══ */
         .theme-btn {
@@ -452,9 +597,14 @@
                 </div>
 
                 <form id="message-form" class="flex items-end gap-3" onsubmit="handleSendMessage(event)">
-                    <button type="button" class="p-3 text-custom-muted hover:text-blue-600 transition" style="position:relative;z-index:20;">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                    <button type="button" id="attach-btn" class="p-3" style="position:relative;z-index:20;" title="Прикрепить файл">
+                        <svg id="clip-svg" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" overflow="visible">
+                            <!-- Тело скрепки: большая дуга + нижний загиб -->
+                            <path id="clip-body" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"
+                                  d="M6.1 17.1 a5 5 0 0 0 7.07 0 l8.1-8.1 a3 3 0 0 0-4.24-4.24 L8.2 13.6 a1 1 0 0 0 1.41 1.41 l7.07-7.07"/>
+                            <!-- Верхний крюк — он разгибается -->
+                            <path id="clip-hook" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"
+                                  d="M17.67 7.93 L19.8 5.8"/>
                         </svg>
                     </button>
 
@@ -638,7 +788,6 @@
 <script src="/web/api.js"></script>
 <script src="/web/websocket.js"></script>
 <script src="/web/render.js"></script>
-<script src="/web/ai.js"></script>
 <script src="/web/app.js"></script>
 <script src="/web/neural-ai-btn.js"></script>
 <script src="/web/ui.js"></script>

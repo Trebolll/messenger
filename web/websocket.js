@@ -24,6 +24,8 @@ function connectWebSocket() {
                 _handleNewMessage(wrapper.content);
             } else if (wrapper.type === 'messages_read') {
                 _handleMessagesRead(wrapper.content);
+            } else if (wrapper.type === 'message_edited') {
+                _handleMessageEdited(wrapper.content);
             } else if (wrapper.type === 'user_status') {
                 updateUserStatus(wrapper.content);
             }
@@ -77,6 +79,16 @@ function _handleMessagesRead(data) {
             }
             return m;
         });
+        renderMessages();
+    }
+}
+
+function _handleMessageEdited(msg) {
+    const app = window.app;
+    // Обновляем сообщение в локальном массиве
+    const idx = app.messages.findIndex(m => String(m.id) === String(msg.id));
+    if (idx !== -1) {
+        app.messages[idx] = msg;
         renderMessages();
     }
 }

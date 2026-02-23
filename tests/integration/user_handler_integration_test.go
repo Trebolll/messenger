@@ -54,7 +54,13 @@ func createTestTables(t *testing.T, db *sql.DB) {
 			username VARCHAR(50) UNIQUE NOT NULL,
 			email VARCHAR(100) UNIQUE NOT NULL,
 			password TEXT NOT NULL,
-			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+			phone VARCHAR(20),
+			full_name VARCHAR(255),
+			birth_date DATE,
+			location VARCHAR(255),
+			status VARCHAR(255),
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_users_username ON users (username)`,
 		`CREATE TABLE chats (
@@ -75,7 +81,8 @@ func createTestTables(t *testing.T, db *sql.DB) {
 			sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
 			content TEXT NOT NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			read_at TIMESTAMP
+			read_at TIMESTAMP,
+			edited_at TIMESTAMP
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_chat_members_user_id ON chat_members (user_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_messages_chat_id_created_at ON messages (chat_id, created_at ASC)`,
@@ -106,7 +113,7 @@ func setupTestRouter(t *testing.T, db *sql.DB) *gin.Engine {
 	router := gin.New()
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
-	userHandler := handler.NewUserHandler(userService)
+	userHandler := handler.NewUserHandler(userService, nil)
 
 	router.POST("/register", userHandler.Register)
 	router.POST("/login", userHandler.Login)

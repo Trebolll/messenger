@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"messenger/internal/model"
 
 	"github.com/google/uuid"
@@ -20,9 +21,9 @@ func (r *MessageRepository) SendMessage(message *model.Message) error {
 		WITH inserted_msg AS (
 			INSERT INTO messages(chat_id, sender_id, content) 
 			VALUES ($1, $2, $3) 
-			RETURNING id, chat_id, sender_id, content, created_at, read_at
+			RETURNING id, chat_id, sender_id, content, created_at, read_at, edited_at
 		)
-		SELECT m.id, m.chat_id, m.sender_id, u.username, m.content, m.created_at, m.read_at
+		SELECT m.id, m.chat_id, m.sender_id, u.username, m.content, m.created_at, m.read_at, m.edited_at
 		FROM inserted_msg m
 		JOIN users u ON m.sender_id = u.id`
 
@@ -34,12 +35,13 @@ func (r *MessageRepository) SendMessage(message *model.Message) error {
 		&message.Content,
 		&message.CreatedAt,
 		&message.ReadAt,
+		&message.EditedAt,
 	)
 }
 
 func (r *MessageRepository) GetMessagesByChatID(chatID uuid.UUID) ([]model.Message, error) {
 	query := `
-		SELECT m.id, m.chat_id, m.sender_id, u.username, m.content, m.created_at, m.read_at 
+		SELECT m.id, m.chat_id, m.sender_id, u.username, m.content, m.created_at, m.read_at, m.edited_at
 		FROM messages m
 		JOIN users u ON m.sender_id = u.id
 		WHERE m.chat_id = $1 
@@ -53,12 +55,35 @@ func (r *MessageRepository) GetMessagesByChatID(chatID uuid.UUID) ([]model.Messa
 	var messages []model.Message
 	for rows.Next() {
 		var m model.Message
-		if err := rows.Scan(&m.ID, &m.ChatID, &m.SenderID, &m.SenderName, &m.Content, &m.CreatedAt, &m.ReadAt); err != nil {
+		if err := rows.Scan(&m.ID, &m.ChatID, &m.SenderID, &m.SenderName, &m.Content, &m.CreatedAt, &m.ReadAt, &m.EditedAt); err != nil {
 			return nil, err
 		}
 		messages = append(messages, m)
 	}
 	return messages, nil
+}
+
+func (r *MessageRepository) EditMessage(messageID, senderID uuid.UUID, content string) (*model.Message, error) {
+	query := `
+		WITH updated AS (
+			UPDATE messages
+			SET content = $1, edited_at = CURRENT_TIMESTAMP
+			WHERE id = $2 AND sender_id = $3
+			RETURNING id, chat_id, sender_id, content, created_at, read_at, edited_at
+		)
+		SELECT u.id, u.chat_id, u.sender_id, usr.username, u.content, u.created_at, u.read_at, u.edited_at
+		FROM updated u
+		JOIN users usr ON u.sender_id = usr.id`
+
+	var m model.Message
+	err := r.db.QueryRow(query, content, messageID, senderID).Scan(
+		&m.ID, &m.ChatID, &m.SenderID, &m.SenderName,
+		&m.Content, &m.CreatedAt, &m.ReadAt, &m.EditedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, errors.New("сообщение не найдено или нет прав на редактирование")
+	}
+	return &m, err
 }
 
 func (r *MessageRepository) MarkAsRead(chatID, userID uuid.UUID) error {

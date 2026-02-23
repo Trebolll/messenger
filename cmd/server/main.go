@@ -76,6 +76,7 @@ func main() {
 		api.POST("/chats/private", chatHandler.CreatePrivateChat)
 		api.POST("/chats/group", chatHandler.CreateGroupChat)
 		api.POST("/messages", messageHandler.SendMessage)
+		api.PUT("/messages/:message_id", messageHandler.EditMessage)
 		api.GET("/chats/:chat_id/messages", messageHandler.GetMessages)
 		api.GET("/chats", chatHandler.GetUserChats)
 		api.GET("/users/search", userHandler.SearchUsers)
