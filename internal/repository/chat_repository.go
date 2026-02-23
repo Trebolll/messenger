@@ -24,7 +24,8 @@ func (r *ChatRepository) GetUserChats(userID uuid.UUID) ([]model.ChatListItem, e
 			COALESCE(c.name, u.username) as name,
 			COALESCE(m.content, '') as last_message,
 			COALESCE(m.created_at, c.created_at) as last_message_time,
-			u.id as interlocutor_id
+			u.id as interlocutor_id,
+			COALESCE(u.status, '') as user_status
 		FROM chats c
 		JOIN chat_members cm ON c.id = cm.chat_id
 		-- Джойним собеседника только если это приватный чат
@@ -56,9 +57,11 @@ func (r *ChatRepository) GetUserChats(userID uuid.UUID) ([]model.ChatListItem, e
 	var chats []model.ChatListItem
 	for rows.Next() {
 		var chat model.ChatListItem
-		if err := rows.Scan(&chat.ID, &chat.Type, &chat.Name, &chat.LastMessage, &chat.LastMessageTime, &chat.InterlocutorID); err != nil {
+		var userStatus sql.NullString
+		if err := rows.Scan(&chat.ID, &chat.Type, &chat.Name, &chat.LastMessage, &chat.LastMessageTime, &chat.InterlocutorID, &userStatus); err != nil {
 			return nil, err
 		}
+		chat.UserStatus = userStatus.String
 		chats = append(chats, chat)
 	}
 	return chats, nil

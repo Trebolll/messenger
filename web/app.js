@@ -8,7 +8,7 @@ class AlphaApp {
         this.messages = [];
         const userId = JSON.parse(localStorage.getItem('alpha_user') || 'null')?.id || 'default';
         this.theme = localStorage.getItem(`alpha_theme_${userId}`) || 'light';
-        
+
         this.init();
         this.applyTheme();
     }
@@ -25,7 +25,7 @@ class AlphaApp {
         } else {
             this.showLanding();
         }
-        
+
         // Обработка Enter в textarea
         document.addEventListener('keydown', (e) => {
             if (e.target.id === 'message-input' && e.key === 'Enter' && !e.shiftKey) {
@@ -40,7 +40,7 @@ class AlphaApp {
         const body = document.body;
         const indicator = document.getElementById('theme-indicator');
         const dot = indicator ? indicator.querySelector('div') : null;
-        
+
         if (this.theme === 'gray') {
             body.classList.add('theme-gray');
             if (indicator) {
@@ -92,7 +92,7 @@ class AlphaApp {
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
         const errorEl = document.getElementById(`${type}-error`);
-        
+
         try {
             const response = await fetch(`/api/${type}`, {
                 method: 'POST',
@@ -107,7 +107,7 @@ class AlphaApp {
             this.currentUser = result.user || { email: data.email, username: data.username || data.email.split('@')[0] };
             localStorage.setItem('alpha_token', this.token);
             localStorage.setItem('alpha_user', JSON.stringify(this.currentUser));
-            
+
             this.notify('Успешно!', 'success');
             closeAuthModal();
             this.showChat();
@@ -140,7 +140,7 @@ class AlphaApp {
         this.activeChatId = chatId;
         document.getElementById('no-chat-selected').classList.add('hidden');
         this.renderChatHeader();
-        
+
         try {
             const res = await this.apiFetch(`/api/chats/${chatId}/messages`);
             this.messages = res || [];
@@ -206,9 +206,9 @@ class AlphaApp {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}/api/ws?token=${this.token}`;
         console.log('Connecting to WebSocket:', wsUrl);
-        
+
         this.socket = new WebSocket(wsUrl);
-        
+
         this.socket.onopen = () => {
             console.log('WebSocket connected ✅');
             this.notify('Соединение установлено', 'success');
@@ -278,57 +278,36 @@ class AlphaApp {
     }
 
     updateUserStatus(status) {
-        // Парсим кастомный статус (формат "key:text" или просто "text")
-        const customStatus = status.status || '';
-        const statusInfo = this._parseStatus(customStatus, status.online);
-
-        // Обновляем в локальном списке чатов
         const chat = this.chats.find(c => String(c.interlocutor_id) === String(status.user_id));
         if (chat) {
             chat.is_online = status.online;
-            chat.user_status = customStatus;
+            chat.user_status = status.status || '';
             this.renderChats();
         }
-
-        // Если это активный чат — обновляем хедер
         const activeChat = this.chats.find(c => String(c.id) === String(this.activeChatId));
         if (activeChat && String(activeChat.interlocutor_id) === String(status.user_id)) {
-            this._renderStatusElements(statusInfo);
+            this._renderStatusElements(status.online, status.status || '');
         }
     }
 
-    // Парсит строку статуса в { dot, text, cssClass }
-    _parseStatus(statusStr, online) {
-        if (!online) {
-            return { dot: 'offline', text: 'был(а) недавно', cssClass: 'text-xs text-custom-muted' };
-        }
-        if (!statusStr) {
-            return { dot: 'available', text: 'онлайн', cssClass: 'text-xs text-green-500' };
-        }
-        const parts = statusStr.split(':');
-        const key = parts[0];
-        const text = parts.length > 1 ? parts.slice(1).join(':').trim() : parts[0];
-        const map = {
-            available: { dot: 'available', cssClass: 'text-xs text-green-500' },
-            busy:      { dot: 'busy',      cssClass: 'text-xs text-red-500' },
-            away:      { dot: 'away',      cssClass: 'text-xs text-yellow-500' },
-            invisible: { dot: 'invisible', cssClass: 'text-xs text-custom-muted' },
-        };
-        const info = map[key] || { dot: 'available', cssClass: 'text-xs text-blue-500' };
-        return { ...info, text };
-    }
+    _renderStatusElements(isOnline, userStatus) {
+        // Бейдж онлайн/офлайн в правой панели
+        const badge = document.getElementById('info-status-badge');
+        const text  = document.getElementById('info-status-text');
+        if (badge) badge.className = 'info-status-badge ' + (isOnline ? 'online' : 'offline');
+        if (text)  text.textContent = isOnline ? 'онлайн' : 'офлайн';
 
-    _renderStatusElements(statusInfo) {
-        const dot = `<span class="status-dot ${statusInfo.dot}"></span>`;
-        const statusEl = document.getElementById('active-chat-status');
-        const infoStatusEl = document.getElementById('info-status');
+        // Текстовый статус — всегда показываем, пустой если нет
+        const statusEl = document.getElementById('info-user-status');
         if (statusEl) {
-            statusEl.innerHTML = dot + statusInfo.text;
-            statusEl.className = statusInfo.cssClass;
+            statusEl.textContent = userStatus ? '«' + userStatus + '»' : '';
         }
-        if (infoStatusEl) {
-            infoStatusEl.innerHTML = dot + statusInfo.text;
-            infoStatusEl.className = statusInfo.cssClass;
+
+        // Строчка под именем в хедере чата
+        const headerStatus = document.getElementById('active-chat-status');
+        if (headerStatus) {
+            headerStatus.textContent = isOnline ? 'онлайн' : 'офлайн';
+            headerStatus.className = 'text-xs ' + (isOnline ? 'text-green-500' : 'text-custom-muted');
         }
     }
 
@@ -341,14 +320,7 @@ class AlphaApp {
                     <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
                         ${(chat.name || 'Chat')[0].toUpperCase()}
                     </div>
-                    ${(function() {
-                        if (!chat.is_online) return '';
-                        const s = chat.user_status || '';
-                        const k = s.split(':')[0];
-                        const colors = { available:'bg-green-500', busy:'bg-red-500', away:'bg-yellow-400', invisible:'bg-slate-400' };
-                        const color = colors[k] || 'bg-green-500';
-                        return '<div class="absolute bottom-0 right-0 w-3 h-3 ' + color + ' border-2 border-white rounded-full"></div>';
-                    })()}
+                    ${chat.is_online ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>' : ''}
                 </div>
                 <div class="flex-grow overflow-hidden">
                     <div class="flex justify-between items-baseline">
@@ -366,7 +338,7 @@ class AlphaApp {
         container.innerHTML = this.messages.map(msg => {
             const isMe = String(msg.sender_id) === String(this.currentUser?.id);
             const isRead = msg.read_at !== null && msg.read_at !== undefined;
-            
+
             return `
                 <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
                     <div class="message-bubble p-4 ${isMe ? 'message-sent' : 'message-received'} shadow-sm">
@@ -390,14 +362,12 @@ class AlphaApp {
     renderChatHeader() {
         const chat = this.chats.find(c => String(c.id) === String(this.activeChatId));
         if (!chat) return;
-        
-        const statusInfo = this._parseStatus(chat.user_status || '', chat.is_online);
-        this._renderStatusElements(statusInfo);
+
+        this._renderStatusElements(chat.is_online, chat.user_status || '');
 
         document.getElementById('active-chat-name').textContent = chat.name;
         document.getElementById('active-chat-avatar').textContent = chat.name[0].toUpperCase();
-        
-        // Update Info Panel
+
         document.getElementById('info-name').textContent = chat.name;
         document.getElementById('info-avatar').textContent = chat.name[0].toUpperCase();
     }
@@ -456,8 +426,8 @@ class AlphaApp {
         const center = document.getElementById('notification-center');
         const note = document.createElement('div');
         note.className = `p-4 rounded-2xl shadow-xl border text-sm font-medium fade-in ${
-            type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-500' : 
-            type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-custom-main border-custom text-custom-main'
+            type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-500' :
+                type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-custom-main border-custom text-custom-main'
         }`;
         note.textContent = text;
         center.appendChild(note);
