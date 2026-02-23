@@ -119,3 +119,26 @@ func (h *MessageHandler) EditMessage(c *gin.Context) {
 
 	c.JSON(http.StatusOK, msg)
 }
+
+func (h *MessageHandler) DeleteMessage(c *gin.Context) {
+	messageIDStr := c.Param("message_id")
+	messageID, err := uuid.Parse(messageIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "неверный ID сообщения"})
+		return
+	}
+
+	val, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "неавторизован"})
+		return
+	}
+	senderID := val.(uuid.UUID)
+
+	if err := h.messageService.DeleteMessage(messageID, senderID); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "сообщение удалено"})
+}

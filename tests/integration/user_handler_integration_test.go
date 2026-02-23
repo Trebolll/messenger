@@ -29,17 +29,8 @@ func init() {
 }
 
 func setupTestDB(t *testing.T) *sql.DB {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		"localhost", 5432, "postgres", "postgres", "postgres")
-
-	db, err := sql.Open("postgres", psqlInfo)
-	require.NoError(t, err, "Failed to connect to test database")
-
-	err = db.Ping()
-	require.NoError(t, err, "Failed to ping test database")
-
-	testDB = db
-	return db
+	// Теперь мы используем БД из контейнера, поднятого в TestMain
+	return containerDB
 }
 
 func createTestTables(t *testing.T, db *sql.DB) {
@@ -124,7 +115,6 @@ func setupTestRouter(t *testing.T, db *sql.DB) *gin.Engine {
 
 func TestRegisterSuccess(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -153,7 +143,6 @@ func TestRegisterSuccess(t *testing.T) {
 
 func TestRegisterInvalidEmail(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -178,7 +167,6 @@ func TestRegisterInvalidEmail(t *testing.T) {
 
 func TestRegisterUsernameTooShort(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -199,7 +187,6 @@ func TestRegisterUsernameTooShort(t *testing.T) {
 
 func TestRegisterUsernameTooLong(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -225,7 +212,6 @@ func TestRegisterUsernameTooLong(t *testing.T) {
 
 func TestRegisterPasswordTooShort(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -246,7 +232,6 @@ func TestRegisterPasswordTooShort(t *testing.T) {
 
 func TestRegisterDuplicateUsername(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -279,7 +264,6 @@ func TestRegisterDuplicateUsername(t *testing.T) {
 
 func TestRegisterDuplicateEmail(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -312,7 +296,6 @@ func TestRegisterDuplicateEmail(t *testing.T) {
 
 func TestLoginSuccess(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -349,7 +332,6 @@ func TestLoginSuccess(t *testing.T) {
 
 func TestLoginUserNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -370,7 +352,6 @@ func TestLoginUserNotFound(t *testing.T) {
 
 func TestLoginInvalidPassword(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -400,7 +381,6 @@ func TestLoginInvalidPassword(t *testing.T) {
 
 func TestSearchUsersWithQParameter(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -435,7 +415,6 @@ func TestSearchUsersWithQParameter(t *testing.T) {
 
 func TestSearchUsersWithUsernameParameter(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -464,7 +443,6 @@ func TestSearchUsersWithUsernameParameter(t *testing.T) {
 
 func TestSearchUsersMissingQuery(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -483,7 +461,6 @@ func TestSearchUsersMissingQuery(t *testing.T) {
 
 func TestSearchUsersQueryTooShort(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -502,7 +479,6 @@ func TestSearchUsersQueryTooShort(t *testing.T) {
 
 func TestSearchUsersEmptyResults(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -526,7 +502,6 @@ func TestSearchUsersEmptyResults(t *testing.T) {
 
 func TestSearchUsersPartialMatch(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 

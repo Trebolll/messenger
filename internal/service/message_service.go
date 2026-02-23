@@ -13,6 +13,7 @@ type MessageRepository interface {
 	GetMessagesByChatID(chatID uuid.UUID) ([]model.Message, error)
 	MarkAsRead(chatID, userID uuid.UUID) error
 	EditMessage(messageID, senderID uuid.UUID, content string) (*model.Message, error)
+	DeleteMessage(messageID, senderID uuid.UUID) (uuid.UUID, error)
 }
 
 type ChatRepository interface {
@@ -113,5 +114,30 @@ func (s *MessageService) MarkChatAsRead(chatID, userID uuid.UUID) error {
 			})
 		}
 	}
+	return nil
+}
+
+func (s *MessageService) DeleteMessage(messageID, senderID uuid.UUID) error {
+	chatID, err := s.repo.DeleteMessage(messageID, senderID)
+	if err != nil {
+		return err
+	}
+
+	// Уведомляем всех участников чата об удалении через WebSocket
+	members, err := s.chatRepo.GetChatMembers(chatID)
+	if err != nil {
+		return err
+	}
+
+	for _, userID := range members {
+		s.hub.SendToUser(userID, websocket.Message{
+			Type: "message_deleted",
+			Content: map[string]interface{}{
+				"message_id": messageID,
+				"chat_id":    chatID,
+			},
+		})
+	}
+
 	return nil
 }
