@@ -85,7 +85,6 @@ func createTestUser(t *testing.T, db *sql.DB, username, email, password string) 
 
 func TestCreatePrivateChatSuccess(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -116,7 +115,6 @@ func TestCreatePrivateChatSuccess(t *testing.T) {
 
 func TestCreatePrivateChatWithSameUser(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -140,7 +138,6 @@ func TestCreatePrivateChatWithSameUser(t *testing.T) {
 
 func TestCreatePrivateChatUserNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -165,7 +162,6 @@ func TestCreatePrivateChatUserNotFound(t *testing.T) {
 
 func TestCreatePrivateChatDuplicate(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -206,7 +202,6 @@ func TestCreatePrivateChatDuplicate(t *testing.T) {
 
 func TestCreatePrivateChatInvalidJSON(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -227,7 +222,6 @@ func TestCreatePrivateChatInvalidJSON(t *testing.T) {
 
 func TestCreatePrivateChatUnauthorized(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -247,7 +241,6 @@ func TestCreatePrivateChatUnauthorized(t *testing.T) {
 
 func TestCreateGroupChatSuccess(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -279,7 +272,6 @@ func TestCreateGroupChatSuccess(t *testing.T) {
 
 func TestCreateGroupChatWithDuplicateUsernames(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -307,7 +299,6 @@ func TestCreateGroupChatWithDuplicateUsernames(t *testing.T) {
 
 func TestCreateGroupChatUserNotFound(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -331,7 +322,6 @@ func TestCreateGroupChatUserNotFound(t *testing.T) {
 
 func TestCreateGroupChatInvalidJSON(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -352,7 +342,6 @@ func TestCreateGroupChatInvalidJSON(t *testing.T) {
 
 func TestGetUserChatsSuccess(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -382,7 +371,6 @@ func TestGetUserChatsSuccess(t *testing.T) {
 
 func TestGetUserChatsMultiple(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -422,7 +410,6 @@ func TestGetUserChatsMultiple(t *testing.T) {
 
 func TestGetUserChatsEmpty(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -442,7 +429,6 @@ func TestGetUserChatsEmpty(t *testing.T) {
 
 func TestGetUserChatsUnauthorized(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 

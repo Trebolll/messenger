@@ -75,6 +75,14 @@ func setupMessageTestRouter(t *testing.T, db *sql.DB) (*gin.Engine, *MockHubMess
 		messageHandler.MarkAsRead(c)
 	})
 
+	router.PUT("/messages/:message_id", authMiddleware, func(c *gin.Context) {
+		messageHandler.EditMessage(c)
+	})
+
+	router.DELETE("/messages/:message_id", authMiddleware, func(c *gin.Context) {
+		messageHandler.DeleteMessage(c)
+	})
+
 	return router, hub
 }
 
@@ -96,7 +104,6 @@ func createTestChat(t *testing.T, db *sql.DB, user1ID, user2ID uuid.UUID) uuid.U
 
 func TestSendMessageSuccess(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -132,7 +139,6 @@ func TestSendMessageSuccess(t *testing.T) {
 
 func TestSendMessageInvalidJSON(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -153,7 +159,6 @@ func TestSendMessageInvalidJSON(t *testing.T) {
 
 func TestSendMessageUnauthorized(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -175,7 +180,6 @@ func TestSendMessageUnauthorized(t *testing.T) {
 
 func TestSendMessageNotChatMember(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -202,7 +206,6 @@ func TestSendMessageNotChatMember(t *testing.T) {
 
 func TestSendMessageEmptyContent(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -225,7 +228,6 @@ func TestSendMessageEmptyContent(t *testing.T) {
 
 func TestGetMessagesSuccess(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -263,7 +265,6 @@ func TestGetMessagesSuccess(t *testing.T) {
 
 func TestGetMessagesMultiple(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -297,7 +298,6 @@ func TestGetMessagesMultiple(t *testing.T) {
 
 func TestGetMessagesInvalidChatID(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -316,7 +316,6 @@ func TestGetMessagesInvalidChatID(t *testing.T) {
 
 func TestGetMessagesNonexistentChat(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -339,7 +338,6 @@ func TestGetMessagesNonexistentChat(t *testing.T) {
 
 func TestGetMessagesEmpty(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -363,7 +361,6 @@ func TestGetMessagesEmpty(t *testing.T) {
 
 func TestMarkAsReadSuccess(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -401,7 +398,6 @@ func TestMarkAsReadSuccess(t *testing.T) {
 
 func TestMarkAsReadDoesNotMarkOwnMessages(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -433,7 +429,6 @@ func TestMarkAsReadDoesNotMarkOwnMessages(t *testing.T) {
 
 func TestMarkAsReadInvalidChatID(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -455,7 +450,6 @@ func TestMarkAsReadInvalidChatID(t *testing.T) {
 
 func TestMarkAsReadUnauthorized(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -474,4 +468,94 @@ func TestMarkAsReadUnauthorized(t *testing.T) {
 	var response map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Contains(t, response["ошибка"], "неавторизован")
+}
+
+func TestDeleteMessageSuccess(t *testing.T) {
+	db := setupTestDB(t)
+	createTestTables(t, db)
+	defer cleanupTestTables(t, db)
+
+	router, hub := setupMessageTestRouter(t, db)
+
+	user1ID := createTestUser(t, db, "user1", "user1@example.com", "pass")
+	user2ID := createTestUser(t, db, "user2", "user2@example.com", "pass")
+	chatID := createTestChat(t, db, user1ID, user2ID)
+
+	msgID := uuid.New()
+	_, err := db.Exec(
+		"INSERT INTO messages (id, chat_id, sender_id, content) VALUES ($1, $2, $3, $4)",
+		msgID, chatID, user1ID, "Message to delete",
+	)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest("DELETE", fmt.Sprintf("/messages/%s", msgID.String()), nil)
+	req.Header.Set("X-User-ID", user1ID.String())
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var response map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, "сообщение удалено", response["status"])
+
+	var count int
+	db.QueryRow("SELECT COUNT(*) FROM messages WHERE id = $1", msgID).Scan(&count)
+	assert.Equal(t, 0, count, "Message should be deleted from DB")
+
+	msgsSent := hub.GetMessages(user2ID)
+	assert.Greater(t, len(msgsSent), 0, "Should notify other members about deletion")
+}
+
+func TestDeleteMessageForbidden(t *testing.T) {
+	db := setupTestDB(t)
+	createTestTables(t, db)
+	defer cleanupTestTables(t, db)
+
+	router, _ := setupMessageTestRouter(t, db)
+
+	user1ID := createTestUser(t, db, "user1", "user1@example.com", "pass")
+	user2ID := createTestUser(t, db, "user2", "user2@example.com", "pass")
+	chatID := createTestChat(t, db, user1ID, user2ID)
+
+	msgID := uuid.New()
+	_, err := db.Exec(
+		"INSERT INTO messages (id, chat_id, sender_id, content) VALUES ($1, $2, $3, $4)",
+		msgID, chatID, user1ID, "Message to delete",
+	)
+	require.NoError(t, err)
+
+	// User 2 tries to delete User 1's message
+	req := httptest.NewRequest("DELETE", fmt.Sprintf("/messages/%s", msgID.String()), nil)
+	req.Header.Set("X-User-ID", user2ID.String())
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	var response map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Contains(t, response["error"], "не являетесь его автором")
+}
+
+func TestDeleteMessageNotFound(t *testing.T) {
+	db := setupTestDB(t)
+	createTestTables(t, db)
+	defer cleanupTestTables(t, db)
+
+	router, _ := setupMessageTestRouter(t, db)
+
+	user1ID := createTestUser(t, db, "user1", "user1@example.com", "pass")
+	nonexistentMsgID := uuid.New()
+
+	req := httptest.NewRequest("DELETE", fmt.Sprintf("/messages/%s", nonexistentMsgID.String()), nil)
+	req.Header.Set("X-User-ID", user1ID.String())
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	var response map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Contains(t, response["error"], "сообщение не найдено")
 }

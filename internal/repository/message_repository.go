@@ -96,3 +96,15 @@ func (r *MessageRepository) MarkAsRead(chatID, userID uuid.UUID) error {
 	_, err := r.db.Exec(query, chatID, userID)
 	return err
 }
+
+func (r *MessageRepository) DeleteMessage(messageID, senderID uuid.UUID) (uuid.UUID, error) {
+	var chatID uuid.UUID
+	query := `DELETE FROM messages WHERE id = $1 AND sender_id = $2 RETURNING chat_id`
+
+	err := r.db.QueryRow(query, messageID, senderID).Scan(&chatID)
+	if err == sql.ErrNoRows {
+		return uuid.Nil, errors.New("сообщение не найдено или вы не являетесь его автором")
+	}
+
+	return chatID, err
+}

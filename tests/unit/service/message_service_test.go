@@ -43,6 +43,11 @@ func (m *MockMessageRepository) EditMessage(messageID, senderID uuid.UUID, conte
 	return args.Get(0).(*model.Message), args.Error(1)
 }
 
+func (m *MockMessageRepository) DeleteMessage(messageID, senderID uuid.UUID) (uuid.UUID, error) {
+	args := m.Called(messageID, senderID)
+	return args.Get(0).(uuid.UUID), args.Error(1)
+}
+
 type MockChatRepository struct {
 	mock.Mock
 }
@@ -490,4 +495,77 @@ func TestMarkChatAsRead_NoOtherMembers(t *testing.T) {
 		return msg.Type == "messages_read"
 	}))
 	mockHub.AssertNotCalled(t, "SendToUser", userID, mock.Anything)
+}
+
+func TestDeleteMessage_Success(t *testing.T) {
+	mockMessageRepo := new(MockMessageRepository)
+	mockChatRepo := new(MockChatRepository)
+	mockHub := new(MockHub)
+
+	messageID := uuid.New()
+	senderID := uuid.New()
+	chatID := uuid.New()
+	memberID1 := uuid.New()
+	memberID2 := uuid.New()
+
+	mockMessageRepo.On("DeleteMessage", messageID, senderID).Return(chatID, nil)
+	mockChatRepo.On("GetChatMembers", chatID).Return([]uuid.UUID{memberID1, memberID2}, nil)
+	mockHub.On("SendToUser", memberID1, mock.MatchedBy(func(msg websocket.Message) bool {
+		content, ok := msg.Content.(map[string]interface{})
+		return ok && msg.Type == "message_deleted" && content["message_id"] == messageID && content["chat_id"] == chatID
+	})).Return()
+	mockHub.On("SendToUser", memberID2, mock.MatchedBy(func(msg websocket.Message) bool {
+		content, ok := msg.Content.(map[string]interface{})
+		return ok && msg.Type == "message_deleted" && content["message_id"] == messageID && content["chat_id"] == chatID
+	})).Return()
+
+	messageService := service.NewMessageService(mockMessageRepo, mockChatRepo, mockHub)
+	err := messageService.DeleteMessage(messageID, senderID)
+
+	assert.NoError(t, err)
+	mockMessageRepo.AssertCalled(t, "DeleteMessage", messageID, senderID)
+	mockChatRepo.AssertCalled(t, "GetChatMembers", chatID)
+	mockHub.AssertCalled(t, "SendToUser", memberID1, mock.Anything)
+	mockHub.AssertCalled(t, "SendToUser", memberID2, mock.Anything)
+}
+
+func TestDeleteMessage_DeleteError(t *testing.T) {
+	mockMessageRepo := new(MockMessageRepository)
+	mockChatRepo := new(MockChatRepository)
+	mockHub := new(MockHub)
+
+	messageID := uuid.New()
+	senderID := uuid.New()
+
+	mockMessageRepo.On("DeleteMessage", messageID, senderID).Return(uuid.Nil, errors.New("delete error"))
+
+	messageService := service.NewMessageService(mockMessageRepo, mockChatRepo, mockHub)
+	err := messageService.DeleteMessage(messageID, senderID)
+
+	assert.Error(t, err)
+	assert.Equal(t, "delete error", err.Error())
+	mockMessageRepo.AssertCalled(t, "DeleteMessage", messageID, senderID)
+	mockChatRepo.AssertNotCalled(t, "GetChatMembers")
+}
+
+func TestDeleteMessage_GetChatMembersError(t *testing.T) {
+	mockMessageRepo := new(MockMessageRepository)
+	mockChatRepo := new(MockChatRepository)
+	mockHub := new(MockHub)
+
+	messageID := uuid.New()
+	senderID := uuid.New()
+	chatID := uuid.New()
+
+	mockMessageRepo.On("DeleteMessage", messageID, senderID).Return(chatID, nil)
+	mockChatRepo.On("GetChatMembers", chatID).Return(nil, errors.New("db error"))
+
+	messageService := service.NewMessageService(mockMessageRepo, mockChatRepo, mockHub)
+	err := messageService.DeleteMessage(messageID, senderID)
+
+	assert.Error(t, err)
+	assert.Equal(t, "db error", err.Error())
+	mockMessageRepo.AssertCalled(t, "DeleteMessage", messageID, senderID)
+	mockChatRepo.AssertCalled(t, "GetChatMembers", chatID)
+	mockHub.AssertNotCalled(t, "SendToUser", mock.Anything, mock.Anything)
 }
