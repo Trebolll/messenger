@@ -28,6 +28,7 @@ func main() {
 	defer func(database *sql.DB) {
 		err := database.Close()
 		if err != nil {
+			log.Printf("Server not find active database at port: 5432")
 			panic(err)
 		}
 	}(database)

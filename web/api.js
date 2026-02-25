@@ -129,3 +129,9 @@ async function apiEditMessage(messageId, content) {
         body: JSON.stringify({ content }),
     });
 }
+
+async function apiDeleteMessage(messageId) {
+    return await apiFetch(`/api/messages/${messageId}`, {
+        method: 'DELETE',
+    });
+}

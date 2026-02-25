@@ -285,7 +285,93 @@
         .ai-action-apply { background: #059669; color: white; }
         .ai-action-apply:hover { background: #047857; }
 
-        /* ══ Send button — самолётик улетает ══ */
+        /* ══ Delete Confirm Dialog ══ */
+        #delete-confirm-dialog {
+            position: fixed; inset: 0; z-index: 500;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.2s ease;
+        }
+        #delete-confirm-dialog.visible { opacity: 1; }
+
+        .delete-confirm-backdrop {
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        .delete-confirm-box {
+            position: relative; z-index: 1;
+            background: var(--bg-main);
+            border: 1.5px solid var(--border-color);
+            border-radius: 1.5rem;
+            padding: 1.75rem 2rem;
+            width: 280px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.1);
+            transform: scale(0.88) translateY(8px);
+            transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        #delete-confirm-dialog.visible .delete-confirm-box {
+            transform: scale(1) translateY(0);
+        }
+        .delete-confirm-icon {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: rgba(239,68,68,0.1);
+            border: 1.5px solid rgba(239,68,68,0.2);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1rem;
+            color: #ef4444;
+        }
+        body.theme-gray .delete-confirm-icon {
+            background: rgba(239,68,68,0.15);
+            border-color: rgba(239,68,68,0.25);
+        }
+        .delete-confirm-text {
+            font-size: 0.95rem; font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 0.35rem;
+        }
+        .delete-confirm-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+        .delete-confirm-actions {
+            display: flex; gap: 0.75rem;
+        }
+        .delete-btn-cancel {
+            flex: 1; padding: 0.6rem 0;
+            font-size: 0.875rem; font-weight: 500;
+            border-radius: 0.9rem;
+            border: 1.5px solid var(--border-color);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: background 0.18s, color 0.18s, transform 0.15s;
+        }
+        .delete-btn-cancel:hover {
+            background: var(--bg-item-hover);
+            color: var(--text-main);
+        }
+        .delete-btn-cancel:active { transform: scale(0.96); }
+        .delete-btn-confirm {
+            flex: 1; padding: 0.6rem 0;
+            font-size: 0.875rem; font-weight: 600;
+            border-radius: 0.9rem;
+            border: none;
+            background: #ef4444;
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.18s, transform 0.15s, box-shadow 0.18s;
+            box-shadow: 0 4px 12px rgba(239,68,68,0.3);
+        }
+        .delete-btn-confirm:hover {
+            background: #dc2626;
+            box-shadow: 0 6px 16px rgba(239,68,68,0.4);
+        }
+        .delete-btn-confirm:active { transform: scale(0.96); }
+
+        /* ══ Send button ══ */
         #send-btn {
             position: relative; overflow: hidden;
             transition: background 0.2s, transform 0.15s;
@@ -313,21 +399,46 @@
             opacity: 1;
         }
 
-        /* ══ Paperclip unbend animation ══ */
+        /* ══ Pin (булавка) animation ══ */
         #attach-btn {
             color: var(--text-muted);
-            transition: color 0.2s;
+            transition: color 0.25s;
+            perspective: 200px;
         }
         #attach-btn:hover { color: #3b82f6; }
-        #clip-svg {
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+        #pin-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-style: preserve-3d;
+            transition:
+                transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1),
+                filter    0.35s ease;
+            will-change: transform;
         }
-        #attach-btn:hover  #clip-svg { transform: scale(1.1);  }
-        #attach-btn:active #clip-svg { transform: scale(0.92); }
-        #clip-body, #clip-hook {
-            transform-box: fill-box;
-            transform-origin: center;
+
+        /* Hover: булавка отодвигается назад и чуть наклоняется */
+        #attach-btn:hover #pin-wrap {
+            transform: translateZ(-8px) rotateX(18deg) rotateY(-12deg) scale(0.88);
+            filter: drop-shadow(0 6px 8px rgba(0,0,0,0.22));
         }
+
+        /* Active: резко прилетает вперёд — втыкается */
+        #attach-btn:active #pin-wrap {
+            transform: translateZ(6px) rotateX(-6deg) rotateY(4deg) scale(1.06);
+            transition:
+                transform 0.1s cubic-bezier(0.2, 0, 0.4, 1),
+                filter    0.1s ease;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.18));
+        }
+
+        /* Тень исчезает когда близко (active) и появляется когда далеко (hover) */
+        #pin-shadow {
+            transition: opacity 0.35s ease, rx 0.35s ease;
+        }
+        #attach-btn:hover  #pin-shadow { opacity: 0.22; }
+        #attach-btn:active #pin-shadow { opacity: 0.06; }
 
         /* ══ Theme button animation ══ */
         .theme-btn {
@@ -598,14 +709,29 @@
 
                 <form id="message-form" class="flex items-end gap-3" onsubmit="handleSendMessage(event)">
                     <button type="button" id="attach-btn" class="p-3" style="position:relative;z-index:20;" title="Прикрепить файл">
-                        <svg id="clip-svg" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" overflow="visible">
-                            <!-- Тело скрепки: большая дуга + нижний загиб -->
-                            <path id="clip-body" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"
-                                  d="M6.1 17.1 a5 5 0 0 0 7.07 0 l8.1-8.1 a3 3 0 0 0-4.24-4.24 L8.2 13.6 a1 1 0 0 0 1.41 1.41 l7.07-7.07"/>
-                            <!-- Верхний крюк — он разгибается -->
-                            <path id="clip-hook" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"
-                                  d="M17.67 7.93 L19.8 5.8"/>
-                        </svg>
+                        <div id="pin-wrap">
+                            <svg id="pin-svg" width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Тень под булавкой -->
+                                <ellipse id="pin-shadow" cx="19" cy="22" rx="3.5" ry="1.1"
+                                         fill="currentColor" opacity="0.12"/>
+                                <!-- Острие булавки — тонкое, слегка изогнутое -->
+                                <path stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
+                                      d="M14.5 13.5 Q17 17 20 21.5"/>
+                                <!-- Тело — цилиндр под углом 45° -->
+                                <path stroke="currentColor" stroke-width="3.8" stroke-linecap="round"
+                                      d="M6.5 6.5 L14.5 13.5" opacity="0.22"/>
+                                <path stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                                      d="M6.5 6.5 L14.5 13.5"/>
+                                <!-- Кольцо-ограничитель на стержне -->
+                                <circle cx="11" cy="11" r="1.8"
+                                        fill="var(--bg-main, white)" stroke="currentColor" stroke-width="1.4"/>
+                                <!-- Головка — шарик -->
+                                <circle cx="5.8" cy="5.8" r="3.8" fill="currentColor" opacity="0.85"/>
+                                <!-- Блик на шарике -->
+                                <circle cx="4.6" cy="4.5" r="1.4" fill="white" opacity="0.6"/>
+                                <circle cx="5.3" cy="3.9" r="0.5" fill="white" opacity="0.8"/>
+                            </svg>
+                        </div>
                     </button>
 
                     <div class="flex-grow" style="position:relative;z-index:20;">
