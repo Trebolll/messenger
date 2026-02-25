@@ -26,6 +26,8 @@ function connectWebSocket() {
                 _handleMessagesRead(wrapper.content);
             } else if (wrapper.type === 'message_edited') {
                 _handleMessageEdited(wrapper.content);
+            } else if (wrapper.type === 'message_deleted') {
+                _handleMessageDeleted(wrapper.content);
             } else if (wrapper.type === 'user_status') {
                 updateUserStatus(wrapper.content);
             }
@@ -85,11 +87,25 @@ function _handleMessagesRead(data) {
 
 function _handleMessageEdited(msg) {
     const app = window.app;
-    // Обновляем сообщение в локальном массиве
     const idx = app.messages.findIndex(m => String(m.id) === String(msg.id));
     if (idx !== -1) {
         app.messages[idx] = msg;
         renderMessages();
+    }
+}
+
+function _handleMessageDeleted(data) {
+    const app   = window.app;
+    const msgId = String(data.message_id);
+    const el    = document.querySelector(`[data-msg-id="${msgId}"]`);
+
+    if (el) {
+        ashDisintegrate(el, () => {
+            app.messages = app.messages.filter(m => String(m.id) !== msgId);
+            el.remove();
+        });
+    } else {
+        app.messages = app.messages.filter(m => String(m.id) !== msgId);
     }
 }
 
