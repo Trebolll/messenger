@@ -25,6 +25,28 @@ function switchForm(type) {
 
 // ── New Chat Modal ─────────────────────────────────────────────────────────
 
+function handleNewChatBtn() {
+  const btn = document.getElementById('new-chat-btn');
+
+  // Вспышка
+  btn.classList.remove('clicked', 'pulsing');
+  void btn.offsetWidth; // reflow чтобы перезапустить анимацию
+  btn.classList.add('clicked');
+
+  // Пульс кольца чуть позже
+  setTimeout(() => {
+    btn.classList.add('pulsing');
+  }, 80);
+
+  // Убираем классы после окончания
+  setTimeout(() => {
+    btn.classList.remove('clicked', 'pulsing');
+  }, 1600);
+
+  // Открываем модал
+  openNewChatMenu();
+}
+
 function openNewChatMenu() {
   const overlay = document.getElementById('new-chat-overlay');
   const modal   = document.getElementById('new-chat-modal');

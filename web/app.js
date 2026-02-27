@@ -60,11 +60,14 @@ class AlphaApp {
     // ── Тема ───────────────────────────────────────────────────────────────
 
     applyTheme() {
-        document.body.classList.toggle('theme-gray', this.theme === 'gray');
+        const themes = ['gray', 'twilight', 'dawn', 'sunset', 'coral', 'ocean', 'mint'];
+        themes.forEach(t => document.body.classList.toggle(`theme-${t}`, this.theme === t));
     }
 
     toggleTheme() {
-        this.theme = this.theme === 'light' ? 'gray' : 'light';
+        const order = ['light', 'gray', 'twilight', 'dawn', 'sunset', 'coral', 'ocean', 'mint'];
+        const idx = order.indexOf(this.theme);
+        this.theme = order[(idx + 1) % order.length];
         localStorage.setItem(`alpha_theme_${this.currentUser?.id || 'default'}`, this.theme);
         this.applyTheme();
     }
