@@ -135,3 +135,20 @@ async function apiDeleteMessage(messageId) {
         method: 'DELETE',
     });
 }
+async function apiUploadAvatar(file) {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    // Для FormData НЕ ставим Content-Type — браузер сам выставит multipart/form-data
+    // Токен берём из window.app.token как все остальные запросы
+    const token = window.app?.token;
+    const res = await fetch('/api/users/avatar', {
+        method: 'PUT',
+        headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+        body: formData,
+    });
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Ошибка загрузки');
+    }
+    return res.json();
+}

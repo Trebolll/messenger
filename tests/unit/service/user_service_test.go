@@ -31,14 +31,6 @@ func hashPassword(password string) string {
 	return string(bytes)
 }
 
-func (m *MockUserRepository) GetByUsername(username string) (*model.User, error) {
-	args := m.Called(username)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*model.User), args.Error(1)
-}
-
 func (m *MockUserRepository) GetByEmail(email string) (*model.User, error) {
 	args := m.Called(email)
 	if args.Get(0) == nil {
@@ -81,6 +73,11 @@ func (m *MockUserRepository) UpdateStatus(id uuid.UUID, status string) (*model.U
 	return args.Get(0).(*model.User), args.Error(1)
 }
 
+func (m *MockUserRepository) UpdateAvatarUrl(userID uuid.UUID, url string) error {
+	args := m.Called(userID, url)
+	return args.Error(0)
+}
+
 func TestCreateUser_Success(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com").Return(nil, nil)
@@ -119,7 +116,6 @@ func TestCreateUser_InvalidEmail(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Equal(t, "неверный формат электронной почты, формат должен быть в виде example@example.com", err.Error())
-	mockRepo.AssertNotCalled(t, "GetByUsername")
 	mockRepo.AssertNotCalled(t, "GetByEmail")
 	mockRepo.AssertNotCalled(t, "Create")
 }
@@ -138,7 +134,6 @@ func TestCreateUser_UsernameTooShort(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Equal(t, "имя пользователя должно содержать от 3 до 50 символов", err.Error())
-	mockRepo.AssertNotCalled(t, "GetByUsername")
 	mockRepo.AssertNotCalled(t, "GetByEmail")
 	mockRepo.AssertNotCalled(t, "Create")
 }
@@ -157,7 +152,6 @@ func TestCreateUser_UsernameTooLong(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Equal(t, "имя пользователя должно содержать от 3 до 50 символов", err.Error())
-	mockRepo.AssertNotCalled(t, "GetByUsername")
 	mockRepo.AssertNotCalled(t, "GetByEmail")
 	mockRepo.AssertNotCalled(t, "Create")
 }

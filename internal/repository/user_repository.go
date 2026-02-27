@@ -27,8 +27,8 @@ func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
 	var phone, fullName, location, status sql.NullString
 	var birthDate sql.NullTime
 	err := r.db.QueryRow(
-		"SELECT id, username, email, password, phone, full_name, birth_date, location, status FROM users WHERE email = $1", email,
-	).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &phone, &fullName, &birthDate, &location, &status)
+		"SELECT id, username, email, password, phone, full_name, birth_date, location, status, COALESCE(avatar_url,'') FROM users WHERE email = $1", email,
+	).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &phone, &fullName, &birthDate, &location, &status, &u.AvatarUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -47,8 +47,8 @@ func (r *UserRepository) GetById(id uuid.UUID) (*model.User, error) {
 	var phone, fullName, location, status sql.NullString
 	var birthDate sql.NullTime
 	err := r.db.QueryRow(
-		"SELECT id, username, email, phone, full_name, birth_date, location, status FROM users WHERE id = $1", id,
-	).Scan(&u.ID, &u.Username, &u.Email, &phone, &fullName, &birthDate, &location, &status)
+		"SELECT id, username, email, phone, full_name, birth_date, location, status, COALESCE(avatar_url,'') FROM users WHERE id = $1", id,
+	).Scan(&u.ID, &u.Username, &u.Email, &phone, &fullName, &birthDate, &location, &status, &u.AvatarUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +79,8 @@ func (r *UserRepository) GetByUsername(username string) (*model.User, error) {
 	u := new(model.User)
 	var phone, fullName, location, status sql.NullString
 	var birthDate sql.NullTime
-	query := `SELECT id, username, email, phone, full_name, birth_date, location, status FROM users WHERE username = $1`
-	err := r.db.QueryRow(query, username).Scan(&u.ID, &u.Username, &u.Email, &phone, &fullName, &birthDate, &location, &status)
+	query := `SELECT id, username, email, phone, full_name, birth_date, location, status, COALESCE(avatar_url,'') FROM users WHERE username = $1`
+	err := r.db.QueryRow(query, username).Scan(&u.ID, &u.Username, &u.Email, &phone, &fullName, &birthDate, &location, &status, &u.AvatarUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -142,4 +142,9 @@ func (r *UserRepository) UpdateStatus(id uuid.UUID, status string) (*model.User,
 	}
 
 	return r.GetById(id)
+}
+
+func (r *UserRepository) UpdateAvatarUrl(userID uuid.UUID, url string) error {
+	_, err := r.db.Exec(`UPDATE users SET avatar_url = $1, updated_at = NOW() WHERE id = $2`, url, userID)
+	return err
 }

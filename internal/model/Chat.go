@@ -22,4 +22,5 @@ type ChatListItem struct {
 	IsOnline        bool       `json:"is_online"`
 	UserStatus      string     `json:"user_status"`     // Текстовый статус собеседника
 	InterlocutorID  *uuid.UUID `json:"interlocutor_id"` // ID собеседника для проверки онлайна
+	AvatarUrl       string     `json:"avatar_url"`      // Аватар собеседника
 }

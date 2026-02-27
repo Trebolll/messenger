@@ -16,6 +16,7 @@ type User struct {
 	BirthDate *time.Time `json:"birth_date"`
 	Location  string     `json:"location"`
 	Status    string     `json:"status"`
+	AvatarUrl string     `json:"avatar_url"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 }
