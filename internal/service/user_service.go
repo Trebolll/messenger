@@ -19,6 +19,7 @@ type UserRepository interface {
 	SearchByUsername(username string) ([]model.User, error)
 	UpdateProfile(u *model.User) error
 	UpdateStatus(id uuid.UUID, status string) (*model.User, error)
+	UpdateAvatarUrl(userID uuid.UUID, url string) error
 }
 
 type UserService struct {
@@ -164,4 +165,12 @@ func (s *UserService) UpdateStatus(userID interface{}, status string) (*model.Us
 	}
 
 	return s.repo.UpdateStatus(id, status)
+}
+
+func (s *UserService) UpdateAvatarUrl(userID uuid.UUID, url string) error {
+	return s.repo.UpdateAvatarUrl(userID, url)
+}
+
+func (s *UserService) GetUserByID(id uuid.UUID) (*model.User, error) {
+	return s.repo.GetById(id)
 }

@@ -43,9 +43,23 @@ CREATE TABLE IF NOT EXISTS messages (
                                         edited_at TIMESTAMP
 );
 
+CREATE TABLE  IF NOT EXISTS attachments (
+                             id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                             chat_id    UUID REFERENCES chats(id),
+                             sender_id  UUID REFERENCES users(id),
+                             message_id UUID REFERENCES messages(id) ON DELETE CASCADE,
+                             url        TEXT NOT NULL,
+                             filename   TEXT,
+                             mime_type  VARCHAR(100),
+                             size_bytes BIGINT,
+                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_chat_members_user_id ON chat_members (user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_chat_id_created_at ON messages (chat_id, created_at ASC);
 -- Добавляем edited_at если ещё нет (для существующих БД)
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMP;
+-- Аватар пользователя
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;

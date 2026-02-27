@@ -38,9 +38,19 @@ func main() {
 	hub := websocket.NewHub()
 	go hub.Run()
 
+	storageService, err := service.NewStorageService(
+		os.Getenv("MINIO_ENDPOINT"),
+		os.Getenv("MINIO_ACCESS_KEY"),
+		os.Getenv("MINIO_SECRET_KEY"),
+		os.Getenv("MINIO_BUCKET"),
+	)
+	if err != nil {
+		log.Fatalf("Ошибка инициализации хранилища: %v", err)
+	}
+
 	userRepository := repository.NewUserRepository(database)
 	userService := service.NewUserService(userRepository)
-	userHandler := handler.NewUserHandler(userService, hub)
+	userHandler := handler.NewUserHandler(userService, hub, storageService)
 
 	chatRepository := repository.NewChatRepository(database)
 	chatService := service.NewChatService(chatRepository, userRepository, hub)
@@ -52,6 +62,10 @@ func main() {
 
 	aiService := service.NewAIService()
 	aiHandler := handler.NewAIHandler(aiService)
+
+	attachmentRepository := repository.NewAttachmentRepository(database)
+	attachmentService := service.NewAttachmentService(attachmentRepository, storageService)
+	attachmentHandler := handler.NewAttachmentHandler(attachmentService)
 
 	wsHandler := handler.NewWebSocketHandler(hub, "your_secret_key")
 
@@ -83,9 +97,11 @@ func main() {
 		api.GET("/chats", chatHandler.GetUserChats)
 		api.GET("/users/search", userHandler.SearchUsers)
 		api.PUT("/users/profile", userHandler.UpdateProfile)
+		api.PUT("/users/avatar", userHandler.UpdateAvatar)
 		api.PUT("/users/status", userHandler.UpdateStatus)
 		api.POST("/chats/:chat_id/read", messageHandler.MarkAsRead)
 		api.POST("/ai/suggest", aiHandler.Suggest)
+		api.POST("/chats/:chat_id/attachments", attachmentHandler.Upload)
 	}
 
 	r.GET("/api/ws", wsHandler.HandleWebSocket)

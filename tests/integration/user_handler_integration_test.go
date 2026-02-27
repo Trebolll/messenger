@@ -50,6 +50,7 @@ func createTestTables(t *testing.T, db *sql.DB) {
 			birth_date DATE,
 			location VARCHAR(255),
 			status VARCHAR(255),
+			avatar_url TEXT DEFAULT '',
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP
 		)`,
@@ -104,7 +105,7 @@ func setupTestRouter(t *testing.T, db *sql.DB) *gin.Engine {
 	router := gin.New()
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
-	userHandler := handler.NewUserHandler(userService, nil)
+	userHandler := handler.NewUserHandler(userService, nil, nil)
 
 	router.POST("/register", userHandler.Register)
 	router.POST("/login", userHandler.Login)

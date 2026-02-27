@@ -30,6 +30,8 @@ function connectWebSocket() {
                 _handleMessageDeleted(wrapper.content);
             } else if (wrapper.type === 'user_status') {
                 updateUserStatus(wrapper.content);
+            } else if (wrapper.type === 'user_profile_updated') {
+                updateUserProfile(wrapper.content);
             }
         } catch (err) {
             console.error('Error parsing WS message:', err);
@@ -106,6 +108,24 @@ function _handleMessageDeleted(data) {
         });
     } else {
         app.messages = app.messages.filter(m => String(m.id) !== msgId);
+    }
+}
+
+function updateUserProfile(data) {
+    const app = window.app;
+
+    // Обновляем все чаты где этот пользователь — собеседник
+    let changed = false;
+    app.chats.forEach(chat => {
+        if (String(chat.interlocutor_id) === String(data.user_id)) {
+            chat.avatar_url = data.avatar_url;
+            chat.name       = data.username || chat.name;
+            changed = true;
+        }
+    });
+    if (changed) {
+        renderChats();
+        renderChatHeader();
     }
 }
 

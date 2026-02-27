@@ -195,3 +195,29 @@ func (c *Client) WritePump() {
 		}
 	}
 }
+
+// BroadcastProfileUpdate — рассылает всем онлайн-пользователям обновление профиля
+func (h *Hub) BroadcastProfileUpdate(userID uuid.UUID, avatarUrl, username, fullName, status string) {
+	msg := Message{
+		Type: "user_profile_updated",
+		Content: map[string]interface{}{
+			"user_id":    userID,
+			"avatar_url": avatarUrl,
+			"username":   username,
+			"full_name":  fullName,
+			"status":     status,
+		},
+	}
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return
+	}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for _, client := range h.Clients {
+		select {
+		case client.Send <- data:
+		default:
+		}
+	}
+}

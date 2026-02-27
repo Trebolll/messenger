@@ -6,6 +6,7 @@ import (
 	"messenger/internal/service/websocket"
 	"messenger/internal/utils"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,12 +14,13 @@ import (
 )
 
 type UserHandler struct {
-	userService *service.UserService
-	hub         *websocket.Hub
+	userService    *service.UserService
+	hub            *websocket.Hub
+	storageService *service.StorageService
 }
 
-func NewUserHandler(userService *service.UserService, hub *websocket.Hub) *UserHandler {
-	return &UserHandler{userService: userService, hub: hub}
+func NewUserHandler(userService *service.UserService, hub *websocket.Hub, storageService *service.StorageService) *UserHandler {
+	return &UserHandler{userService: userService, hub: hub, storageService: storageService}
 }
 
 func (h *UserHandler) Register(c *gin.Context) {
@@ -111,6 +113,11 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
+	// Рассылаем обновление профиля всем онлайн
+	if id, ok := userID.(uuid.UUID); ok {
+		h.hub.BroadcastProfileUpdate(id, user.AvatarUrl, user.Username, user.FullName, user.Status)
+	}
+
 	c.JSON(http.StatusOK, user)
 }
 
@@ -146,4 +153,73 @@ func (h *UserHandler) UpdateStatus(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
+}
+
+func (h *UserHandler) UpdateAvatar(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	fileHeader, err := c.FormFile("avatar")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "файл не найден"})
+		return
+	}
+
+	// Валидация размера (макс 5MB)
+	if fileHeader.Size > 5<<20 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "файл слишком большой, максимум 5MB"})
+		return
+	}
+
+	// Валидация типа
+	mimeType := fileHeader.Header.Get("Content-Type")
+	allowed := map[string]bool{"image/jpeg": true, "image/png": true, "image/gif": true, "image/webp": true}
+	if !allowed[mimeType] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "разрешены только изображения (jpg, png, gif, webp)"})
+		return
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "не удалось открыть файл"})
+		return
+	}
+	defer file.Close()
+
+	// Генерируем уникальное имя
+	path := filepath.Ext(fileHeader.Filename)
+	objectName := "avatars/" + uuid.New().String() + path
+
+	url, err := h.storageService.Upload(c.Request.Context(), objectName, file, fileHeader.Size, mimeType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "не удалось загрузить файл"})
+		return
+	}
+
+	var uid uuid.UUID
+	switch v := userID.(type) {
+	case uuid.UUID:
+		uid = v
+	case string:
+		uid, err = uuid.Parse(v)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "неверный ID"})
+			return
+		}
+	}
+
+	if err := h.userService.UpdateAvatarUrl(uid, url); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Получаем актуальные данные пользователя для рассылки
+	if user, err := h.userService.GetUserByID(uid); err == nil {
+		h.hub.BroadcastProfileUpdate(uid, url, user.Username, user.FullName, user.Status)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"avatar_url": url})
 }

@@ -22,14 +22,6 @@ type MockUserRepository struct {
 	mock.Mock
 }
 
-func (m *MockUserRepository) GetByUsername(username string) (*model.User, error) {
-	args := m.Called(username)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*model.User), args.Error(1)
-}
-
 func (m *MockUserRepository) GetByEmail(email string) (*model.User, error) {
 	args := m.Called(email)
 	if args.Get(0) == nil {
@@ -80,11 +72,16 @@ func (m *MockUserRepository) UpdateStatus(id uuid.UUID, status string) (*model.U
 	return args.Get(0).(*model.User), args.Error(1)
 }
 
+func (m *MockUserRepository) UpdateAvatarUrl(userID uuid.UUID, url string) error {
+	args := m.Called(userID, url)
+	return args.Error(0)
+}
+
 func setupTestRouter(mockRepo *MockUserRepository) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	userService := service.NewUserService(mockRepo)
-	userHandler := handler.NewUserHandler(userService, nil)
+	userHandler := handler.NewUserHandler(userService, nil, nil)
 
 	router.POST("/register", userHandler.Register)
 	router.POST("/login", userHandler.Login)

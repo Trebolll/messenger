@@ -1,3 +1,18 @@
+// Хелперы аватаров — избегаем вложенных backtick в template literals
+function chatAvatarHtml(chat) {
+    if (chat.avatar_url) {
+        return '<img src="' + chat.avatar_url + '" style="width:100%;height:100%;object-fit:cover;">';
+    }
+    return (chat.name || '?')[0].toUpperCase();
+}
+
+function userAvatarHtml(user) {
+    if (user && user.avatar_url) {
+        return '<img src="' + user.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    }
+    return (user && user.username ? user.username[0].toUpperCase() : 'U');
+}
+
 // ─── render.js — отрисовка интерфейса ─────────────────────────────────────
 
 function renderChats() {
@@ -6,8 +21,8 @@ function renderChats() {
     list.innerHTML = app.chats.map(chat => `
         <div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${String(app.activeChatId) === String(chat.id) ? 'active' : ''}">
             <div class="relative">
-                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                    ${(chat.name || 'Chat')[0].toUpperCase()}
+                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
+                    ${chatAvatarHtml(chat)}
                 </div>
                 ${chat.is_online ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>' : ''}
             </div>
@@ -76,9 +91,12 @@ function renderChatHeader() {
     renderStatusElements(chat.is_online, chat.user_status || '');
 
     document.getElementById('active-chat-name').textContent   = chat.name;
-    document.getElementById('active-chat-avatar').textContent = chat.name[0].toUpperCase();
-    document.getElementById('info-name').textContent          = chat.name;
-    document.getElementById('info-avatar').textContent        = chat.name[0].toUpperCase();
+    const _ava = chatAvatarHtml(chat);
+    const _hdr = document.getElementById('active-chat-avatar');
+    _hdr.innerHTML = _ava; _hdr.style.overflow = 'hidden';
+    document.getElementById('info-name').textContent = chat.name;
+    const _inf = document.getElementById('info-avatar');
+    _inf.innerHTML = _ava; _inf.style.overflow = 'hidden';
 }
 
 function renderStatusElements(isOnline, userStatus) {
@@ -114,11 +132,21 @@ function renderSearchResults(users) {
 }
 
 function loadUserData() {
-    // window.app может ещё не быть присвоен если вызов идёт из constructor
     const user = window.app?.currentUser || JSON.parse(localStorage.getItem('alpha_user') || 'null');
     if (!user) return;
-    document.getElementById('current-user-name').textContent   = user.username;
-    document.getElementById('current-user-avatar').textContent = user.username[0].toUpperCase();
+    document.getElementById('current-user-name').textContent = user.username;
+    setAvatarEl(document.getElementById('current-user-avatar'), user);
+}
+
+// Универсальная функция: ставит фото или букву в элемент-аватар
+function setAvatarEl(el, user) {
+    if (!el) return;
+    if (user.avatar_url) {
+        el.innerHTML = `<img src="${user.avatar_url}" alt="${user.username}"
+            style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    } else {
+        el.textContent = (user.username || 'U')[0].toUpperCase();
+    }
 }
 
 function updateLastMessageInChatList(msg) {
