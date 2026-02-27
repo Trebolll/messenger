@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"messenger/internal/model"
 	_ "messenger/internal/service/websocket"
@@ -15,6 +16,7 @@ type ChatRepositoryForService interface {
 	CreatePrivateChat(initiatorID, targetUserID uuid.UUID) (*model.Chat, error)
 	CreateGroupChat(name string, memberIDs []uuid.UUID) (*model.Chat, error)
 	GetUserChats(userID uuid.UUID) ([]model.ChatListItem, error)
+	UpdateGroupAvatarUrl(chatID uuid.UUID, url string) error
 }
 
 type UserRepositoryForService interface {
@@ -56,6 +58,7 @@ func (s *ChatService) CreateGroupChatByUsernames(name string, usernames []string
 	seenIDs[creatorID] = true
 
 	userIDs := []uuid.UUID{creatorID}
+	resolvedNames := []string{}
 
 	for _, username := range usernames {
 		user, err := s.userRepo.GetByUsername(username)
@@ -67,7 +70,13 @@ func (s *ChatService) CreateGroupChatByUsernames(name string, usernames []string
 		if !seenIDs[user.ID] {
 			seenIDs[user.ID] = true
 			userIDs = append(userIDs, user.ID)
+			resolvedNames = append(resolvedNames, user.Username)
 		}
+	}
+
+	// Если имя не задано — используем никнеймы участников через запятую
+	if name == "" {
+		name = strings.Join(resolvedNames, ", ")
 	}
 
 	return s.repo.CreateGroupChat(name, userIDs)
@@ -90,4 +99,8 @@ func (s *ChatService) GetUserChats(userID uuid.UUID) ([]model.ChatListItem, erro
 	}
 
 	return chats, nil
+}
+
+func (s *ChatService) UpdateGroupAvatarUrl(chatID uuid.UUID, url string) error {
+	return s.repo.UpdateGroupAvatarUrl(chatID, url)
 }

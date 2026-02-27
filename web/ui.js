@@ -48,10 +48,24 @@ function handleNewChatBtn() {
 }
 
 function openNewChatMenu() {
+  // Сбрасываем состояние выбора
+  window._ncSelected = [];
+  ncRenderChips();
+  ncUpdateFooter();
+
   const overlay = document.getElementById('new-chat-overlay');
   const modal   = document.getElementById('new-chat-modal');
+  const input   = document.getElementById('user-search-input');
+  const results = document.getElementById('search-results');
+  if (input) { input.value = ''; }
+  if (results) { results.innerHTML = ''; }
+
   overlay.classList.remove('hidden');
-  setTimeout(() => { overlay.classList.remove('opacity-0'); modal.classList.remove('scale-95'); }, 10);
+  setTimeout(() => {
+    overlay.classList.remove('opacity-0');
+    modal.classList.remove('scale-95');
+    if (input) input.focus();
+  }, 10);
 }
 
 function closeNewChatModal() {
@@ -59,7 +73,110 @@ function closeNewChatModal() {
   const modal   = document.getElementById('new-chat-modal');
   overlay.classList.add('opacity-0');
   modal.classList.add('scale-95');
-  setTimeout(() => overlay.classList.add('hidden'), 300);
+  setTimeout(() => {
+    overlay.classList.add('hidden');
+    window._ncSelected = [];
+  }, 300);
+}
+
+// Переключить пользователя в выборке (принимает id, берёт из Map)
+function ncToggleUser(userId) {
+  if (!window._ncSelected) window._ncSelected = [];
+  const uid = String(userId);
+  // Берём полный объект из Map, заполненного в renderSearchResults
+  const user = (window._ncUserMap || {})[uid];
+  if (!user) return;
+
+  const idx = window._ncSelected.findIndex(u => String(u.id) === uid);
+  if (idx === -1) {
+    window._ncSelected.push(user);
+  } else {
+    window._ncSelected.splice(idx, 1);
+  }
+  ncRenderChips();
+  ncUpdateFooter();
+
+  // Обновляем галочки в списке без перерендера
+  document.querySelectorAll('#search-results .nc-result-item').forEach(el => {
+    const elUid = el.dataset.uid;
+    const sel = window._ncSelected.some(u => String(u.id) === elUid);
+    el.classList.toggle('selected', sel);
+    const check = el.querySelector('.nc-check');
+    if (check) {
+      check.innerHTML = sel
+          ? '<svg class="w-3 h-3" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>'
+          : '';
+    }
+  });
+}
+
+// Рендерим плашки выбранных
+function ncRenderChips() {
+  const bar    = document.getElementById('selected-users-bar');
+  const chips  = document.getElementById('selected-chips');
+  const sel    = window._ncSelected || [];
+  if (!bar || !chips) return;
+
+  if (sel.length === 0) {
+    bar.classList.add('hidden');
+    chips.innerHTML = '';
+    return;
+  }
+  bar.classList.remove('hidden');
+  chips.innerHTML = sel.map(u => `
+    <span class="nc-chip">
+      <span class="nc-chip-avatar">${(u.username||'U')[0].toUpperCase()}</span>
+      <span>${u.username}</span>
+      <svg onclick="ncToggleUser(${JSON.stringify(u).replace(/"/g,'&quot;')})" class="nc-chip-remove w-3.5 h-3.5 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </span>
+  `).join('');
+}
+
+// Обновляем кнопку снизу
+function ncUpdateFooter() {
+  const footer    = document.getElementById('new-chat-footer');
+  const btn       = document.getElementById('create-chat-btn');
+  const label     = document.getElementById('create-chat-label');
+  const subtitle  = document.getElementById('new-chat-subtitle');
+  const groupWrap = document.getElementById('group-name-wrap');
+  const sel       = window._ncSelected || [];
+
+  if (!footer || !btn || !label) return;
+
+  if (sel.length === 0) {
+    footer.classList.add('hidden');
+    if (groupWrap) groupWrap.classList.add('hidden');
+    if (subtitle) subtitle.textContent = 'Найди пользователя для начала общения';
+  } else if (sel.length === 1) {
+    footer.classList.remove('hidden');
+    if (groupWrap) groupWrap.classList.add('hidden');
+    btn.classList.remove('group-mode');
+    label.textContent = `Открыть чат с ${sel[0].username}`;
+    if (subtitle) subtitle.textContent = 'Выбран 1 участник · приватный чат';
+  } else {
+    footer.classList.remove('hidden');
+    if (groupWrap) groupWrap.classList.remove('hidden');
+    btn.classList.add('group-mode');
+    label.textContent = `Создать группу · ${sel.length} участника`;
+    if (subtitle) subtitle.textContent = `Выбрано: ${sel.length}`;
+  }
+}
+
+// Действие при нажатии на кнопку создания
+async function handleCreateChat() {
+  const sel = window._ncSelected || [];
+  if (sel.length === 0) return;
+
+  if (sel.length === 1) {
+    // Приватный чат — логика не меняется
+    await app.createPrivateChat(sel[0].id);
+  } else {
+    // Групповой чат
+    const groupName = document.getElementById('group-name-input')?.value.trim() || '';
+    await apiCreateGroupChat(sel.map(u => u.id), groupName);
+  }
 }
 
 // ── Info Panel ─────────────────────────────────────────────────────────────
@@ -612,4 +729,53 @@ function ashDisintegrate(el, onDone) {
   }
 
   requestAnimationFrame(tick);
+}
+// ─── Аватарка группового чата ─────────────────────────────────────────────
+
+function triggerGroupAvatarUpload() {
+  let input = document.getElementById('group-avatar-upload-input');
+  if (!input) {
+    input = document.createElement('input');
+    input.type = 'file';
+    input.id = 'group-avatar-upload-input';
+    input.accept = 'image/*';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+  }
+  input.value = '';
+  input.onchange = handleGroupAvatarSelected;
+  input.click();
+}
+
+async function handleGroupAvatarSelected(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const chatId = window.app?.activeChatId;
+  if (!chatId) return;
+
+  // Мгновенный превью в info-panel
+  const infAva = document.getElementById('info-avatar');
+  const previewUrl = URL.createObjectURL(file);
+  if (infAva) {
+    infAva.innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+    infAva.style.overflow = 'hidden';
+  }
+
+  try {
+    const result = await apiUploadGroupAvatar(chatId, file);
+    // Обновляем данные чата в памяти
+    const chat = window.app.chats.find(c => String(c.id) === String(chatId));
+    if (chat) {
+      chat.avatar_url = result.avatar_url;
+    }
+    renderChats();
+    renderChatHeader();
+    window.app.notify('Аватарка группы обновлена ✓', 'success');
+  } catch (err) {
+    window.app.notify('Ошибка: ' + err.message, 'error');
+    // Откатываем превью
+    renderChatHeader();
+  } finally {
+    URL.revokeObjectURL(previewUrl);
+  }
 }

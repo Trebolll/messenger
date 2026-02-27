@@ -40,7 +40,7 @@ async function apiLoadMessages(chatId) {
 }
 
 async function apiSearchUsers(query) {
-    if (!query || query.length < 2) {
+    if (!query || query.length < 3) {
         document.getElementById('search-results').innerHTML = '';
         return;
     }
@@ -48,6 +48,30 @@ async function apiSearchUsers(query) {
         const res = await apiFetch(`/api/users/search?q=${encodeURIComponent(query)}`);
         renderSearchResults(res || []);
     } catch (err) { /* silent */ }
+}
+
+async function apiCreateGroupChat(userIds, groupName) {
+    try {
+        // Бэкенд ожидает usernames[] — собираем из Map выбранных пользователей
+        const userMap = window._ncUserMap || {};
+        const usernames = userIds.map(id => {
+            const u = userMap[String(id)];
+            return u ? u.username : null;
+        }).filter(Boolean);
+
+        const res = await apiFetch('/api/chats/group', {
+            method: 'POST',
+            body: JSON.stringify({
+                name: groupName || usernames.join(', '),
+                usernames,
+            }),
+        });
+        closeNewChatModal();
+        await apiLoadChats();
+        await apiLoadMessages(res.id);
+    } catch (err) {
+        window.app.notify(err.message || 'Не удалось создать группу', 'error');
+    }
 }
 
 async function apiCreatePrivateChat(userId) {
@@ -142,6 +166,22 @@ async function apiUploadAvatar(file) {
     // Токен берём из window.app.token как все остальные запросы
     const token = window.app?.token;
     const res = await fetch('/api/users/avatar', {
+        method: 'PUT',
+        headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+        body: formData,
+    });
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Ошибка загрузки');
+    }
+    return res.json();
+}
+
+async function apiUploadGroupAvatar(chatId, file) {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const token = window.app?.token;
+    const res = await fetch(`/api/chats/${chatId}/avatar`, {
         method: 'PUT',
         headers: { ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
         body: formData,

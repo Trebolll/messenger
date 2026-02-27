@@ -26,7 +26,7 @@ func (r *ChatRepository) GetUserChats(userID uuid.UUID) ([]model.ChatListItem, e
 			COALESCE(m.created_at, c.created_at) as last_message_time,
 			u.id as interlocutor_id,
 			COALESCE(u.status, '') as user_status,
-			COALESCE(u.avatar_url, '') as avatar_url
+			COALESCE(CASE WHEN c.type = 'group' THEN c.avatar_url ELSE u.avatar_url END, '') as avatar_url
 		FROM chats c
 		JOIN chat_members cm ON c.id = cm.chat_id
 		-- Джойним собеседника только если это приватный чат
@@ -63,9 +63,55 @@ func (r *ChatRepository) GetUserChats(userID uuid.UUID) ([]model.ChatListItem, e
 			return nil, err
 		}
 		chat.UserStatus = userStatus.String
+		if chat.Type == model.TypeGroup {
+			chat.IsGroup = true
+		}
 		chats = append(chats, chat)
 	}
+
+	// Для групп подгружаем участников отдельным запросом
+	for i := range chats {
+		if chats[i].IsGroup {
+			members, err := r.GetMembersInfo(chats[i].ID)
+			if err == nil {
+				chats[i].Members = members
+			}
+		}
+	}
+
 	return chats, nil
+}
+
+// GetMembersInfo возвращает краткую информацию об участниках чата
+func (r *ChatRepository) GetMembersInfo(chatID uuid.UUID) ([]model.ChatMemberInfo, error) {
+	query := `
+		SELECT u.id, u.username, COALESCE(u.avatar_url, '')
+		FROM chat_members cm
+		JOIN users u ON u.id = cm.user_id
+		WHERE cm.chat_id = $1
+		ORDER BY cm.joined_at ASC`
+
+	rows, err := r.db.Query(query, chatID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var members []model.ChatMemberInfo
+	for rows.Next() {
+		var m model.ChatMemberInfo
+		if err := rows.Scan(&m.ID, &m.Username, &m.AvatarUrl); err != nil {
+			return nil, err
+		}
+		members = append(members, m)
+	}
+	return members, nil
+}
+
+// UpdateGroupAvatarUrl обновляет аватар группового чата
+func (r *ChatRepository) UpdateGroupAvatarUrl(chatID uuid.UUID, url string) error {
+	_, err := r.db.Exec(`UPDATE chats SET avatar_url = $1 WHERE id = $2`, url, chatID)
+	return err
 }
 
 func (r *ChatRepository) CreatePrivateChat(
