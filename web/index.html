@@ -22,6 +22,54 @@
             --message-sent-bg: #2563eb; --message-sent-text: #ffffff;
             --message-received-bg: #374151; --message-received-text: #f8fafc;
         }
+        /* ══ Тема «Сумерки» ══ */
+        body.theme-twilight {
+            --bg-main: #1e1b2e; --bg-sidebar: #13111f; --bg-item-hover: #2d2640;
+            --bg-item-active: #3b2f6e; --text-main: #e8e0f5; --text-muted: #a78bca;
+            --border-color: #3d3560; --accent-color: #a78bfa;
+            --message-sent-bg: #7c3aed; --message-sent-text: #ffffff;
+            --message-received-bg: #2d2640; --message-received-text: #e8e0f5;
+        }
+        /* ══ Тема «Рассвет» ══ */
+        body.theme-dawn {
+            --bg-main: #f0faf4; --bg-sidebar: #e6f5ec; --bg-item-hover: #d1ede0;
+            --bg-item-active: #bbdece; --text-main: #1a3d2b; --text-muted: #4a7c5f;
+            --border-color: #b2d9c0; --accent-color: #22c55e;
+            --message-sent-bg: #16a34a; --message-sent-text: #ffffff;
+            --message-received-bg: #d1ede0; --message-received-text: #1a3d2b;
+        }
+        /* ══ Тема «Закат» ══ */
+        body.theme-sunset {
+            --bg-main: #fff8f0; --bg-sidebar: #fff1e3; --bg-item-hover: #fde0c0;
+            --bg-item-active: #fcd0a0; --text-main: #431407; --text-muted: #9a4520;
+            --border-color: #fbbf7a; --accent-color: #ea580c;
+            --message-sent-bg: #ea580c; --message-sent-text: #ffffff;
+            --message-received-bg: #fde0c0; --message-received-text: #431407;
+        }
+        /* ══ Тема «Коралл» ══ */
+        body.theme-coral {
+            --bg-main: #fff5f5; --bg-sidebar: #fff0f0; --bg-item-hover: #ffd6d6;
+            --bg-item-active: #ffc0c0; --text-main: #4a0a0a; --text-muted: #b04040;
+            --border-color: #fca5a5; --accent-color: #ef4444;
+            --message-sent-bg: #ef4444; --message-sent-text: #ffffff;
+            --message-received-bg: #ffd6d6; --message-received-text: #4a0a0a;
+        }
+        /* ══ Тема «Океан» ══ */
+        body.theme-ocean {
+            --bg-main: #0a1628; --bg-sidebar: #060e1c; --bg-item-hover: #0f2040;
+            --bg-item-active: #0e3060; --text-main: #c8e6ff; --text-muted: #5b9fd4;
+            --border-color: #1a3a6b; --accent-color: #38bdf8;
+            --message-sent-bg: #0ea5e9; --message-sent-text: #ffffff;
+            --message-received-bg: #0f2040; --message-received-text: #c8e6ff;
+        }
+        /* ══ Тема «Мята» ══ */
+        body.theme-mint {
+            --bg-main: #f0fffe; --bg-sidebar: #e0faf8; --bg-item-hover: #b8f0ed;
+            --bg-item-active: #8ee8e4; --text-main: #0d3330; --text-muted: #2d7a74;
+            --border-color: #7dd3d0; --accent-color: #0d9488;
+            --message-sent-bg: #0d9488; --message-sent-text: #ffffff;
+            --message-received-bg: #b8f0ed; --message-received-text: #0d3330;
+        }
         body { font-family: 'Inter', sans-serif; overflow: hidden; background-color: var(--bg-main); color: var(--text-main); transition: background-color 0.3s, color 0.3s; }
         .gradient-bg { background: linear-gradient(135deg, var(--bg-sidebar) 0%, var(--bg-main) 100%); }
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
@@ -56,27 +104,142 @@
             color: #ffffff;
             border-radius: 1.25rem 1.25rem 0.25rem 1.25rem;
             box-shadow: 0 4px 16px rgba(37,99,235,0.25), 0 1px 3px rgba(37,99,235,0.15);
-            transition: box-shadow 0.2s;
+            transition: box-shadow 0.2s, transform 0.2s;
         }
         .message-sent:hover {
             box-shadow: 0 6px 20px rgba(37,99,235,0.35), 0 2px 6px rgba(37,99,235,0.2);
+            transform: translateY(-1px);
         }
         body.theme-gray .message-sent {
             background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
             box-shadow: 0 4px 16px rgba(37,99,235,0.3);
+        }
+        body.theme-gray .message-sent:hover {
+            box-shadow: 0 6px 20px rgba(37,99,235,0.5), 0 2px 8px rgba(37,99,235,0.3);
+            transform: translateY(-1px);
         }
         .message-received {
             background-color: var(--message-received-bg);
             color: var(--message-received-text);
             border-radius: 1.25rem 1.25rem 1.25rem 0.25rem;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            transition: box-shadow 0.2s;
+            transition: box-shadow 0.2s, transform 0.2s;
         }
         .message-received:hover {
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
         }
         body.theme-gray .message-received {
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        body.theme-gray .message-received:hover {
+            box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+            transform: translateY(-1px);
+        }
+        /* ── Twilight message styles ── */
+        body.theme-twilight .message-sent {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            box-shadow: 0 4px 16px rgba(124,58,237,0.35), 0 1px 3px rgba(124,58,237,0.2);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        body.theme-twilight .message-sent:hover {
+            box-shadow: 0 6px 22px rgba(124,58,237,0.55), 0 2px 8px rgba(124,58,237,0.3);
+            transform: translateY(-1px);
+        }
+        body.theme-twilight .message-received {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        body.theme-twilight .message-received:hover {
+            box-shadow: 0 4px 16px rgba(124,58,237,0.2), 0 2px 6px rgba(0,0,0,0.25);
+            transform: translateY(-1px);
+        }
+        /* ── Dawn (Рассвет) message styles ── */
+        body.theme-dawn .message-sent {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            box-shadow: 0 4px 16px rgba(34,197,94,0.3), 0 1px 3px rgba(34,197,94,0.15);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        body.theme-dawn .message-sent:hover {
+            box-shadow: 0 6px 22px rgba(34,197,94,0.45), 0 2px 8px rgba(34,197,94,0.25);
+            transform: translateY(-1px);
+        }
+        body.theme-dawn .message-received {
+            box-shadow: 0 2px 8px rgba(34,197,94,0.1);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        body.theme-dawn .message-received:hover {
+            box-shadow: 0 4px 14px rgba(34,197,94,0.2), 0 2px 6px rgba(0,0,0,0.05);
+            transform: translateY(-1px);
+        }
+        /* ── Sunset (Закат) message styles ── */
+        body.theme-sunset .message-sent {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            box-shadow: 0 4px 16px rgba(234,88,12,0.35), 0 1px 3px rgba(234,88,12,0.2);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        body.theme-sunset .message-sent:hover {
+            box-shadow: 0 6px 22px rgba(234,88,12,0.5), 0 2px 8px rgba(234,88,12,0.3);
+            transform: translateY(-1px);
+        }
+        body.theme-sunset .message-received {
+            box-shadow: 0 2px 8px rgba(234,88,12,0.1);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        body.theme-sunset .message-received:hover {
+            box-shadow: 0 4px 14px rgba(234,88,12,0.22), 0 2px 6px rgba(0,0,0,0.06);
+            transform: translateY(-1px);
+        }
+        /* ── Coral messages ── */
+        body.theme-coral .message-sent {
+            background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+            box-shadow: 0 4px 16px rgba(239,68,68,0.35), 0 1px 3px rgba(239,68,68,0.2);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        body.theme-coral .message-sent:hover {
+            box-shadow: 0 6px 22px rgba(239,68,68,0.5), 0 2px 8px rgba(239,68,68,0.3);
+            transform: translateY(-1px);
+        }
+        body.theme-coral .message-received {
+            box-shadow: 0 2px 8px rgba(239,68,68,0.08); transition: box-shadow 0.2s, transform 0.2s;
+        }
+        body.theme-coral .message-received:hover {
+            box-shadow: 0 4px 14px rgba(239,68,68,0.18), 0 2px 6px rgba(0,0,0,0.05);
+            transform: translateY(-1px);
+        }
+        /* ── Ocean messages ── */
+        body.theme-ocean .message-sent {
+            background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+            box-shadow: 0 4px 16px rgba(14,165,233,0.4), 0 1px 3px rgba(14,165,233,0.2);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        body.theme-ocean .message-sent:hover {
+            box-shadow: 0 6px 22px rgba(14,165,233,0.6), 0 2px 8px rgba(14,165,233,0.3);
+            transform: translateY(-1px);
+        }
+        body.theme-ocean .message-received {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: box-shadow 0.2s, transform 0.2s;
+        }
+        body.theme-ocean .message-received:hover {
+            box-shadow: 0 4px 16px rgba(14,165,233,0.25), 0 2px 8px rgba(0,0,0,0.2);
+            transform: translateY(-1px);
+        }
+        /* ── Mint messages ── */
+        body.theme-mint .message-sent {
+            background: linear-gradient(135deg, #2dd4bf 0%, #0d9488 100%);
+            box-shadow: 0 4px 16px rgba(13,148,136,0.35), 0 1px 3px rgba(13,148,136,0.2);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        body.theme-mint .message-sent:hover {
+            box-shadow: 0 6px 22px rgba(13,148,136,0.5), 0 2px 8px rgba(13,148,136,0.3);
+            transform: translateY(-1px);
+        }
+        body.theme-mint .message-received {
+            box-shadow: 0 2px 8px rgba(13,148,136,0.1); transition: box-shadow 0.2s, transform 0.2s;
+        }
+        body.theme-mint .message-received:hover {
+            box-shadow: 0 4px 14px rgba(13,148,136,0.22), 0 2px 6px rgba(0,0,0,0.05);
+            transform: translateY(-1px);
         }
 
         /* ── Инлайн-редактирование ─────────────────────────────────────── */
@@ -253,8 +416,26 @@
             background: rgba(30,58,138,0.25);
             border-color: rgba(96,165,250,0.4);
         }
+        body.theme-twilight #ai-panel {
+            background: rgba(60,27,100,0.3);
+            border-color: rgba(167,139,250,0.4);
+        }
+        body.theme-dawn #ai-panel {
+            background: rgba(34,197,94,0.08);
+            border-color: rgba(34,197,94,0.35);
+        }
+        body.theme-sunset #ai-panel { background: rgba(234,88,12,0.07); border-color: rgba(234,88,12,0.3); }
+        body.theme-coral  #ai-panel { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.3); }
+        body.theme-ocean  #ai-panel { background: rgba(14,165,233,0.1); border-color: rgba(14,165,233,0.35); }
+        body.theme-mint   #ai-panel { background: rgba(13,148,136,0.08); border-color: rgba(13,148,136,0.3); }
         .ai-panel-title { color: #2563eb; font-weight: 600; font-size: 0.75rem; margin-bottom: 0.5rem; }
         body.theme-gray .ai-panel-title { color: #93c5fd; }
+        body.theme-twilight .ai-panel-title { color: #c4b5fd; }
+        body.theme-dawn .ai-panel-title { color: #16a34a; }
+        body.theme-sunset .ai-panel-title { color: #c2410c; }
+        body.theme-coral  .ai-panel-title { color: #b91c1c; }
+        body.theme-ocean  .ai-panel-title { color: #38bdf8; }
+        body.theme-mint   .ai-panel-title { color: #0d9488; }
         #ai-loading { color: #3b82f6; font-size: 0.875rem; }
         #ai-result {
             font-size: 0.875rem;
@@ -440,7 +621,8 @@
         #attach-btn:hover  #pin-shadow { opacity: 0.22; }
         #attach-btn:active #pin-shadow { opacity: 0.06; }
 
-        /* ══ Theme button animation ══ */
+        /* ══ Theme button animation (4 themes) ══
+           ☀️ sun = белая  🌙 moon = тёмная  ⭐ star = сумерки  🌱 sprout = рассвет  */
         .theme-btn {
             position: relative;
             width: 32px; height: 32px;
@@ -449,7 +631,13 @@
             color: var(--text-muted);
         }
         .theme-btn:hover { background: rgba(234,179,8,0.1); }
-        body.theme-gray .theme-btn:hover { background: rgba(250,204,21,0.1); }
+        body.theme-gray     .theme-btn:hover { background: rgba(96,165,250,0.1); }
+        body.theme-twilight .theme-btn:hover { background: rgba(167,139,250,0.15); }
+        body.theme-dawn     .theme-btn:hover { background: rgba(34,197,94,0.12); }
+        body.theme-sunset   .theme-btn:hover { background: rgba(234,88,12,0.1); }
+        body.theme-coral    .theme-btn:hover { background: rgba(239,68,68,0.1); }
+        body.theme-ocean    .theme-btn:hover { background: rgba(14,165,233,0.1); }
+        body.theme-mint     .theme-btn:hover { background: rgba(13,148,136,0.1); }
 
         .theme-icon-wrap {
             position: relative;
@@ -462,17 +650,95 @@
             transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease;
         }
 
-        /* Светлая тема: луна видна, солнце спрятано вверху */
-        .theme-moon { transform: translateY(0) rotate(0deg); opacity: 1; color: var(--text-muted); }
-        .theme-sun  { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #f59e0b; }
+        /* Белая тема (light): показываем солнце */
+        .theme-sun           { transform: translateY(0)     rotate(0deg);   opacity: 1; color: #f59e0b; }
+        .theme-moon          { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #94a3b8; }
+        .theme-twilight-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #a78bfa; }
+        .theme-dawn-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #22c55e; }
+        .theme-sunset-icon   { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #ea580c; }
+        .theme-coral-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #ef4444; }
+        .theme-ocean-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #38bdf8; }
+        .theme-mint-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #0d9488; }
 
-        /* Тёмная тема: солнце видно, луна ушла вниз */
-        body.theme-gray .theme-moon { transform: translateY(24px) rotate(90deg); opacity: 0; }
-        body.theme-gray .theme-sun  { transform: translateY(0) rotate(0deg); opacity: 1; }
+        /* Тёмная тема (gray): показываем луну */
+        body.theme-gray .theme-sun           { transform: translateY(24px)  rotate(90deg);  opacity: 0; }
+        body.theme-gray .theme-moon          { transform: translateY(0)     rotate(0deg);   opacity: 1; }
+        body.theme-gray .theme-twilight-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+        body.theme-gray .theme-dawn-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+        body.theme-gray .theme-sunset-icon   { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+        body.theme-gray .theme-coral-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+        body.theme-gray .theme-ocean-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+        body.theme-gray .theme-mint-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+        /* Сумерки (twilight): показываем звезду */
+        body.theme-twilight .theme-sun           { transform: translateY(24px)  rotate(90deg);  opacity: 0; }
+        body.theme-twilight .theme-moon          { transform: translateY(24px)  rotate(90deg);  opacity: 0; }
+        body.theme-twilight .theme-twilight-icon { transform: translateY(0)     rotate(0deg);   opacity: 1; }
+        body.theme-twilight .theme-dawn-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+        body.theme-twilight .theme-sunset-icon   { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+        body.theme-twilight .theme-coral-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+        body.theme-twilight .theme-ocean-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+        body.theme-twilight .theme-mint-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+        /* Рассвет (dawn): показываем росток */
+        body.theme-dawn .theme-sun           { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-dawn .theme-moon          { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-dawn .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-dawn .theme-dawn-icon     { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+        body.theme-dawn .theme-sunset-icon   { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+        body.theme-dawn .theme-coral-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+        body.theme-dawn .theme-ocean-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+        body.theme-dawn .theme-mint-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+        /* Закат (sunset): показываем огонь */
+        body.theme-sunset .theme-sun           { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-sunset .theme-moon          { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-sunset .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-sunset .theme-dawn-icon     { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-sunset .theme-sunset-icon   { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+        body.theme-sunset .theme-coral-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+        body.theme-sunset .theme-ocean-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+        body.theme-sunset .theme-mint-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+        /* Коралл (coral): показываем сердце */
+        body.theme-coral .theme-sun           { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-coral .theme-moon          { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-coral .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-coral .theme-dawn-icon     { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-coral .theme-sunset-icon   { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-coral .theme-coral-icon    { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+        body.theme-coral .theme-ocean-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+        body.theme-coral .theme-mint-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+        /* Океан (ocean): показываем волну */
+        body.theme-ocean .theme-sun           { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-ocean .theme-moon          { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-ocean .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-ocean .theme-dawn-icon     { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-ocean .theme-sunset-icon   { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-ocean .theme-coral-icon    { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-ocean .theme-ocean-icon    { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+        body.theme-ocean .theme-mint-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+        /* Мята (mint): показываем кристалл/снежинку */
+        body.theme-mint .theme-sun           { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-mint .theme-moon          { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-mint .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-mint .theme-dawn-icon     { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-mint .theme-sunset-icon   { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-mint .theme-coral-icon    { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-mint .theme-ocean-icon    { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+        body.theme-mint .theme-mint-icon     { transform: translateY(0)    rotate(0deg);   opacity: 1; }
 
         /* Анимация при клике */
-        .theme-btn.animating .theme-moon { transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease; }
-        .theme-btn.animating .theme-sun  { transition: transform 0.5s cubic-bezier(0.4,0,0.2,1) 0.05s, opacity 0.35s ease 0.05s; }
+        .theme-btn.animating .theme-sun,
+        .theme-btn.animating .theme-moon,
+        .theme-btn.animating .theme-twilight-icon,
+        .theme-btn.animating .theme-dawn-icon,
+        .theme-btn.animating .theme-sunset-icon,
+        .theme-btn.animating .theme-coral-icon,
+        .theme-btn.animating .theme-ocean-icon,
+        .theme-btn.animating .theme-mint-icon { transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease; }
 
         /* Свечение при наведении */
         .theme-btn::after {
@@ -484,8 +750,93 @@
         }
         .theme-btn:hover::after { opacity: 1; }
         body.theme-gray .theme-btn::after {
-            background: radial-gradient(circle, rgba(250,204,21,0.15) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(96,165,250,0.18) 0%, transparent 70%);
         }
+        body.theme-twilight .theme-btn::after {
+            background: radial-gradient(circle, rgba(167,139,250,0.25) 0%, transparent 70%);
+        }
+        body.theme-dawn .theme-btn::after {
+            background: radial-gradient(circle, rgba(34,197,94,0.2) 0%, transparent 70%);
+        }
+        body.theme-sunset .theme-btn::after {
+            background: radial-gradient(circle, rgba(234,88,12,0.22) 0%, transparent 70%);
+        }
+        body.theme-coral .theme-btn::after {
+            background: radial-gradient(circle, rgba(239,68,68,0.22) 0%, transparent 70%);
+        }
+        body.theme-ocean .theme-btn::after {
+            background: radial-gradient(circle, rgba(14,165,233,0.22) 0%, transparent 70%);
+        }
+        body.theme-mint .theme-btn::after {
+            background: radial-gradient(circle, rgba(13,148,136,0.22) 0%, transparent 70%);
+        }
+
+        /* ══ New Chat Button ══ */
+        #new-chat-btn {
+            position: relative;
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%;
+            color: var(--text-muted);
+            transition: color 0.25s, background 0.25s, transform 0.2s, box-shadow 0.3s;
+            outline: none;
+        }
+
+        /* Пульсирующее кольцо */
+        #new-chat-btn::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            border: 2px solid rgba(34,197,94,0);
+            transition: border-color 0.3s, inset 0.3s;
+            pointer-events: none;
+        }
+
+        /* Свечение-фон */
+        #new-chat-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(34,197,94,0.18) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        #new-chat-btn:hover {
+            color: #22c55e;
+            background: rgba(34,197,94,0.1);
+            transform: scale(1.1);
+        }
+        #new-chat-btn:hover::before { border-color: rgba(34,197,94,0.45); inset: -5px; }
+        #new-chat-btn:hover::after  { opacity: 1; }
+
+        /* Иконка плюса — поворот при hover */
+        #new-chat-btn svg {
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        #new-chat-btn:hover svg { transform: rotate(90deg) scale(1.12); }
+
+        /* Клик */
+        #new-chat-btn:active { transform: scale(0.9); background: rgba(34,197,94,0.2); }
+
+        /* Анимация вспышки */
+        @keyframes newChatFlash {
+            0%   { box-shadow: 0 0 0 0   rgba(34,197,94,0.6);  transform: scale(0.9); }
+            35%  { box-shadow: 0 0 0 10px rgba(34,197,94,0.22); transform: scale(1.14); }
+            65%  { box-shadow: 0 0 0 18px rgba(34,197,94,0.07); transform: scale(1.04); }
+            100% { box-shadow: 0 0 0 24px rgba(34,197,94,0);    transform: scale(1); }
+        }
+        #new-chat-btn.clicked { animation: newChatFlash 0.55s cubic-bezier(0.22,1,0.36,1) forwards; }
+
+        /* Пульс кольца после клика */
+        @keyframes newChatRing {
+            0%   { inset: -4px;  border-color: rgba(34,197,94,0.65); }
+            100% { inset: -16px; border-color: rgba(34,197,94,0); }
+        }
+        #new-chat-btn.pulsing::before { animation: newChatRing 0.7s ease-out 2; }
 
         /* ══ Profile Modal ══ */
         /* Profile modal — светлая тема */
@@ -502,6 +853,39 @@
             border-color: rgba(96,165,250,0.25);
             box-shadow: 0 0 0 1px rgba(96,165,250,0.08), 0 24px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03);
         }
+        /* Сумерки тема */
+        body.theme-twilight .profile-modal {
+            background: rgba(30,27,46,0.75);
+            border-color: rgba(167,139,250,0.25);
+            box-shadow: 0 0 0 1px rgba(167,139,250,0.1), 0 24px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+        /* Рассвет тема */
+        body.theme-dawn .profile-modal {
+            background: rgba(230,245,236,0.85);
+            border-color: rgba(34,197,94,0.25);
+            box-shadow: 0 0 0 1px rgba(34,197,94,0.08), 0 24px 60px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+        /* Закат тема */
+        body.theme-sunset .profile-modal {
+            background: rgba(255,241,227,0.88);
+            border-color: rgba(234,88,12,0.25);
+            box-shadow: 0 0 0 1px rgba(234,88,12,0.08), 0 24px 60px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+        body.theme-coral .profile-modal {
+            background: rgba(255,245,245,0.88);
+            border-color: rgba(239,68,68,0.25);
+            box-shadow: 0 0 0 1px rgba(239,68,68,0.08), 0 24px 60px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+        body.theme-ocean .profile-modal {
+            background: rgba(10,22,40,0.82);
+            border-color: rgba(14,165,233,0.3);
+            box-shadow: 0 0 0 1px rgba(14,165,233,0.1), 0 24px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+        body.theme-mint .profile-modal {
+            background: rgba(224,250,248,0.88);
+            border-color: rgba(13,148,136,0.25);
+            box-shadow: 0 0 0 1px rgba(13,148,136,0.08), 0 24px 60px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.95);
+        }
         .profile-field { display: flex; flex-direction: column; gap: 4px; }
         .profile-label {
             font-size: 0.7rem; font-weight: 500;
@@ -510,6 +894,12 @@
             padding-left: 4px;
         }
         body.theme-gray .profile-label { color: rgba(147,197,253,0.8); }
+        body.theme-twilight .profile-label { color: rgba(167,139,250,0.9); }
+        body.theme-dawn .profile-label { color: rgba(22,163,74,0.9); }
+        body.theme-sunset .profile-label { color: rgba(194,65,12,0.9); }
+        body.theme-coral  .profile-label { color: rgba(185,28,28,0.9); }
+        body.theme-ocean  .profile-label { color: rgba(56,189,248,0.9); }
+        body.theme-mint   .profile-label { color: rgba(13,148,136,0.9); }
         .profile-input {
             background: rgba(241,245,249,0.8);
             border: 1px solid rgba(59,130,246,0.2);
@@ -525,10 +915,40 @@
             background: rgba(255,255,255,0.06);
             color: #e2e8f0;
         }
+        body.theme-twilight .profile-input {
+            background: rgba(167,139,250,0.06);
+            color: #e8e0f5;
+            border-color: rgba(167,139,250,0.2);
+        }
         .profile-input::placeholder { color: rgba(100,116,139,0.5); }
         body.theme-gray .profile-input::placeholder { color: rgba(148,163,184,0.4); }
+        body.theme-twilight .profile-input::placeholder { color: rgba(167,139,250,0.35); }
         .profile-input:focus { border-color: rgba(59,130,246,0.5); background: rgba(239,246,255,0.9); }
         body.theme-gray .profile-input:focus { background: rgba(255,255,255,0.09); }
+        body.theme-twilight .profile-input:focus { background: rgba(167,139,250,0.1); border-color: rgba(167,139,250,0.5); }
+        body.theme-dawn .profile-input {
+            background: rgba(34,197,94,0.06);
+            color: #1a3d2b;
+            border-color: rgba(34,197,94,0.2);
+        }
+        body.theme-dawn .profile-input::placeholder { color: rgba(74,124,95,0.4); }
+        body.theme-dawn .profile-input:focus { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.5); }
+        body.theme-sunset .profile-input {
+            background: rgba(234,88,12,0.06);
+            color: #431407;
+            border-color: rgba(234,88,12,0.2);
+        }
+        body.theme-sunset .profile-input::placeholder { color: rgba(154,69,32,0.4); }
+        body.theme-sunset .profile-input:focus { background: rgba(234,88,12,0.1); border-color: rgba(234,88,12,0.5); }
+        body.theme-coral .profile-input { background: rgba(239,68,68,0.06); color: #4a0a0a; border-color: rgba(239,68,68,0.2); }
+        body.theme-coral .profile-input::placeholder { color: rgba(176,64,64,0.4); }
+        body.theme-coral .profile-input:focus { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.5); }
+        body.theme-ocean .profile-input { background: rgba(14,165,233,0.08); color: #c8e6ff; border-color: rgba(14,165,233,0.25); }
+        body.theme-ocean .profile-input::placeholder { color: rgba(91,159,212,0.4); }
+        body.theme-ocean .profile-input:focus { background: rgba(14,165,233,0.14); border-color: rgba(14,165,233,0.55); }
+        body.theme-mint .profile-input { background: rgba(13,148,136,0.06); color: #0d3330; border-color: rgba(13,148,136,0.2); }
+        body.theme-mint .profile-input::placeholder { color: rgba(45,122,116,0.4); }
+        body.theme-mint .profile-input:focus { background: rgba(13,148,136,0.1); border-color: rgba(13,148,136,0.5); }
         .profile-input:disabled { opacity: 0.4; cursor: not-allowed; }
         .profile-verify-block {
             background: rgba(59,130,246,0.05);
@@ -648,16 +1068,22 @@
                     </div>
                     <button id="theme-btn" onclick="handleToggleTheme()" title="Сменить тему" class="theme-btn p-1.5 rounded-full transition">
                             <span class="theme-icon-wrap">
-                                <svg class="theme-icon theme-moon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                                 <svg class="theme-icon theme-sun w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
+                                <svg class="theme-icon theme-moon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                                <svg class="theme-icon theme-twilight-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+                                <svg class="theme-icon theme-dawn-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v3M6.343 6.343L4.222 4.222M3 12H0m21 0h-3M19.778 4.222l-2.121 2.121M12 18a6 6 0 100-12 6 6 0 000 12zm0 0v3M4.929 19.071l1.414-1.414M17.657 17.657l1.414 1.414"/></svg>
+                                <svg class="theme-icon theme-sunset-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"/></svg>
+                                <svg class="theme-icon theme-coral-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                                <svg class="theme-icon theme-ocean-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15s1.5-2 4.5-2 4.5 2 4.5 2 1.5-2 4.5-2 4.5 2 4.5 2M3 9s1.5-2 4.5-2 4.5 2 4.5 2 1.5-2 4.5-2 4.5 2 4.5 2"/></svg>
+                                <svg class="theme-icon theme-mint-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/></svg>
                             </span>
                     </button>
                     <button onclick="handleLogout()" title="Выйти" class="p-1.5 hover:bg-red-50 rounded-full transition text-custom-muted hover:text-red-500">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                     </button>
                 </div>
-                <button onclick="openNewChatMenu()" class="p-2 hover:bg-custom-sidebar rounded-full transition text-custom-muted">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <button id="new-chat-btn" onclick="handleNewChatBtn()" title="Новый чат">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 </button>
             </div>
             <div class="p-4">
