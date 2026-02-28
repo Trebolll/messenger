@@ -771,6 +771,9 @@
             background: radial-gradient(circle, rgba(13,148,136,0.22) 0%, transparent 70%);
         }
 
+        /* ══ Group member row hover ══ */
+        #group-members-list .group:hover .opacity-0 { opacity: 1; }
+
         /* ══ Group Chat Row (в списке чатов) ══ */
         .chat-list-item--group {
             display: flex;
@@ -1359,6 +1362,108 @@
             font-size: 0.8rem; color: rgba(255,255,255,0.5);
             margin-top: 0.25rem;
         }
+
+        /* ══ Inline group name edit ══ */
+        .group-edit-name {
+            cursor: pointer;
+            transition: color 0.2s;
+            position: relative;
+        }
+        .group-edit-name::after {
+            content: '✎';
+            font-size: 0.75rem;
+            opacity: 0;
+            margin-left: 6px;
+            transition: opacity 0.2s;
+            color: var(--accent-color);
+        }
+        .group-edit-name:hover { color: var(--accent-color); }
+        .group-edit-name:hover::after { opacity: 0.7; }
+
+        .inline-group-name-input {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid var(--accent-color);
+            outline: none;
+            width: 100%;
+            max-width: 220px;
+            padding-bottom: 2px;
+            font-family: inherit;
+        }
+
+        /* ══ Add member + button ══ */
+        .add-member-plus-btn {
+            position: relative;
+            color: var(--text-muted);
+            transition: color 0.25s, background 0.25s, transform 0.2s, box-shadow 0.3s;
+            outline: none;
+        }
+        .add-member-plus-btn::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            border: 2px solid rgba(34,197,94,0);
+            transition: border-color 0.3s, inset 0.3s;
+            pointer-events: none;
+        }
+        .add-member-plus-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(34,197,94,0.18) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .add-member-plus-btn:hover {
+            color: #22c55e;
+            background: rgba(34,197,94,0.1);
+            transform: scale(1.1);
+        }
+        .add-member-plus-btn:hover::before { border-color: rgba(34,197,94,0.45); inset: -5px; }
+        .add-member-plus-btn:hover::after  { opacity: 1; }
+        .add-member-plus-btn svg {
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .add-member-plus-btn:hover svg { transform: rotate(90deg) scale(1.12); }
+        .add-member-plus-btn:active { transform: scale(0.9); background: rgba(34,197,94,0.2); }
+
+        @keyframes addMemberFlash {
+            0%   { box-shadow: 0 0 0 0   rgba(34,197,94,0.6);  transform: scale(0.9); }
+            35%  { box-shadow: 0 0 0 8px rgba(34,197,94,0.22); transform: scale(1.14); }
+            65%  { box-shadow: 0 0 0 14px rgba(34,197,94,0.07); transform: scale(1.04); }
+            100% { box-shadow: 0 0 0 18px rgba(34,197,94,0);    transform: scale(1); }
+        }
+        .add-member-plus-btn.add-member-clicked { animation: addMemberFlash 0.55s cubic-bezier(0.22,1,0.36,1) forwards; }
+
+        @keyframes addMemberRing {
+            0%   { inset: -4px;  border-color: rgba(34,197,94,0.65); }
+            100% { inset: -14px; border-color: rgba(34,197,94,0); }
+        }
+        .add-member-plus-btn.add-member-pulsing::before { animation: addMemberRing 0.7s ease-out 2; }
+
+        /* ══ Member row hover — show remove btn ══ */
+        .member-row .member-remove-btn { opacity: 0; transition: opacity 0.15s; }
+        .member-row:hover .member-remove-btn { opacity: 1; }
+
+        /* ══ Member online dot ══ */
+        .member-online-dot {
+            position: absolute;
+            bottom: 1px;
+            right: 1px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #22c55e;
+            border: 2px solid var(--bg-main, #fff);
+            box-shadow: 0 0 0 1px rgba(34,197,94,0.25);
+        }
+
     </style>
 </head>
 <body class="bg-custom-main min-h-screen text-custom-main">

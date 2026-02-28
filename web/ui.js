@@ -76,6 +76,15 @@ function closeNewChatModal() {
   setTimeout(() => {
     overlay.classList.add('hidden');
     window._ncSelected = [];
+    window._ncExcludeIds = new Set();
+    // Сбрасываем режим добавления участника и восстанавливаем заголовки
+    if (window._addMemberMode) {
+      window._addMemberMode = false;
+      const modalTitle = document.querySelector('#new-chat-modal h2');
+      if (modalTitle) modalTitle.textContent = 'Новый чат';
+      const subtitle = document.getElementById('new-chat-subtitle');
+      if (subtitle) subtitle.textContent = 'Найди пользователя для начала общения';
+    }
   }, 300);
 }
 
@@ -145,6 +154,23 @@ function ncUpdateFooter() {
 
   if (!footer || !btn || !label) return;
 
+  // Режим добавления участника в группу
+  if (window._addMemberMode) {
+    if (sel.length === 0) {
+      footer.classList.add('hidden');
+      if (groupWrap) groupWrap.classList.add('hidden');
+    } else {
+      footer.classList.remove('hidden');
+      if (groupWrap) groupWrap.classList.add('hidden');
+      btn.classList.add('group-mode');
+      label.textContent = sel.length === 1
+          ? `Добавить ${sel[0].username}`
+          : `Добавить ${sel.length} участника`;
+      if (subtitle) subtitle.textContent = `Выбрано: ${sel.length}`;
+    }
+    return;
+  }
+
   if (sel.length === 0) {
     footer.classList.add('hidden');
     if (groupWrap) groupWrap.classList.add('hidden');
@@ -169,11 +195,28 @@ async function handleCreateChat() {
   const sel = window._ncSelected || [];
   if (sel.length === 0) return;
 
+  // Режим добавления участника в группу
+  if (window._addMemberMode) {
+    const chatId = window.app?.activeChatId;
+    if (!chatId) return;
+    try {
+      for (const u of sel) {
+        await apiAddChatMember(chatId, u.username);
+      }
+      const names = sel.map(u => u.username).join(', ');
+      window.app.notify(`${names} добавлен(ы) в группу ✓`, 'success');
+      closeAddMemberModal();
+      await apiLoadChats();
+      renderChatHeader();
+    } catch (err) {
+      window.app.notify('Ошибка: ' + err.message, 'error');
+    }
+    return;
+  }
+
   if (sel.length === 1) {
-    // Приватный чат — логика не меняется
     await app.createPrivateChat(sel[0].id);
   } else {
-    // Групповой чат
     const groupName = document.getElementById('group-name-input')?.value.trim() || '';
     await apiCreateGroupChat(sel.map(u => u.id), groupName);
   }
@@ -778,4 +821,195 @@ async function handleGroupAvatarSelected(e) {
   } finally {
     URL.revokeObjectURL(previewUrl);
   }
+}
+// ── Group Chat Management ─────────────────────────────────────────────────
+
+async function saveGroupName(chatId) {
+  // Legacy — kept for compatibility, inline edit uses startInlineGroupNameEdit
+  const input = document.getElementById('group-name-edit-input');
+  if (!input) return;
+  const name = input.value.trim();
+  if (!name) { window.app.notify('Название не может быть пустым', 'error'); return; }
+  try {
+    const updated = await apiUpdateGroupInfo(chatId, name);
+    const chat = window.app.chats.find(c => String(c.id) === String(chatId));
+    if (chat) { chat.name = updated.name || name; }
+    renderChats();
+    renderChatHeader();
+    window.app.notify('Название обновлено ✓', 'success');
+  } catch (err) {
+    window.app.notify('Ошибка: ' + err.message, 'error');
+  }
+}
+
+// ── Inline-редактирование названия группы ────────────────────────────────
+
+function startInlineGroupNameEdit(chatId, currentName) {
+  const infoNameEl = document.getElementById('info-name');
+  if (!infoNameEl || infoNameEl.querySelector('input')) return; // уже редактируется
+
+  const originalText = currentName || infoNameEl.textContent.trim();
+
+  // Заменяем h4 на input
+  infoNameEl.innerHTML = '';
+  const input = document.createElement('input');
+  input.id = 'inline-group-name-input';
+  input.type = 'text';
+  input.value = originalText;
+  input.className = 'inline-group-name-input';
+  infoNameEl.appendChild(input);
+  input.focus();
+  input.select();
+
+  let saved = false;
+  const save = async () => {
+    if (saved) return;
+    saved = true;
+    const name = input.value.trim();
+
+    // Восстанавливаем вид
+    infoNameEl.textContent = name || originalText;
+    infoNameEl.style.cursor = 'pointer';
+    infoNameEl.title = 'Нажмите для редактирования';
+    infoNameEl.classList.add('group-edit-name');
+    infoNameEl.onclick = () => startInlineGroupNameEdit(chatId, window.app.chats.find(c => String(c.id) === String(chatId))?.name || '');
+
+    if (!name || name === originalText) return;
+    try {
+      const updated = await apiUpdateGroupInfo(chatId, name);
+      const chat = window.app.chats.find(c => String(c.id) === String(chatId));
+      if (chat) { chat.name = updated.name || name; }
+      document.getElementById('active-chat-name').textContent = name;
+      infoNameEl.textContent = name;
+      renderChats();
+      window.app.notify('Название обновлено ✓', 'success');
+    } catch (err) {
+      infoNameEl.textContent = originalText;
+      window.app.notify('Ошибка: ' + err.message, 'error');
+    }
+  };
+
+  const cancel = () => {
+    if (saved) return;
+    saved = true;
+    infoNameEl.textContent = originalText;
+    infoNameEl.style.cursor = 'pointer';
+    infoNameEl.title = 'Нажмите для редактирования';
+    infoNameEl.classList.add('group-edit-name');
+    infoNameEl.onclick = () => startInlineGroupNameEdit(chatId, originalText);
+  };
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter')  { e.preventDefault(); save(); }
+    if (e.key === 'Escape') { cancel(); }
+  });
+  input.addEventListener('blur', save);
+}
+
+// ── Добавление участника через модал поиска ──────────────────────────────
+
+function handleAddMemberBtn() {
+  const btn = document.getElementById('add-member-plus-btn');
+  if (btn) {
+    btn.classList.remove('add-member-clicked', 'add-member-pulsing');
+    void btn.offsetWidth;
+    btn.classList.add('add-member-clicked');
+    setTimeout(() => btn.classList.add('add-member-pulsing'), 80);
+    setTimeout(() => btn.classList.remove('add-member-clicked', 'add-member-pulsing'), 1600);
+  }
+  openAddMemberModal();
+}
+
+function openAddMemberModal() {
+  // Открываем модал поиска в режиме "добавить участника"
+  window._addMemberMode = true;
+  window._ncSelected = [];
+  ncRenderChips();
+
+  // Сохраняем ID текущих участников чтобы исключить их из поиска
+  const activeChat = window.app?.chats?.find(c => String(c.id) === String(window.app?.activeChatId));
+  window._ncExcludeIds = new Set(
+      (activeChat?.members || []).map(m => String(m.id))
+  );
+
+  const overlay   = document.getElementById('new-chat-overlay');
+  const modal     = document.getElementById('new-chat-modal');
+  const input     = document.getElementById('user-search-input');
+  const results   = document.getElementById('search-results');
+  const subtitle  = document.getElementById('new-chat-subtitle');
+  const footer    = document.getElementById('new-chat-footer');
+  const groupWrap = document.getElementById('group-name-wrap');
+
+  if (input)    { input.value = ''; }
+  if (results)  { results.innerHTML = ''; }
+  if (subtitle) { subtitle.textContent = 'Найди пользователя для добавления'; }
+  if (footer)   { footer.classList.add('hidden'); }
+  if (groupWrap){ groupWrap.classList.add('hidden'); }
+
+  // Меняем заголовок модала
+  const modalTitle = document.querySelector('#new-chat-modal h2');
+  if (modalTitle) modalTitle.textContent = 'Добавить участника';
+
+  overlay.classList.remove('hidden');
+  setTimeout(() => {
+    overlay.classList.remove('opacity-0');
+    modal.classList.remove('scale-95');
+    if (input) input.focus();
+  }, 10);
+}
+
+function closeAddMemberModal() {
+  window._addMemberMode = false;
+  // Восстанавливаем заголовок
+  const modalTitle = document.querySelector('#new-chat-modal h2');
+  if (modalTitle) modalTitle.textContent = 'Новый чат';
+  const subtitle = document.getElementById('new-chat-subtitle');
+  if (subtitle) subtitle.textContent = 'Найди пользователя для начала общения';
+  closeNewChatModal();
+}
+
+async function removeGroupMember(chatId, userId) {
+  try {
+    await apiRemoveChatMember(chatId, userId);
+    const chat = window.app.chats.find(c => String(c.id) === String(chatId));
+    if (chat && chat.members) {
+      chat.members = chat.members.filter(m => String(m.id) !== String(userId));
+    }
+    window.app.notify('Участник удалён', 'success');
+    renderChatHeader();
+    renderChats();
+  } catch (err) {
+    window.app.notify('Ошибка: ' + err.message, 'error');
+  }
+}
+
+async function addGroupMember(chatId) {
+  const input = document.getElementById('add-member-username-input');
+  if (!input) return;
+  const username = input.value.trim();
+  if (!username) return;
+  try {
+    await apiAddChatMember(chatId, username);
+    input.value = '';
+    window.app.notify(`${username} добавлен в группу ✓`, 'success');
+    await apiLoadChats();
+    renderChatHeader();
+  } catch (err) {
+    window.app.notify('Ошибка: ' + err.message, 'error');
+  }
+}
+
+// Просмотр аватара участника группы
+function openMemberAvatarViewer(member) {
+  const circleEl = document.getElementById('avatar-viewer-circle');
+  if (!circleEl) return;
+  circleEl.style.overflow = 'hidden';
+  if (member.avatar_url) {
+    circleEl.innerHTML = `<img src="${member.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+  } else {
+    circleEl.textContent = (member.username || '?')[0].toUpperCase();
+  }
+  document.getElementById('avatar-viewer-name').textContent   = member.username || '';
+  document.getElementById('avatar-viewer-status').textContent = member.full_name || '';
+  document.getElementById('avatar-viewer-overlay').classList.remove('hidden');
 }

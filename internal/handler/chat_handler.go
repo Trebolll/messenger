@@ -24,13 +24,11 @@ type CreatePrivateChatRequest struct {
 
 func (h *ChatHandler) CreatePrivateChat(c *gin.Context) {
 	var req CreatePrivateChatRequest
-
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
-	// Получаем текущего пользователя из токена
 	val, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
@@ -43,7 +41,6 @@ func (h *ChatHandler) CreatePrivateChat(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
 	c.JSON(http.StatusCreated, chat)
 }
 
@@ -59,7 +56,6 @@ func (h *ChatHandler) CreateGroupChat(c *gin.Context) {
 		return
 	}
 
-	// Получаем создателя группы из токена
 	val, _ := c.Get("userID")
 	creatorID := val.(uuid.UUID)
 
@@ -68,29 +64,25 @@ func (h *ChatHandler) CreateGroupChat(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
 	c.JSON(http.StatusCreated, chat)
 }
 
 func (h *ChatHandler) GetUserChats(c *gin.Context) {
-	// Получаем userID из контекста (который установил JWT middleware)
 	val, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
-
 	userID, ok := val.(uuid.UUID)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
-
 	chats, _ := h.chatService.GetUserChats(userID)
-
 	c.JSON(http.StatusOK, chats)
 }
 
+// UpdateGroupAvatar — загрузить аватар группы через файл (доступно всем участникам через UI, проверка создателя на фронте)
 func (h *ChatHandler) UpdateGroupAvatar(c *gin.Context) {
 	chatIDStr := c.Param("chat_id")
 	chatID, err := uuid.Parse(chatIDStr)
@@ -110,14 +102,10 @@ func (h *ChatHandler) UpdateGroupAvatar(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "файл не найден"})
 		return
 	}
-
-	// Валидация размера (макс 5MB)
 	if fileHeader.Size > 5<<20 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "файл слишком большой, максимум 5MB"})
 		return
 	}
-
-	// Валидация типа
 	mimeType := fileHeader.Header.Get("Content-Type")
 	allowed := map[string]bool{"image/jpeg": true, "image/png": true, "image/gif": true, "image/webp": true}
 	if !allowed[mimeType] {
@@ -147,4 +135,103 @@ func (h *ChatHandler) UpdateGroupAvatar(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"avatar_url": url})
+}
+
+// UpdateGroupInfo — изменить имя группы (только создатель)
+type UpdateGroupInfoRequest struct {
+	Name string `json:"name"`
+}
+
+func (h *ChatHandler) UpdateGroupInfo(c *gin.Context) {
+	val, _ := c.Get("userID")
+	requestingUserID := val.(uuid.UUID)
+
+	chatID, err := uuid.Parse(c.Param("chat_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid chat_id"})
+		return
+	}
+
+	var req UpdateGroupInfoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	chat, err := h.chatService.UpdateGroupChat(chatID, requestingUserID, req.Name, "")
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, chat)
+}
+
+// AddChatMember — добавить участника по username (только создатель)
+type AddMemberRequest struct {
+	Username string `json:"username" binding:"required"`
+}
+
+func (h *ChatHandler) AddChatMember(c *gin.Context) {
+	val, _ := c.Get("userID")
+	requestingUserID := val.(uuid.UUID)
+
+	chatID, err := uuid.Parse(c.Param("chat_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid chat_id"})
+		return
+	}
+
+	var req AddMemberRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	if err := h.chatService.AddChatMember(chatID, requestingUserID, req.Username); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+// RemoveChatMember — удалить участника (только создатель)
+func (h *ChatHandler) RemoveChatMember(c *gin.Context) {
+	val, _ := c.Get("userID")
+	requestingUserID := val.(uuid.UUID)
+
+	chatID, err := uuid.Parse(c.Param("chat_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid chat_id"})
+		return
+	}
+	targetUserID, err := uuid.Parse(c.Param("user_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
+		return
+	}
+
+	if err := h.chatService.RemoveChatMember(chatID, requestingUserID, targetUserID); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+// GetGroupMembers — список участников группы
+func (h *ChatHandler) GetGroupMembers(c *gin.Context) {
+	val, _ := c.Get("userID")
+	requestingUserID := val.(uuid.UUID)
+
+	chatID, err := uuid.Parse(c.Param("chat_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid chat_id"})
+		return
+	}
+
+	members, err := h.chatService.GetGroupMembers(chatID, requestingUserID)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, members)
 }

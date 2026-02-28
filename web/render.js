@@ -145,51 +145,155 @@ function renderChatHeader() {
     const chat = app.chats.find(c => String(c.id) === String(app.activeChatId));
     if (!chat) return;
 
-    renderStatusElements(chat.is_online, chat.user_status || '');
-
+    const isGroup    = !!chat.is_group;
+    const isCreator  = isGroup && chat.creator_id && String(chat.creator_id) === String(app.currentUser?.id);
     const displayName = chatDisplayName(chat);
-    document.getElementById('active-chat-name').textContent = displayName;
-    document.getElementById('info-name').textContent = displayName;
 
-    // Групповой чат — стек аватарок в хедере
+    // ── Имя в хедере чата ──────────────────────────────────────────────
+    document.getElementById('active-chat-name').textContent = displayName;
+
+    // info-name: для создателя — кликабелен для inline-редактирования
+    const infoNameEl = document.getElementById('info-name');
+    infoNameEl.textContent = displayName;
+    if (isCreator) {
+        infoNameEl.style.cursor = 'pointer';
+        infoNameEl.title = 'Нажмите для редактирования';
+        infoNameEl.classList.add('group-edit-name');
+        infoNameEl.onclick = () => startInlineGroupNameEdit(chat.id, chat.name || '');
+    } else {
+        infoNameEl.style.cursor = '';
+        infoNameEl.title = '';
+        infoNameEl.classList.remove('group-edit-name');
+        infoNameEl.onclick = null;
+    }
+
+    const headerStatus = document.getElementById('active-chat-status');
+    if (isGroup) {
+        if (headerStatus) {
+            headerStatus.textContent = '';   // не показываем "офлайн/онлайн" для группы
+            headerStatus.className   = 'text-xs text-custom-muted';
+        }
+        const badge = document.getElementById('info-status-badge');
+        if (badge) badge.style.display = 'none';
+        const statusEl = document.getElementById('info-user-status');
+        if (statusEl) statusEl.textContent = '';
+    } else {
+        renderStatusElements(chat.is_online, chat.user_status || '');
+        const badge = document.getElementById('info-status-badge');
+        if (badge) badge.style.display = '';
+    }
+
+    // ── Аватар в хедере и info-panel ──────────────────────────────────
     const _hdr = document.getElementById('active-chat-avatar');
     const _inf = document.getElementById('info-avatar');
-    if (chat.is_group && chat.members && chat.members.length > 1) {
+
+    if (isGroup && chat.members && chat.members.length > 1) {
         if (chat.avatar_url) {
-            // Есть своя аватарка группы
             const groupImgHtml = `<img src="${chat.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`;
-            _hdr.innerHTML = groupImgHtml;
-            _hdr.style.overflow = 'hidden';
-            _inf.innerHTML = groupImgHtml;
-            _inf.style.overflow = 'hidden';
+            _hdr.innerHTML = groupImgHtml; _hdr.style.overflow = 'hidden';
+            _inf.innerHTML = groupImgHtml; _inf.style.overflow = 'hidden';
         } else {
-            // Стек аватарок участников
             const stackHtml = groupAvatarStackInline(chat.members, 28);
-            _hdr.innerHTML = stackHtml;
-            _hdr.style.overflow = 'visible';
+            _hdr.innerHTML = stackHtml; _hdr.style.overflow = 'visible';
             _inf.innerHTML = groupAvatarStackInline(chat.members, 36);
             _inf.style.overflow = 'visible';
         }
-        // Добавляем кнопку загрузки аватарки группы в info-panel
-        let uploadBtn = document.getElementById('group-avatar-upload-btn');
-        if (!uploadBtn) {
-            uploadBtn = document.createElement('button');
-            uploadBtn.id = 'group-avatar-upload-btn';
-            uploadBtn.className = 'mt-3 text-xs text-blue-500 hover:text-blue-700 underline cursor-pointer';
-            uploadBtn.textContent = 'Загрузить аватарку группы';
-            uploadBtn.onclick = triggerGroupAvatarUpload;
-            _inf.parentNode.insertBefore(uploadBtn, _inf.nextSibling);
-        }
-        uploadBtn.style.display = '';
     } else {
         const _ava = chatAvatarHtml(chat);
         _hdr.innerHTML = _ava; _hdr.style.overflow = 'hidden';
         _inf.innerHTML = _ava; _inf.style.overflow = 'hidden';
-        // Скрываем кнопку загрузки если не группа
-        const uploadBtn = document.getElementById('group-avatar-upload-btn');
-        if (uploadBtn) uploadBtn.style.display = 'none';
     }
+
+    if (isGroup && isCreator) {
+        _inf.style.cursor = 'pointer';
+        _inf.title = 'Сменить аватар группы';
+        _inf.onclick = () => triggerGroupAvatarUpload();
+    } else {
+        _inf.style.cursor = '';
+        _inf.title = '';
+        _inf.onclick = null;
+    }
+
+    // ── Блок участников в info-panel ──────────────────────────────────
+    let membersBlock = document.getElementById('info-members-block');
+    if (!membersBlock) {
+        membersBlock = document.createElement('div');
+        membersBlock.id = 'info-members-block';
+        membersBlock.className = 'w-full text-left px-4 pb-4';
+        const statusP = document.getElementById('info-user-status');
+        if (statusP && statusP.parentNode) {
+            statusP.parentNode.insertBefore(membersBlock, statusP.nextSibling);
+        }
+    }
+    membersBlock.innerHTML = '';
+
+    if (!isGroup) return;
+
+    apiGetGroupMembers(chat.id).then(members => {
+        if (!members || !members.length) return;
+
+        const localChat = app.chats.find(c => String(c.id) === String(chat.id));
+        if (localChat) localChat.members = members;
+
+        const membersList = members.map(m => {
+            const isMe = String(m.id) === String(app.currentUser?.id);
+            const avatarInner = m.avatar_url
+                ? `<img src="${m.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`
+                : (m.username || '?')[0].toUpperCase();
+            const onlineDot = m.is_online
+                ? `<span class="member-online-dot"></span>`
+                : '';
+            const removeBtn = (isCreator && !isMe)
+                ? `<button onclick="removeGroupMember('${chat.id}','${m.id}')"
+                        title="Удалить из группы"
+                        class="ml-auto text-red-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition flex-shrink-0 member-remove-btn">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>`
+                : '';
+            return `
+                <div class="member-row flex items-center gap-3 py-1.5">
+                    <div class="relative flex-shrink-0">
+                        <div onclick="openMemberAvatarViewer(${JSON.stringify(m).replace(/"/g,'&quot;')})"
+                            class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-400 hover:ring-offset-1 transition text-sm">
+                            ${avatarInner}
+                        </div>
+                        ${onlineDot}
+                    </div>
+                    <div class="overflow-hidden flex-1 min-w-0">
+                        <div class="text-sm font-semibold text-custom-main truncate">
+                            ${m.username}${isMe ? ' <span class="text-xs text-custom-muted font-normal">(вы)</span>' : ''}
+                        </div>
+                        ${m.full_name ? `<div class="text-xs text-custom-muted truncate">${m.full_name}</div>` : ''}
+                    </div>
+                    ${removeBtn}
+                </div>`;
+        }).join('');
+
+        // Кнопка + рядом с заголовком — только для создателя
+        const addBtnHtml = isCreator
+            ? `<button id="add-member-plus-btn" onclick="handleAddMemberBtn()" title="Добавить участника"
+                    class="add-member-plus-btn w-7 h-7 flex items-center justify-center rounded-full relative">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </button>`
+            : `<div class="w-7 h-7"></div>`;  // заглушка для выравнивания
+
+        membersBlock.innerHTML = `
+            <div class="flex items-center justify-between mb-2 mt-1">
+                <div class="text-xs font-semibold text-custom-muted uppercase tracking-wider">
+                    Участники (${members.length})
+                </div>
+                ${addBtnHtml}
+            </div>
+            <div id="group-members-list" class="space-y-0.5">
+                ${membersList}
+            </div>`;
+    }).catch(() => {});
 }
+
 
 function renderStatusElements(isOnline, userStatus) {
     // Бейдж онлайн/офлайн в правой панели
@@ -218,11 +322,18 @@ function renderSearchResults(users) {
     if (!window._ncUserMap) window._ncUserMap = {};
     users.forEach(u => { window._ncUserMap[String(u.id)] = u; });
 
-    if (!users.length) {
-        container.innerHTML = '<p class="text-xs text-custom-muted text-center py-3 opacity-60">Пользователи не найдены</p>';
+    // В режиме добавления — исключаем тех, кто уже в группе
+    const excludeIds = window._addMemberMode ? (window._ncExcludeIds || new Set()) : new Set();
+    const filtered = users.filter(u => !excludeIds.has(String(u.id)));
+
+    if (!filtered.length) {
+        const msg = (window._addMemberMode && users.length)
+            ? 'Все найденные пользователи уже в группе'
+            : 'Пользователи не найдены';
+        container.innerHTML = `<p class="text-xs text-custom-muted text-center py-3 opacity-60">${msg}</p>`;
         return;
     }
-    container.innerHTML = users.map(user => {
+    container.innerHTML = filtered.map(user => {
         const isSelected = selected.some(u => String(u.id) === String(user.id));
         const initial = (user.username || 'U')[0].toUpperCase();
         const checkSvg = isSelected

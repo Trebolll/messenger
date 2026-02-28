@@ -192,3 +192,26 @@ async function apiUploadGroupAvatar(chatId, file) {
     }
     return res.json();
 }
+// ── Group Management API ───────────────────────────────────────────────────
+
+async function apiUpdateGroupInfo(chatId, name) {
+    return await apiFetch(`/api/chats/${chatId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name }),
+    });
+}
+
+async function apiRemoveChatMember(chatId, userId) {
+    return await apiFetch(`/api/chats/${chatId}/members/${userId}`, { method: 'DELETE' });
+}
+
+async function apiAddChatMember(chatId, username) {
+    return await apiFetch(`/api/chats/${chatId}/members`, {
+        method: 'POST',
+        body: JSON.stringify({ username }),
+    });
+}
+
+async function apiGetGroupMembers(chatId) {
+    return await apiFetch(`/api/chats/${chatId}/members`);
+}

@@ -65,3 +65,9 @@ ALTER TABLE messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMP;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 -- Аватар группового чата
 ALTER TABLE chats ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+-- Создатель группового чата
+ALTER TABLE chats ADD COLUMN IF NOT EXISTS creator_id UUID REFERENCES users(id);
+-- Заполняем creator_id для существующих групп (первый вступивший = создатель)
+UPDATE chats SET creator_id = (
+    SELECT user_id FROM chat_members WHERE chat_id = chats.id ORDER BY joined_at ASC LIMIT 1
+) WHERE creator_id IS NULL AND type = 'group';
