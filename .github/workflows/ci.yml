@@ -36,8 +36,11 @@ jobs:
 
       - name: Run tests
         run: |
-          go test -v -coverprofile=coverage.out ./... || echo "Tests finished with warnings"
+          go test -v -coverprofile=coverage.out ./...
           go tool cover -func=coverage.out
+
+      - name: Check coverage file
+        run: ls -l coverage.out
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
