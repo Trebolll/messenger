@@ -44,7 +44,7 @@ func setupChatTestRouter(t *testing.T, db *sql.DB) (*gin.Engine, *MockHub) {
 	hub := NewMockHub()
 
 	chatService := service.NewChatService(chatRepo, userRepo, hub)
-	chatHandler := handler.NewChatHandler(chatService)
+	chatHandler := handler.NewChatHandler(chatService, nil)
 
 	authMiddleware := func(c *gin.Context) {
 		userIDStr := c.GetHeader("X-User-ID")
@@ -68,6 +68,22 @@ func setupChatTestRouter(t *testing.T, db *sql.DB) (*gin.Engine, *MockHub) {
 
 	router.GET("/chats", authMiddleware, func(c *gin.Context) {
 		chatHandler.GetUserChats(c)
+	})
+
+	router.DELETE("/chats/:chat_id/members/:user_id", authMiddleware, func(c *gin.Context) {
+		chatHandler.RemoveChatMember(c)
+	})
+
+	router.GET("/chats/:chat_id/members", authMiddleware, func(c *gin.Context) {
+		chatHandler.GetGroupMembers(c)
+	})
+
+	router.POST("/chats/:chat_id/members", authMiddleware, func(c *gin.Context) {
+		chatHandler.AddChatMember(c)
+	})
+
+	router.PUT("/chats/:chat_id", authMiddleware, func(c *gin.Context) {
+		chatHandler.UpdateGroupInfo(c)
 	})
 
 	return router, hub
@@ -455,4 +471,127 @@ func createPrivateChatInDB(t *testing.T, db *sql.DB, user1ID, user2ID uuid.UUID)
 		chatID, user1ID, user2ID,
 	)
 	require.NoError(t, err)
+}
+
+func TestUpdateGroupInfoSuccess(t *testing.T) {
+	db := setupTestDB(t)
+	createTestTables(t, db)
+	defer cleanupTestTables(t, db)
+
+	router, _ := setupChatTestRouter(t, db)
+
+	creatorID := createTestUser(t, db, "creator", "creator@example.com", "pass")
+	chatID := uuid.New()
+	_, err := db.Exec("INSERT INTO chats (id, type, name, creator_id) VALUES ($1, $2, $3, $4)",
+		chatID, model.TypeGroup, "Old Name", creatorID)
+	require.NoError(t, err)
+	_, err = db.Exec("INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2)", chatID, creatorID)
+	require.NoError(t, err)
+
+	body := []byte(`{"name":"New Group Name"}`)
+	req := httptest.NewRequest("PUT", fmt.Sprintf("/chats/%s", chatID.String()), bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-User-ID", creatorID.String())
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var response model.Chat
+	json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, "New Group Name", response.Name)
+
+	var name string
+	db.QueryRow("SELECT name FROM chats WHERE id = $1", chatID).Scan(&name)
+	assert.Equal(t, "New Group Name", name)
+}
+
+func TestAddChatMemberSuccess(t *testing.T) {
+	db := setupTestDB(t)
+	createTestTables(t, db)
+	defer cleanupTestTables(t, db)
+
+	router, _ := setupChatTestRouter(t, db)
+
+	creatorID := createTestUser(t, db, "creator", "creator@example.com", "pass")
+	createTestUser(t, db, "user1", "user1@example.com", "pass")
+	chatID := uuid.New()
+	_, err := db.Exec("INSERT INTO chats (id, type, name, creator_id) VALUES ($1, $2, $3, $4)",
+		chatID, model.TypeGroup, "Group", creatorID)
+	require.NoError(t, err)
+	_, err = db.Exec("INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2)", chatID, creatorID)
+	require.NoError(t, err)
+
+	body := []byte(`{"username":"user1"}`)
+	req := httptest.NewRequest("POST", fmt.Sprintf("/chats/%s/members", chatID.String()), bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-User-ID", creatorID.String())
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var count int
+	db.QueryRow("SELECT COUNT(*) FROM chat_members WHERE chat_id = $1", chatID).Scan(&count)
+	assert.Equal(t, 2, count)
+}
+
+func TestRemoveChatMemberSuccess(t *testing.T) {
+	db := setupTestDB(t)
+	createTestTables(t, db)
+	defer cleanupTestTables(t, db)
+
+	router, _ := setupChatTestRouter(t, db)
+
+	creatorID := createTestUser(t, db, "creator", "creator@example.com", "pass")
+	user1ID := createTestUser(t, db, "user1", "user1@example.com", "pass")
+	chatID := uuid.New()
+	_, err := db.Exec("INSERT INTO chats (id, type, name, creator_id) VALUES ($1, $2, $3, $4)",
+		chatID, model.TypeGroup, "Group", creatorID)
+	require.NoError(t, err)
+	_, err = db.Exec("INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2), ($1, $3)",
+		chatID, creatorID, user1ID)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest("DELETE", fmt.Sprintf("/chats/%s/members/%s", chatID.String(), user1ID.String()), nil)
+	req.Header.Set("X-User-ID", creatorID.String())
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var count int
+	db.QueryRow("SELECT COUNT(*) FROM chat_members WHERE chat_id = $1 AND user_id = $2", chatID, user1ID).Scan(&count)
+	assert.Equal(t, 0, count)
+}
+
+func TestGetGroupMembersSuccess(t *testing.T) {
+	db := setupTestDB(t)
+	createTestTables(t, db)
+	defer cleanupTestTables(t, db)
+
+	router, _ := setupChatTestRouter(t, db)
+
+	creatorID := createTestUser(t, db, "creator", "creator@example.com", "pass")
+	user1ID := createTestUser(t, db, "user1", "user1@example.com", "pass")
+	chatID := uuid.New()
+	_, err := db.Exec("INSERT INTO chats (id, type, name, creator_id) VALUES ($1, $2, $3, $4)",
+		chatID, model.TypeGroup, "Group", creatorID)
+	require.NoError(t, err)
+	_, err = db.Exec("INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2), ($1, $3)",
+		chatID, creatorID, user1ID)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest("GET", fmt.Sprintf("/chats/%s/members", chatID.String()), nil)
+	req.Header.Set("X-User-ID", creatorID.String())
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var response []model.ChatMemberInfo
+	json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Len(t, response, 2)
 }

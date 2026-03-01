@@ -14,10 +14,10 @@ type AttachmentRepository interface {
 }
 type AttachmentService struct {
 	attachmentRepo AttachmentRepository
-	storageService *StorageService
+	storageService Storage
 }
 
-func NewAttachmentService(repo AttachmentRepository, storage *StorageService) *AttachmentService {
+func NewAttachmentService(repo AttachmentRepository, storage Storage) *AttachmentService {
 	return &AttachmentService{
 		attachmentRepo: repo,
 		storageService: storage,

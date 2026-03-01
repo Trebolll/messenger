@@ -771,6 +771,351 @@
             background: radial-gradient(circle, rgba(13,148,136,0.22) 0%, transparent 70%);
         }
 
+        /* ══ Group member row hover ══ */
+        #group-members-list .group:hover .opacity-0 { opacity: 1; }
+
+        /* ══ Group Chat Row (в списке чатов) ══ */
+        .chat-list-item--group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: stretch;
+        }
+
+        /* Горизонтальная полоска аватарок */
+        .gc-avatars-row {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 4px;
+            overflow: hidden;
+            flex-wrap: nowrap;
+            min-width: 0;
+        }
+        .gc-avatar {
+            flex-shrink: 0;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            border: 1.5px solid var(--bg-main);
+            background: var(--bg-item-active);
+            color: var(--accent-color);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 11px;
+            overflow: hidden;
+            transition: transform 0.15s;
+        }
+        .chat-list-item--group:hover .gc-avatar { transform: scale(1.06); }
+
+        /* Когда аватарок много — уменьшаем размер */
+        .gc-avatars-row:has(.gc-avatar:nth-child(6)) .gc-avatar { width: 24px; height: 24px; font-size: 9px; gap: 3px; }
+        .gc-avatars-row:has(.gc-avatar:nth-child(9)) .gc-avatar { width: 20px; height: 20px; font-size: 8px; }
+
+        /* Никнеймы — горизонтально, сжимаются */
+        .gc-names-row {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            overflow: hidden;
+            flex-wrap: nowrap;
+            min-width: 0;
+        }
+        .gc-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 1;
+            min-width: 18px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .gc-sep {
+            color: var(--text-muted);
+            font-weight: 400;
+            flex-shrink: 0;
+        }
+
+        /* Последнее сообщение */
+        .gc-last-msg {
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ══ New Chat Modal ══ */
+        .new-chat-backdrop {
+            background: rgba(0,0,0,0.45);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .new-chat-modal-card {
+            background: var(--nc-bg, rgba(255,255,255,0.72));
+            border: 1px solid var(--nc-border, rgba(255,255,255,0.5));
+            border-radius: 24px;
+            box-shadow: var(--nc-shadow, 0 8px 40px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.6) inset);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        /* Светлая тема */
+        :root {
+            --nc-bg: rgba(255,255,255,0.78);
+            --nc-border: rgba(226,232,240,0.8);
+            --nc-shadow: 0 8px 40px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.9);
+            --nc-search-bg: rgba(241,245,249,0.7);
+            --nc-search-border: rgba(226,232,240,0.6);
+            --nc-result-hover: rgba(241,245,249,0.8);
+            --nc-chip-bg: rgba(59,130,246,0.12);
+            --nc-chip-border: rgba(59,130,246,0.25);
+            --nc-chip-text: #2563eb;
+            --nc-divider: rgba(226,232,240,0.6);
+            --nc-btn-bg: #2563eb;
+            --nc-btn-text: #fff;
+            --nc-btn-hover: #1d4ed8;
+            --nc-btn-group-bg: #16a34a;
+            --nc-btn-group-hover: #15803d;
+            --nc-close-hover: rgba(0,0,0,0.06);
+        }
+
+        body.theme-gray {
+            --nc-bg: rgba(31,41,55,0.82);
+            --nc-border: rgba(75,85,99,0.5);
+            --nc-shadow: 0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
+            --nc-search-bg: rgba(17,24,39,0.6);
+            --nc-search-border: rgba(75,85,99,0.5);
+            --nc-result-hover: rgba(55,65,81,0.7);
+            --nc-chip-bg: rgba(96,165,250,0.15);
+            --nc-chip-border: rgba(96,165,250,0.3);
+            --nc-chip-text: #93c5fd;
+            --nc-divider: rgba(75,85,99,0.4);
+            --nc-btn-bg: #2563eb;
+            --nc-btn-text: #fff;
+            --nc-btn-hover: #1d4ed8;
+            --nc-btn-group-bg: #16a34a;
+            --nc-btn-group-hover: #15803d;
+            --nc-close-hover: rgba(255,255,255,0.06);
+        }
+
+        body.theme-twilight {
+            --nc-bg: rgba(30,27,46,0.85);
+            --nc-border: rgba(124,58,237,0.25);
+            --nc-shadow: 0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(167,139,250,0.07);
+            --nc-search-bg: rgba(19,17,31,0.6);
+            --nc-search-border: rgba(124,58,237,0.3);
+            --nc-result-hover: rgba(45,38,64,0.8);
+            --nc-chip-bg: rgba(167,139,250,0.15);
+            --nc-chip-border: rgba(167,139,250,0.3);
+            --nc-chip-text: #c4b5fd;
+            --nc-divider: rgba(124,58,237,0.2);
+            --nc-btn-bg: #7c3aed;
+            --nc-btn-text: #fff;
+            --nc-btn-hover: #6d28d9;
+            --nc-btn-group-bg: #059669;
+            --nc-btn-group-hover: #047857;
+            --nc-close-hover: rgba(167,139,250,0.1);
+        }
+
+        body.theme-dawn {
+            --nc-bg: rgba(240,250,244,0.82);
+            --nc-border: rgba(34,197,94,0.2);
+            --nc-shadow: 0 8px 40px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.95);
+            --nc-search-bg: rgba(209,237,224,0.5);
+            --nc-search-border: rgba(34,197,94,0.2);
+            --nc-result-hover: rgba(187,222,206,0.6);
+            --nc-chip-bg: rgba(22,163,74,0.12);
+            --nc-chip-border: rgba(22,163,74,0.25);
+            --nc-chip-text: #15803d;
+            --nc-divider: rgba(34,197,94,0.2);
+            --nc-btn-bg: #16a34a;
+            --nc-btn-text: #fff;
+            --nc-btn-hover: #15803d;
+            --nc-btn-group-bg: #0d9488;
+            --nc-btn-group-hover: #0f766e;
+            --nc-close-hover: rgba(22,163,74,0.1);
+        }
+
+        body.theme-sunset {
+            --nc-bg: rgba(255,248,240,0.82);
+            --nc-border: rgba(234,88,12,0.2);
+            --nc-shadow: 0 8px 40px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.95);
+            --nc-search-bg: rgba(253,224,192,0.4);
+            --nc-search-border: rgba(234,88,12,0.2);
+            --nc-result-hover: rgba(252,208,160,0.5);
+            --nc-chip-bg: rgba(234,88,12,0.1);
+            --nc-chip-border: rgba(234,88,12,0.25);
+            --nc-chip-text: #c2410c;
+            --nc-divider: rgba(234,88,12,0.15);
+            --nc-btn-bg: #ea580c;
+            --nc-btn-text: #fff;
+            --nc-btn-hover: #c2410c;
+            --nc-btn-group-bg: #b45309;
+            --nc-btn-group-hover: #92400e;
+            --nc-close-hover: rgba(234,88,12,0.08);
+        }
+
+        body.theme-coral {
+            --nc-bg: rgba(255,245,245,0.82);
+            --nc-border: rgba(239,68,68,0.2);
+            --nc-shadow: 0 8px 40px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.95);
+            --nc-search-bg: rgba(255,214,214,0.4);
+            --nc-search-border: rgba(239,68,68,0.2);
+            --nc-result-hover: rgba(255,192,192,0.5);
+            --nc-chip-bg: rgba(239,68,68,0.1);
+            --nc-chip-border: rgba(239,68,68,0.25);
+            --nc-chip-text: #b91c1c;
+            --nc-divider: rgba(239,68,68,0.15);
+            --nc-btn-bg: #ef4444;
+            --nc-btn-text: #fff;
+            --nc-btn-hover: #dc2626;
+            --nc-btn-group-bg: #b45309;
+            --nc-btn-group-hover: #92400e;
+            --nc-close-hover: rgba(239,68,68,0.08);
+        }
+
+        body.theme-ocean {
+            --nc-bg: rgba(10,22,40,0.88);
+            --nc-border: rgba(14,165,233,0.2);
+            --nc-shadow: 0 8px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(14,165,233,0.07);
+            --nc-search-bg: rgba(6,14,28,0.6);
+            --nc-search-border: rgba(14,165,233,0.25);
+            --nc-result-hover: rgba(15,32,64,0.8);
+            --nc-chip-bg: rgba(14,165,233,0.15);
+            --nc-chip-border: rgba(14,165,233,0.3);
+            --nc-chip-text: #38bdf8;
+            --nc-divider: rgba(14,165,233,0.15);
+            --nc-btn-bg: #0ea5e9;
+            --nc-btn-text: #fff;
+            --nc-btn-hover: #0284c7;
+            --nc-btn-group-bg: #059669;
+            --nc-btn-group-hover: #047857;
+            --nc-close-hover: rgba(14,165,233,0.1);
+        }
+
+        body.theme-mint {
+            --nc-bg: rgba(240,255,254,0.82);
+            --nc-border: rgba(13,148,136,0.2);
+            --nc-shadow: 0 8px 40px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.98);
+            --nc-search-bg: rgba(184,240,237,0.4);
+            --nc-search-border: rgba(13,148,136,0.2);
+            --nc-result-hover: rgba(142,232,228,0.4);
+            --nc-chip-bg: rgba(13,148,136,0.1);
+            --nc-chip-border: rgba(13,148,136,0.25);
+            --nc-chip-text: #0f766e;
+            --nc-divider: rgba(13,148,136,0.15);
+            --nc-btn-bg: #0d9488;
+            --nc-btn-text: #fff;
+            --nc-btn-hover: #0f766e;
+            --nc-btn-group-bg: #0369a1;
+            --nc-btn-group-hover: #075985;
+            --nc-close-hover: rgba(13,148,136,0.08);
+        }
+
+        .new-chat-header { }
+
+        .new-chat-close-btn {
+            color: var(--text-muted);
+            transition: background 0.2s, color 0.2s;
+        }
+        .new-chat-close-btn:hover { background: var(--nc-close-hover); color: var(--text-main); }
+
+        .new-chat-divider {
+            height: 1px;
+            background: var(--nc-divider);
+        }
+
+        .new-chat-search-input {
+            background: var(--nc-search-bg);
+            border: 1px solid var(--nc-search-border);
+            color: var(--text-main);
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .new-chat-search-input::placeholder { color: var(--text-muted); opacity: 0.7; }
+        .new-chat-search-input:focus { border-color: var(--accent-color); outline: none; }
+
+        /* Search result items */
+        #search-results .nc-result-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.15s;
+            position: relative;
+        }
+        #search-results .nc-result-item:hover { background: var(--nc-result-hover); }
+        #search-results .nc-result-item.selected { background: var(--nc-chip-bg); }
+        #search-results .nc-result-item .nc-check {
+            width: 18px; height: 18px;
+            border-radius: 50%;
+            border: 2px solid var(--nc-chip-border);
+            background: transparent;
+            transition: background 0.2s, border-color 0.2s;
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #search-results .nc-result-item.selected .nc-check {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        /* Chips */
+        .nc-chip {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 10px 4px 6px;
+            border-radius: 999px;
+            background: var(--nc-chip-bg);
+            border: 1px solid var(--nc-chip-border);
+            color: var(--nc-chip-text);
+            font-size: 12px; font-weight: 500;
+            animation: chipIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes chipIn {
+            from { transform: scale(0.7); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+        .nc-chip-avatar {
+            width: 20px; height: 20px; border-radius: 50%;
+            background: var(--accent-color);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 700; color: #fff;
+        }
+        .nc-chip-remove {
+            width: 14px; height: 14px;
+            opacity: 0.5; cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .nc-chip-remove:hover { opacity: 1; }
+
+        /* Action button */
+        .create-chat-btn {
+            background: var(--nc-btn-bg);
+            color: var(--nc-btn-text);
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+        .create-chat-btn:hover { background: var(--nc-btn-hover); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+        .create-chat-btn:active { transform: translateY(0); }
+        .create-chat-btn.group-mode {
+            background: var(--nc-btn-group-bg);
+        }
+        .create-chat-btn.group-mode:hover { background: var(--nc-btn-group-hover); }
+
+        /* Footer slide-in */
+        #new-chat-footer {
+            animation: footerSlideIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes footerSlideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
         /* ══ New Chat Button ══ */
         #new-chat-btn {
             position: relative;
@@ -1017,6 +1362,108 @@
             font-size: 0.8rem; color: rgba(255,255,255,0.5);
             margin-top: 0.25rem;
         }
+
+        /* ══ Inline group name edit ══ */
+        .group-edit-name {
+            cursor: pointer;
+            transition: color 0.2s;
+            position: relative;
+        }
+        .group-edit-name::after {
+            content: '✎';
+            font-size: 0.75rem;
+            opacity: 0;
+            margin-left: 6px;
+            transition: opacity 0.2s;
+            color: var(--accent-color);
+        }
+        .group-edit-name:hover { color: var(--accent-color); }
+        .group-edit-name:hover::after { opacity: 0.7; }
+
+        .inline-group-name-input {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid var(--accent-color);
+            outline: none;
+            width: 100%;
+            max-width: 220px;
+            padding-bottom: 2px;
+            font-family: inherit;
+        }
+
+        /* ══ Add member + button ══ */
+        .add-member-plus-btn {
+            position: relative;
+            color: var(--text-muted);
+            transition: color 0.25s, background 0.25s, transform 0.2s, box-shadow 0.3s;
+            outline: none;
+        }
+        .add-member-plus-btn::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            border: 2px solid rgba(34,197,94,0);
+            transition: border-color 0.3s, inset 0.3s;
+            pointer-events: none;
+        }
+        .add-member-plus-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(34,197,94,0.18) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .add-member-plus-btn:hover {
+            color: #22c55e;
+            background: rgba(34,197,94,0.1);
+            transform: scale(1.1);
+        }
+        .add-member-plus-btn:hover::before { border-color: rgba(34,197,94,0.45); inset: -5px; }
+        .add-member-plus-btn:hover::after  { opacity: 1; }
+        .add-member-plus-btn svg {
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .add-member-plus-btn:hover svg { transform: rotate(90deg) scale(1.12); }
+        .add-member-plus-btn:active { transform: scale(0.9); background: rgba(34,197,94,0.2); }
+
+        @keyframes addMemberFlash {
+            0%   { box-shadow: 0 0 0 0   rgba(34,197,94,0.6);  transform: scale(0.9); }
+            35%  { box-shadow: 0 0 0 8px rgba(34,197,94,0.22); transform: scale(1.14); }
+            65%  { box-shadow: 0 0 0 14px rgba(34,197,94,0.07); transform: scale(1.04); }
+            100% { box-shadow: 0 0 0 18px rgba(34,197,94,0);    transform: scale(1); }
+        }
+        .add-member-plus-btn.add-member-clicked { animation: addMemberFlash 0.55s cubic-bezier(0.22,1,0.36,1) forwards; }
+
+        @keyframes addMemberRing {
+            0%   { inset: -4px;  border-color: rgba(34,197,94,0.65); }
+            100% { inset: -14px; border-color: rgba(34,197,94,0); }
+        }
+        .add-member-plus-btn.add-member-pulsing::before { animation: addMemberRing 0.7s ease-out 2; }
+
+        /* ══ Member row hover — show remove btn ══ */
+        .member-row .member-remove-btn { opacity: 0; transition: opacity 0.15s; }
+        .member-row:hover .member-remove-btn { opacity: 1; }
+
+        /* ══ Member online dot ══ */
+        .member-online-dot {
+            position: absolute;
+            bottom: 1px;
+            right: 1px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #22c55e;
+            border: 2px solid var(--bg-main, #fff);
+            box-shadow: 0 0 0 1px rgba(34,197,94,0.25);
+        }
+
     </style>
 </head>
 <body class="bg-custom-main min-h-screen text-custom-main">
@@ -1246,13 +1693,55 @@
     </div>
 
     <!-- New Chat Modal -->
-    <div id="new-chat-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
-        <div id="new-chat-modal" class="bg-custom-main w-full max-w-md rounded-3xl shadow-2xl relative transform scale-95 transition-all duration-300 p-8">
-            <button onclick="closeNewChatModal()" class="absolute top-6 right-6 text-custom-muted hover:text-custom-main transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-            <h2 class="text-2xl font-bold text-custom-main mb-6">Начать общение</h2>
-            <div class="space-y-4">
-                <input type="text" id="user-search-input" oninput="app.searchUsers(this.value)" class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none placeholder-custom-muted" placeholder="Поиск пользователя по имени или email...">
-                <div id="search-results" class="max-h-60 overflow-y-auto space-y-2 scrollbar-hide"></div>
+    <div id="new-chat-overlay" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 new-chat-backdrop" onclick="closeNewChatModal()"></div>
+
+        <div id="new-chat-modal" class="new-chat-modal-card w-full max-w-md relative transform scale-95 transition-all duration-300 overflow-hidden">
+
+            <!-- Header -->
+            <div class="new-chat-header px-6 pt-6 pb-4 flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-custom-main tracking-tight">Новый чат</h2>
+                    <p id="new-chat-subtitle" class="text-xs text-custom-muted mt-0.5">Найди пользователя для начала общения</p>
+                </div>
+                <button onclick="closeNewChatModal()" class="new-chat-close-btn w-8 h-8 flex items-center justify-center rounded-full">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Selected users chips -->
+            <div id="selected-users-bar" class="hidden px-6 pb-3">
+                <div id="selected-chips" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <!-- Divider -->
+            <div class="new-chat-divider mx-6"></div>
+
+            <!-- Search -->
+            <div class="px-6 pt-4">
+                <div class="relative">
+                    <svg class="w-4 h-4 absolute left-3 top-3.5 text-custom-muted pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" id="user-search-input" oninput="app.searchUsers(this.value)" class="new-chat-search-input w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none" placeholder="Имя или email...">
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div id="search-results" class="px-6 pt-3 pb-3 max-h-52 overflow-y-auto space-y-1 scrollbar-hide"></div>
+
+            <!-- Group name input (appears when 2+ selected) -->
+            <div id="group-name-wrap" class="hidden px-6 pb-2">
+                <div class="new-chat-divider mb-3"></div>
+                <input type="text" id="group-name-input" maxlength="60"
+                       class="new-chat-search-input w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+                       placeholder="Название группы (необязательно)…">
+            </div>
+
+            <!-- Footer action button -->
+            <div id="new-chat-footer" class="hidden px-6 pb-6 pt-2">
+                <button id="create-chat-btn" onclick="handleCreateChat()" class="create-chat-btn w-full py-3 rounded-2xl font-semibold text-sm transition-all">
+                    <span id="create-chat-label">Открыть чат</span>
+                </button>
             </div>
         </div>
     </div>

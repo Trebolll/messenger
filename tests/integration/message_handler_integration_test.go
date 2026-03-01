@@ -559,3 +559,76 @@ func TestDeleteMessageNotFound(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Contains(t, response["error"], "сообщение не найдено")
 }
+
+func TestEditMessageSuccess(t *testing.T) {
+	db := setupTestDB(t)
+	createTestTables(t, db)
+	defer cleanupTestTables(t, db)
+
+	router, hub := setupMessageTestRouter(t, db)
+
+	user1ID := createTestUser(t, db, "user1", "user1@example.com", "pass")
+	user2ID := createTestUser(t, db, "user2", "user2@example.com", "pass")
+	chatID := createTestChat(t, db, user1ID, user2ID)
+
+	msgID := uuid.New()
+	_, err := db.Exec(
+		"INSERT INTO messages (id, chat_id, sender_id, content) VALUES ($1, $2, $3, $4)",
+		msgID, chatID, user1ID, "Old content",
+	)
+	require.NoError(t, err)
+
+	body := []byte(`{"content":"New content"}`)
+	req := httptest.NewRequest("PUT", fmt.Sprintf("/messages/%s", msgID.String()), bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-User-ID", user1ID.String())
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var response model.Message
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.Equal(t, "New content", response.Content)
+
+	var content string
+	db.QueryRow("SELECT content FROM messages WHERE id = $1", msgID).Scan(&content)
+	assert.Equal(t, "New content", content, "Content should be updated in DB")
+
+	msgsSent := hub.GetMessages(user2ID)
+	assert.Greater(t, len(msgsSent), 0, "Should notify other members about edit")
+}
+
+func TestEditMessageForbidden(t *testing.T) {
+	db := setupTestDB(t)
+	createTestTables(t, db)
+	defer cleanupTestTables(t, db)
+
+	router, _ := setupMessageTestRouter(t, db)
+
+	user1ID := createTestUser(t, db, "user1", "user1@example.com", "pass")
+	user2ID := createTestUser(t, db, "user2", "user2@example.com", "pass")
+	chatID := createTestChat(t, db, user1ID, user2ID)
+
+	msgID := uuid.New()
+	_, err := db.Exec(
+		"INSERT INTO messages (id, chat_id, sender_id, content) VALUES ($1, $2, $3, $4)",
+		msgID, chatID, user1ID, "Old content",
+	)
+	require.NoError(t, err)
+
+	// User 2 tries to edit User 1's message
+	body := []byte(`{"content":"Try to edit"}`)
+	req := httptest.NewRequest("PUT", fmt.Sprintf("/messages/%s", msgID.String()), bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-User-ID", user2ID.String())
+	w := httptest.NewRecorder()
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	var response map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Contains(t, response["error"], "нет прав на редактирование")
+}

@@ -46,17 +46,40 @@ func (m *MockChatRepositoryForChat) IsChatMember(chatID, userID uuid.UUID) (bool
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockChatRepositoryForChat) GetChatMembers(chatID uuid.UUID) ([]uuid.UUID, error) {
+func (m *MockChatRepositoryForChat) UpdateGroupAvatarUrl(chatID uuid.UUID, url string) error {
+	args := m.Called(chatID, url)
+	return args.Error(0)
+}
+
+func (m *MockChatRepositoryForChat) GetChatByID(chatID uuid.UUID) (*model.Chat, error) {
 	args := m.Called(chatID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]uuid.UUID), args.Error(1)
+	return args.Get(0).(*model.Chat), args.Error(1)
 }
 
-func (m *MockChatRepositoryForChat) Exists(chatID uuid.UUID) (bool, error) {
+func (m *MockChatRepositoryForChat) UpdateGroupChat(chatID uuid.UUID, name string, avatarUrl string) error {
+	args := m.Called(chatID, name, avatarUrl)
+	return args.Error(0)
+}
+
+func (m *MockChatRepositoryForChat) RemoveChatMember(chatID, userID uuid.UUID) error {
+	args := m.Called(chatID, userID)
+	return args.Error(0)
+}
+
+func (m *MockChatRepositoryForChat) AddChatMember(chatID, userID uuid.UUID) error {
+	args := m.Called(chatID, userID)
+	return args.Error(0)
+}
+
+func (m *MockChatRepositoryForChat) GetMembersInfo(chatID uuid.UUID) ([]model.ChatMemberInfo, error) {
 	args := m.Called(chatID)
-	return args.Bool(0), args.Error(1)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]model.ChatMemberInfo), args.Error(1)
 }
 
 type MockUserRepositoryForChat struct {
@@ -672,4 +695,166 @@ func TestGetUserChats_SingleChat(t *testing.T) {
 	assert.True(t, result[0].IsOnline)
 	mockChatRepo.AssertCalled(t, "GetUserChats", userID)
 	mockHub.AssertCalled(t, "IsUserOnline", interlocutorID)
+}
+
+func TestUpdateGroupAvatarUrl_Success(t *testing.T) {
+	mockChatRepo := new(MockChatRepositoryForChat)
+	mockUserRepo := new(MockUserRepositoryForChat)
+	mockHub := new(MockHubForChat)
+
+	chatID := uuid.New()
+	url := "http://example.com/avatar.png"
+
+	mockChatRepo.On("UpdateGroupAvatarUrl", chatID, url).Return(nil)
+
+	chatService := service.NewChatService(mockChatRepo, mockUserRepo, mockHub)
+	err := chatService.UpdateGroupAvatarUrl(chatID, url)
+
+	assert.NoError(t, err)
+	mockChatRepo.AssertExpectations(t)
+}
+
+func TestGetChatByID_Success(t *testing.T) {
+	mockChatRepo := new(MockChatRepositoryForChat)
+	mockUserRepo := new(MockUserRepositoryForChat)
+	mockHub := new(MockHubForChat)
+
+	chatID := uuid.New()
+	userID := uuid.New()
+	chat := &model.Chat{ID: chatID, Type: model.TypeGroup}
+
+	mockChatRepo.On("IsChatMember", chatID, userID).Return(true, nil)
+	mockChatRepo.On("GetChatByID", chatID).Return(chat, nil)
+
+	chatService := service.NewChatService(mockChatRepo, mockUserRepo, mockHub)
+	result, err := chatService.GetChatByID(chatID, userID)
+
+	assert.NoError(t, err)
+	assert.Equal(t, chat, result)
+	mockChatRepo.AssertExpectations(t)
+}
+
+func TestGetChatByID_AccessDenied(t *testing.T) {
+	mockChatRepo := new(MockChatRepositoryForChat)
+	mockUserRepo := new(MockUserRepositoryForChat)
+	mockHub := new(MockHubForChat)
+
+	chatID := uuid.New()
+	userID := uuid.New()
+
+	mockChatRepo.On("IsChatMember", chatID, userID).Return(false, nil)
+
+	chatService := service.NewChatService(mockChatRepo, mockUserRepo, mockHub)
+	result, err := chatService.GetChatByID(chatID, userID)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Equal(t, "access denied", err.Error())
+}
+
+func TestUpdateGroupChat_Success(t *testing.T) {
+	mockChatRepo := new(MockChatRepositoryForChat)
+	mockUserRepo := new(MockUserRepositoryForChat)
+	mockHub := new(MockHubForChat)
+
+	chatID := uuid.New()
+	creatorID := uuid.New()
+	chat := &model.Chat{ID: chatID, Type: model.TypeGroup, CreatorID: &creatorID, Name: "Old Name"}
+
+	mockChatRepo.On("GetChatByID", chatID).Return(chat, nil)
+	mockChatRepo.On("UpdateGroupChat", chatID, "New Name", "").Return(nil)
+
+	chatService := service.NewChatService(mockChatRepo, mockUserRepo, mockHub)
+	result, err := chatService.UpdateGroupChat(chatID, creatorID, "New Name", "")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "New Name", result.Name)
+	mockChatRepo.AssertExpectations(t)
+}
+
+func TestUpdateGroupChat_NotCreator(t *testing.T) {
+	mockChatRepo := new(MockChatRepositoryForChat)
+	mockUserRepo := new(MockUserRepositoryForChat)
+	mockHub := new(MockHubForChat)
+
+	chatID := uuid.New()
+	creatorID := uuid.New()
+	otherUserID := uuid.New()
+	chat := &model.Chat{ID: chatID, Type: model.TypeGroup, CreatorID: &creatorID}
+
+	mockChatRepo.On("GetChatByID", chatID).Return(chat, nil)
+
+	chatService := service.NewChatService(mockChatRepo, mockUserRepo, mockHub)
+	_, err := chatService.UpdateGroupChat(chatID, otherUserID, "New Name", "")
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "only the creator")
+}
+
+func TestRemoveChatMember_Success(t *testing.T) {
+	mockChatRepo := new(MockChatRepositoryForChat)
+	mockUserRepo := new(MockUserRepositoryForChat)
+	mockHub := new(MockHubForChat)
+
+	chatID := uuid.New()
+	creatorID := uuid.New()
+	targetID := uuid.New()
+	chat := &model.Chat{ID: chatID, Type: model.TypeGroup, CreatorID: &creatorID}
+
+	mockChatRepo.On("GetChatByID", chatID).Return(chat, nil)
+	mockChatRepo.On("RemoveChatMember", chatID, targetID).Return(nil)
+
+	chatService := service.NewChatService(mockChatRepo, mockUserRepo, mockHub)
+	err := chatService.RemoveChatMember(chatID, creatorID, targetID)
+
+	assert.NoError(t, err)
+	mockChatRepo.AssertExpectations(t)
+}
+
+func TestAddChatMember_Success(t *testing.T) {
+	mockChatRepo := new(MockChatRepositoryForChat)
+	mockUserRepo := new(MockUserRepositoryForChat)
+	mockHub := new(MockHubForChat)
+
+	chatID := uuid.New()
+	creatorID := uuid.New()
+	targetUser := &model.User{ID: uuid.New(), Username: "newuser"}
+	chat := &model.Chat{ID: chatID, Type: model.TypeGroup, CreatorID: &creatorID}
+
+	mockChatRepo.On("GetChatByID", chatID).Return(chat, nil)
+	mockUserRepo.On("GetByUsername", "newuser").Return(targetUser, nil)
+	mockChatRepo.On("AddChatMember", chatID, targetUser.ID).Return(nil)
+
+	chatService := service.NewChatService(mockChatRepo, mockUserRepo, mockHub)
+	err := chatService.AddChatMember(chatID, creatorID, "newuser")
+
+	assert.NoError(t, err)
+	mockChatRepo.AssertExpectations(t)
+	mockUserRepo.AssertExpectations(t)
+}
+
+func TestGetGroupMembers_Success(t *testing.T) {
+	mockChatRepo := new(MockChatRepositoryForChat)
+	mockUserRepo := new(MockUserRepositoryForChat)
+	mockHub := new(MockHubForChat)
+
+	chatID := uuid.New()
+	userID := uuid.New()
+	memberID := uuid.New()
+	members := []model.ChatMemberInfo{
+		{ID: memberID, Username: "member1"},
+	}
+
+	mockChatRepo.On("IsChatMember", chatID, userID).Return(true, nil)
+	mockChatRepo.On("GetMembersInfo", chatID).Return(members, nil)
+	mockHub.On("IsUserOnline", memberID).Return(true)
+
+	chatService := service.NewChatService(mockChatRepo, mockUserRepo, mockHub)
+	result, err := chatService.GetGroupMembers(chatID, userID)
+
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.True(t, result[0].IsOnline)
+	mockChatRepo.AssertExpectations(t)
+	mockHub.AssertExpectations(t)
 }

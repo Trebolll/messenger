@@ -1,0 +1,137 @@
+package integration
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"net/http/httptest"
+	"net/textproto"
+	"testing"
+
+	"messenger/internal/handler"
+	"messenger/internal/model"
+	"messenger/internal/repository"
+	"messenger/internal/service"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+type mockStorage struct{}
+
+func (m *mockStorage) Upload(ctx context.Context, objectName string, file io.Reader, size int64, contentType string) (string, error) {
+	return fmt.Sprintf("http://mock-storage/%s", objectName), nil
+}
+
+func TestUploadAttachmentSuccess(t *testing.T) {
+	db := setupTestDB(t)
+	createTestTables(t, db)
+	defer cleanupTestTables(t, db)
+
+	userRepo := repository.NewUserRepository(db)
+	attachRepo := repository.NewAttachmentRepository(db)
+
+	mockStorage := &mockStorage{}
+	attachService := service.NewAttachmentService(attachRepo, mockStorage)
+
+	user1 := &model.User{ID: uuid.New(), Username: "user1", Email: "user1@test.com", Password: "password"}
+	err := userRepo.Create(user1)
+	require.NoError(t, err)
+
+	// Create chat manually in DB for simplicity in test
+	chatID := uuid.New()
+	_, err = db.Exec("INSERT INTO chats (id, type, creator_id) VALUES ($1, $2, $3)", chatID, model.TypePrivate, user1.ID)
+	require.NoError(t, err)
+
+	_, err = db.Exec("INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2)", chatID, user1.ID)
+	require.NoError(t, err)
+
+	chat := &model.Chat{ID: chatID, Type: model.TypePrivate, CreatorID: &user1.ID}
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+
+	// Mock middleware to set user in context
+	router.Use(func(c *gin.Context) {
+		c.Set("userID", user1.ID)
+		c.Next()
+	})
+
+	attachHandler := handler.NewAttachmentHandler(attachService)
+	router.POST("/api/chats/:chat_id/attachments", attachHandler.Upload)
+
+	// Prepare multipart form
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", "test.png"))
+	h.Set("Content-Type", "image/png")
+	part, err := writer.CreatePart(h)
+	require.NoError(t, err)
+	_, err = part.Write([]byte("fake image content"))
+	require.NoError(t, err)
+	err = writer.Close()
+	require.NoError(t, err)
+
+	req, _ := http.NewRequest("POST", fmt.Sprintf("/api/chats/%s/attachments", chat.ID), body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Logf("Response body: %s", w.Body.String())
+	}
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	var response model.Attachment
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+
+	assert.Equal(t, "test.png", response.Filename)
+	assert.Equal(t, chat.ID, response.ChatID)
+	assert.Equal(t, user1.ID, response.SenderID)
+	assert.Contains(t, response.Url, ".png")
+}
+
+func TestUploadAttachmentInvalidChat(t *testing.T) {
+	db := setupTestDB(t)
+	createTestTables(t, db)
+	defer cleanupTestTables(t, db)
+
+	userRepo := repository.NewUserRepository(db)
+	attachRepo := repository.NewAttachmentRepository(db)
+
+	attachService := service.NewAttachmentService(attachRepo, &mockStorage{})
+
+	user1 := &model.User{ID: uuid.New(), Username: "user1", Password: "password"}
+	userRepo.Create(user1)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		c.Set("userID", user1.ID)
+		c.Next()
+	})
+
+	attachHandler := handler.NewAttachmentHandler(attachService)
+	router.POST("/api/chats/:chat_id/attachments", attachHandler.Upload)
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	writer.CreateFormFile("file", "test.png")
+	writer.Close()
+
+	req, _ := http.NewRequest("POST", "/api/chats/not-a-uuid/attachments", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}

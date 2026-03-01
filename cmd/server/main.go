@@ -54,7 +54,7 @@ func main() {
 
 	chatRepository := repository.NewChatRepository(database)
 	chatService := service.NewChatService(chatRepository, userRepository, hub)
-	chatHandler := handler.NewChatHandler(chatService)
+	chatHandler := handler.NewChatHandler(chatService, storageService)
 
 	messageRepository := repository.NewMessageRepository(database)
 	messageService := service.NewMessageService(messageRepository, chatRepository, hub)
@@ -95,6 +95,11 @@ func main() {
 		api.DELETE("/messages/:message_id", messageHandler.DeleteMessage)
 		api.GET("/chats/:chat_id/messages", messageHandler.GetMessages)
 		api.GET("/chats", chatHandler.GetUserChats)
+		api.PUT("/chats/:chat_id/avatar", chatHandler.UpdateGroupAvatar)
+		api.PUT("/chats/:chat_id", chatHandler.UpdateGroupInfo)
+		api.GET("/chats/:chat_id/members", chatHandler.GetGroupMembers)
+		api.POST("/chats/:chat_id/members", chatHandler.AddChatMember)
+		api.DELETE("/chats/:chat_id/members/:user_id", chatHandler.RemoveChatMember)
 		api.GET("/users/search", userHandler.SearchUsers)
 		api.PUT("/users/profile", userHandler.UpdateProfile)
 		api.PUT("/users/avatar", userHandler.UpdateAvatar)

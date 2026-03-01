@@ -44,15 +44,15 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 
 CREATE TABLE  IF NOT EXISTS attachments (
-                             id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                             chat_id    UUID REFERENCES chats(id),
-                             sender_id  UUID REFERENCES users(id),
-                             message_id UUID REFERENCES messages(id) ON DELETE CASCADE,
-                             url        TEXT NOT NULL,
-                             filename   TEXT,
-                             mime_type  VARCHAR(100),
-                             size_bytes BIGINT,
-                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                            id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                                            chat_id    UUID REFERENCES chats(id),
+                                            sender_id  UUID REFERENCES users(id),
+                                            message_id UUID REFERENCES messages(id) ON DELETE CASCADE,
+                                            url        TEXT NOT NULL,
+                                            filename   TEXT,
+                                            mime_type  VARCHAR(100),
+                                            size_bytes BIGINT,
+                                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
@@ -63,3 +63,11 @@ CREATE INDEX IF NOT EXISTS idx_messages_chat_id_created_at ON messages (chat_id,
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS edited_at TIMESTAMP;
 -- Аватар пользователя
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+-- Аватар группового чата
+ALTER TABLE chats ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+-- Создатель группового чата
+ALTER TABLE chats ADD COLUMN IF NOT EXISTS creator_id UUID REFERENCES users(id);
+-- Заполняем creator_id для существующих групп (первый вступивший = создатель)
+UPDATE chats SET creator_id = (
+    SELECT user_id FROM chat_members WHERE chat_id = chats.id ORDER BY joined_at ASC LIMIT 1
+) WHERE creator_id IS NULL AND type = 'group';
