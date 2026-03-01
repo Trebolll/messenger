@@ -27,6 +27,10 @@ async function apiLoadChats() {
 async function apiLoadMessages(chatId) {
     window.app.activeChatId = chatId;
     document.getElementById('no-chat-selected').classList.add('hidden');
+    const inputArea = document.getElementById('input-area');
+    inputArea.classList.remove('hidden');
+    requestAnimationFrame(() => inputArea.classList.add('visible'));
+    if (typeof switchView === 'function') switchView('chat');
     renderChatHeader();
     try {
         const res = await apiFetch(`/api/chats/${chatId}/messages`);
@@ -93,6 +97,7 @@ async function apiSendMessage() {
     const text = input.value.trim();
     if (!text || !window.app.activeChatId) return;
     input.value = '';
+    document.dispatchEvent(new Event('_msgSent'));
     try {
         const msg = await apiFetch('/api/messages', {
             method: 'POST',
