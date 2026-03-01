@@ -48,6 +48,20 @@ jobs:
           file: ./coverage.out
           token: ${{ secrets.CODECOV_TOKEN }}
 
+      - name: Add Codecov link to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const url = 'https://app.codecov.io/github/Trebolll/messenger';
+            const body = `📊 **Codecov Report:** [View coverage details](${url})`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            })
+
       - name: Run vet
         run: go vet ./...
 
