@@ -196,6 +196,25 @@ func (c *Client) WritePump() {
 	}
 }
 
+// BroadcastToUsers — отправить сообщение конкретным пользователям (по списку ID)
+func (h *Hub) BroadcastToUsers(userIDs []uuid.UUID, message Message) {
+	data, err := json.Marshal(message)
+	if err != nil {
+		log.Printf("error marshaling message: %v", err)
+		return
+	}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	for _, userID := range userIDs {
+		if client, ok := h.Clients[userID]; ok {
+			select {
+			case client.Send <- data:
+			default:
+			}
+		}
+	}
+}
+
 // BroadcastProfileUpdate — рассылает всем онлайн-пользователям обновление профиля
 func (h *Hub) BroadcastProfileUpdate(userID uuid.UUID, avatarUrl, username, fullName, status string) {
 	msg := Message{

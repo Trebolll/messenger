@@ -5,6 +5,7 @@ import (
 	"errors"
 	"messenger/internal/model"
 	"messenger/internal/service"
+	wsmodel "messenger/internal/service/websocket"
 	"testing"
 	"time"
 
@@ -138,6 +139,10 @@ func (m *MockHubForChat) Run() {
 func (m *MockHubForChat) IsUserOnline(userID uuid.UUID) bool {
 	args := m.Called(userID)
 	return args.Bool(0)
+}
+
+func (m *MockHubForChat) BroadcastToUsers(userIDs []uuid.UUID, message wsmodel.Message) {
+	m.Called(userIDs, message)
 }
 
 func TestCreatePrivateChat_Success(t *testing.T) {
@@ -800,9 +805,15 @@ func TestRemoveChatMember_Success(t *testing.T) {
 	creatorID := uuid.New()
 	targetID := uuid.New()
 	chat := &model.Chat{ID: chatID, Type: model.TypeGroup, CreatorID: &creatorID}
+	membersBefore := []model.ChatMemberInfo{
+		{ID: creatorID, Username: "creator"},
+		{ID: targetID, Username: "target"},
+	}
 
 	mockChatRepo.On("GetChatByID", chatID).Return(chat, nil)
+	mockChatRepo.On("GetMembersInfo", chatID).Return(membersBefore, nil)
 	mockChatRepo.On("RemoveChatMember", chatID, targetID).Return(nil)
+	mockHub.On("BroadcastToUsers", mock.Anything, mock.Anything).Return()
 
 	chatService := service.NewChatService(mockChatRepo, mockUserRepo, mockHub)
 	err := chatService.RemoveChatMember(chatID, creatorID, targetID)
@@ -820,10 +831,16 @@ func TestAddChatMember_Success(t *testing.T) {
 	creatorID := uuid.New()
 	targetUser := &model.User{ID: uuid.New(), Username: "newuser"}
 	chat := &model.Chat{ID: chatID, Type: model.TypeGroup, CreatorID: &creatorID}
+	membersAfter := []model.ChatMemberInfo{
+		{ID: creatorID, Username: "creator"},
+		{ID: targetUser.ID, Username: "newuser"},
+	}
 
 	mockChatRepo.On("GetChatByID", chatID).Return(chat, nil)
 	mockUserRepo.On("GetByUsername", "newuser").Return(targetUser, nil)
 	mockChatRepo.On("AddChatMember", chatID, targetUser.ID).Return(nil)
+	mockChatRepo.On("GetMembersInfo", chatID).Return(membersAfter, nil)
+	mockHub.On("BroadcastToUsers", mock.Anything, mock.Anything).Return()
 
 	chatService := service.NewChatService(mockChatRepo, mockUserRepo, mockHub)
 	err := chatService.AddChatMember(chatID, creatorID, "newuser")

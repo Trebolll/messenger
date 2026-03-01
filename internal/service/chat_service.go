@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"messenger/internal/model"
-	_ "messenger/internal/service/websocket"
+	wsmodel "messenger/internal/service/websocket"
 
 	"github.com/google/uuid"
 )
@@ -32,6 +32,7 @@ type UserRepositoryForService interface {
 
 type HubForService interface {
 	IsUserOnline(userID uuid.UUID) bool
+	BroadcastToUsers(userIDs []uuid.UUID, message wsmodel.Message)
 }
 
 type ChatService struct {
@@ -158,7 +159,27 @@ func (s *ChatService) RemoveChatMember(chatID uuid.UUID, requestingUserID uuid.U
 	if targetUserID == requestingUserID {
 		return fmt.Errorf("creator cannot remove themselves")
 	}
-	return s.repo.RemoveChatMember(chatID, targetUserID)
+
+	// Получаем список участников ДО удаления (чтобы уведомить их)
+	membersBefore, _ := s.repo.GetMembersInfo(chatID)
+
+	if err := s.repo.RemoveChatMember(chatID, targetUserID); err != nil {
+		return err
+	}
+
+	// Рассылаем WS-событие всем оставшимся участникам (и удалённому)
+	allUserIDs := make([]uuid.UUID, 0, len(membersBefore))
+	for _, m := range membersBefore {
+		allUserIDs = append(allUserIDs, m.ID)
+	}
+	s.hub.BroadcastToUsers(allUserIDs, wsmodel.Message{
+		Type: "member_removed",
+		Content: map[string]interface{}{
+			"chat_id": chatID,
+			"user_id": targetUserID,
+		},
+	})
+	return nil
 }
 
 // AddChatMember — добавить участника по username (только создатель)
@@ -177,7 +198,32 @@ func (s *ChatService) AddChatMember(chatID uuid.UUID, requestingUserID uuid.UUID
 	if err != nil {
 		return fmt.Errorf("user not found")
 	}
-	return s.repo.AddChatMember(chatID, user.ID)
+
+	if err := s.repo.AddChatMember(chatID, user.ID); err != nil {
+		return err
+	}
+
+	// Получаем актуальный список участников ПОСЛЕ добавления
+	membersAfter, _ := s.repo.GetMembersInfo(chatID)
+
+	// Рассылаем WS-событие всем участникам (включая нового)
+	allUserIDs := make([]uuid.UUID, 0, len(membersAfter))
+	for _, m := range membersAfter {
+		allUserIDs = append(allUserIDs, m.ID)
+	}
+	s.hub.BroadcastToUsers(allUserIDs, wsmodel.Message{
+		Type: "member_added",
+		Content: map[string]interface{}{
+			"chat_id": chatID,
+			"user": map[string]interface{}{
+				"id":         user.ID,
+				"username":   user.Username,
+				"full_name":  user.FullName,
+				"avatar_url": user.AvatarUrl,
+			},
+		},
+	})
+	return nil
 }
 
 // GetGroupMembers — получить список участников (только для членов чата)
