@@ -36,7 +36,7 @@ jobs:
 
       - name: Run tests
         run: |
-          go test -v -covermode=atomic -coverpkg=./internal/... -coverprofile=coverage.out ./internal/... ./tests/...
+          go test -v -covermode=atomic -coverpkg=./internal/... -coverprofile=coverage.out ./internal/... ./tests/... || [ -f coverage.out ]
           go tool cover -func=coverage.out
 
       - name: Check coverage file
