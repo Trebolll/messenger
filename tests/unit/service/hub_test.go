@@ -317,9 +317,22 @@ func TestHub_SendToUser_Success(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	assert.Greater(t, len(client.Send), 0)
-	data := <-client.Send
+
 	var received websocket.Message
-	json.Unmarshal(data, &received)
+	found := false
+	// Проверяем все сообщения в очереди, так как там может быть user_status
+	for len(client.Send) > 0 {
+		data := <-client.Send
+		var msg websocket.Message
+		json.Unmarshal(data, &msg)
+		if msg.Type == "private" {
+			received = msg
+			found = true
+			break
+		}
+	}
+
+	assert.True(t, found, "private message not found in client.Send")
 	assert.Equal(t, "private", received.Type)
 	assert.Equal(t, "Direct message", received.Content)
 }
