@@ -266,6 +266,7 @@ function renderChatHeader() {
                             ${m.username}${isMe ? ' <span class="text-xs text-custom-muted font-normal">(вы)</span>' : ''}
                         </div>
                         ${m.full_name ? `<div class="text-xs text-custom-muted truncate">${m.full_name}</div>` : ''}
+                        ${m.status ? `<div class="text-xs text-custom-muted truncate" style="font-style:italic;opacity:0.8;">${m.status}</div>` : ''}
                     </div>
                     ${removeBtn}
                 </div>`;

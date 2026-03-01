@@ -32,6 +32,10 @@ function connectWebSocket() {
                 updateUserStatus(wrapper.content);
             } else if (wrapper.type === 'user_profile_updated') {
                 updateUserProfile(wrapper.content);
+            } else if (wrapper.type === 'member_added') {
+                _handleMemberAdded(wrapper.content);
+            } else if (wrapper.type === 'member_removed') {
+                _handleMemberRemoved(wrapper.content);
             }
         } catch (err) {
             console.error('Error parsing WS message:', err);
@@ -55,7 +59,6 @@ function _handleNewMessage(msg) {
     console.log('New message:', msg, '| activeChatId:', app.activeChatId);
 
     if (app.activeChatId && String(msg.chat_id) === String(app.activeChatId)) {
-        // Защита от дублей: сравниваем id, или контент+отправитель+время
         const already = app.messages.find(m =>
             (m.id && msg.id && String(m.id) === String(msg.id)) ||
             (m.content === msg.content &&
@@ -99,7 +102,7 @@ function _handleMessageEdited(msg) {
 function _handleMessageDeleted(data) {
     const app   = window.app;
     const msgId = String(data.message_id);
-    const el    = document.querySelector(`[data-msg-id="${msgId}"]`);
+    const el    = document.querySelector('[data-msg-id="' + msgId + '"]');
 
     if (el) {
         ashDisintegrate(el, () => {
@@ -113,8 +116,6 @@ function _handleMessageDeleted(data) {
 
 function updateUserProfile(data) {
     const app = window.app;
-
-    // Обновляем все чаты где этот пользователь — собеседник
     let changed = false;
     app.chats.forEach(chat => {
         if (String(chat.interlocutor_id) === String(data.user_id)) {
@@ -140,5 +141,85 @@ function updateUserStatus(status) {
     const activeChat = app.chats.find(c => String(c.id) === String(app.activeChatId));
     if (activeChat && String(activeChat.interlocutor_id) === String(status.user_id)) {
         renderStatusElements(status.online, status.status || '');
+    }
+}
+
+// ─── Обработка событий участников группы ────────────────────────────────────
+
+function _handleMemberAdded(data) {
+    const app  = window.app;
+    const myId = app.currentUser && app.currentUser.id;
+
+    console.log('[member_added] data:', JSON.stringify(data), '| myId:', myId);
+
+    const chat = app.chats.find(c => String(c.id) === String(data.chat_id));
+
+    if (!chat) {
+        // Чат не найден локально — нас только что добавили в эту группу
+        apiLoadChats().then(function() {
+            renderChats();
+            app.notify('Вас добавили в группу', 'success');
+        });
+        return;
+    }
+
+    // Добавляем нового участника в локальный список если его ещё нет
+    if (chat.members && data.user) {
+        const already = chat.members.find(m => String(m.id) === String(data.user.id));
+        if (!already) {
+            chat.members.push(Object.assign({}, data.user, { is_online: false }));
+        }
+    }
+
+    // Обновляем UI если этот чат сейчас открыт
+    if (String(app.activeChatId) === String(data.chat_id)) {
+        renderChatHeader();
+        if (data.user && String(data.user.id) !== String(myId)) {
+            app.notify((data.user.username || 'Участник') + ' добавлен(а) в группу', 'success');
+        }
+    }
+}
+
+function _handleMemberRemoved(data) {
+    const app       = window.app;
+    const myId      = app.currentUser && app.currentUser.id;
+    const removedId = data.user_id;
+
+    // DEBUG — убрать после проверки
+    console.log('[member_removed] data:', JSON.stringify(data));
+    console.log('[member_removed] myId:', myId, '| removedId:', removedId, '| match:', String(removedId) === String(myId));
+    console.log('[member_removed] all chat ids:', app.chats.map(c => c.id));
+
+    // Если удалили нас самих — убираем чат из списка и закрываем окно
+    if (myId && String(removedId) === String(myId)) {
+        app.chats = app.chats.filter(c => String(c.id) !== String(data.chat_id));
+
+        if (String(app.activeChatId) === String(data.chat_id)) {
+            app.activeChatId = null;
+            app.messages = [];
+
+            var msgContainer = document.getElementById('messages-container');
+            if (msgContainer) msgContainer.innerHTML = '';
+
+            var infoPanel = document.getElementById('info-panel');
+            if (infoPanel) infoPanel.classList.add('hidden');
+
+            var noChatSelected = document.getElementById('no-chat-selected');
+            if (noChatSelected) noChatSelected.classList.remove('hidden');
+        }
+
+        renderChats();
+        app.notify('Вас удалили из группы', 'error');
+        return;
+    }
+
+    // Нас не удалили — убираем участника из локального списка
+    var chat = app.chats.find(c => String(c.id) === String(data.chat_id));
+    if (chat && chat.members) {
+        chat.members = chat.members.filter(m => String(m.id) !== String(removedId));
+    }
+
+    if (chat && String(app.activeChatId) === String(data.chat_id)) {
+        renderChatHeader();
     }
 }

@@ -9,6 +9,7 @@ import (
 	"messenger/internal/model"
 	"messenger/internal/repository"
 	"messenger/internal/service"
+	wsmodel "messenger/internal/service/websocket"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -33,6 +34,10 @@ func (m *MockHub) IsUserOnline(userID uuid.UUID) bool {
 
 func (m *MockHub) SetUserOnline(userID uuid.UUID, online bool) {
 	m.onlineUsers[userID] = online
+}
+
+func (m *MockHub) BroadcastToUsers(userIDs []uuid.UUID, message wsmodel.Message) {
+	// В моке можно оставить пустым или логировать
 }
 
 func setupChatTestRouter(t *testing.T, db *sql.DB) (*gin.Engine, *MockHub) {

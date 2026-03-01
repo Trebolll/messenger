@@ -91,7 +91,7 @@ func (r *ChatRepository) GetUserChats(userID uuid.UUID) ([]model.ChatListItem, e
 // GetMembersInfo возвращает краткую информацию об участниках чата
 func (r *ChatRepository) GetMembersInfo(chatID uuid.UUID) ([]model.ChatMemberInfo, error) {
 	query := `
-		SELECT u.id, u.username, COALESCE(u.full_name, ''), COALESCE(u.avatar_url, '')
+		SELECT u.id, u.username, COALESCE(u.full_name, ''), COALESCE(u.avatar_url, ''), COALESCE(u.status, '')
 		FROM chat_members cm
 		JOIN users u ON u.id = cm.user_id
 		WHERE cm.chat_id = $1
@@ -106,7 +106,7 @@ func (r *ChatRepository) GetMembersInfo(chatID uuid.UUID) ([]model.ChatMemberInf
 	var members []model.ChatMemberInfo
 	for rows.Next() {
 		var m model.ChatMemberInfo
-		if err := rows.Scan(&m.ID, &m.Username, &m.FullName, &m.AvatarUrl); err != nil {
+		if err := rows.Scan(&m.ID, &m.Username, &m.FullName, &m.AvatarUrl, &m.Status); err != nil {
 			return nil, err
 		}
 		members = append(members, m)

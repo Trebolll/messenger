@@ -21,6 +21,7 @@ type ChatMemberInfo struct {
 	Username  string    `json:"username"`
 	FullName  string    `json:"full_name,omitempty"`
 	AvatarUrl string    `json:"avatar_url"`
+	Status    string    `json:"status,omitempty"`
 	IsOnline  bool      `json:"is_online"`
 }
 
