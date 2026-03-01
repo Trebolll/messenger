@@ -569,3 +569,63 @@ func TestDeleteMessage_GetChatMembersError(t *testing.T) {
 	mockChatRepo.AssertCalled(t, "GetChatMembers", chatID)
 	mockHub.AssertNotCalled(t, "SendToUser", mock.Anything, mock.Anything)
 }
+
+func TestEditMessage_Success(t *testing.T) {
+	mockMessageRepo := new(MockMessageRepository)
+	mockChatRepo := new(MockChatRepository)
+	mockHub := new(MockHub)
+
+	messageID := uuid.New()
+	senderID := uuid.New()
+	chatID := uuid.New()
+	content := "Updated content"
+	msg := &model.Message{ID: messageID, ChatID: chatID, SenderID: senderID, Content: content}
+
+	mockMessageRepo.On("EditMessage", messageID, senderID, content).Return(msg, nil)
+	mockChatRepo.On("GetChatMembers", chatID).Return([]uuid.UUID{senderID}, nil)
+	mockHub.On("SendToUser", senderID, mock.MatchedBy(func(m websocket.Message) bool {
+		return m.Type == "message_edited" && m.Content.(*model.Message).Content == content
+	})).Return()
+
+	messageService := service.NewMessageService(mockMessageRepo, mockChatRepo, mockHub)
+	result, err := messageService.EditMessage(messageID, senderID, content)
+
+	assert.NoError(t, err)
+	assert.Equal(t, content, result.Content)
+	mockMessageRepo.AssertExpectations(t)
+	mockChatRepo.AssertExpectations(t)
+	mockHub.AssertExpectations(t)
+}
+
+func TestEditMessage_EmptyContent(t *testing.T) {
+	mockMessageRepo := new(MockMessageRepository)
+	mockChatRepo := new(MockChatRepository)
+	mockHub := new(MockHub)
+
+	messageID := uuid.New()
+	senderID := uuid.New()
+
+	messageService := service.NewMessageService(mockMessageRepo, mockChatRepo, mockHub)
+	_, err := messageService.EditMessage(messageID, senderID, "")
+
+	assert.Error(t, err)
+	assert.Equal(t, "содержимое сообщения не может быть пустым", err.Error())
+}
+
+func TestEditMessage_RepoError(t *testing.T) {
+	mockMessageRepo := new(MockMessageRepository)
+	mockChatRepo := new(MockChatRepository)
+	mockHub := new(MockHub)
+
+	messageID := uuid.New()
+	senderID := uuid.New()
+	content := "Updated content"
+
+	mockMessageRepo.On("EditMessage", messageID, senderID, content).Return(nil, errors.New("db error"))
+
+	messageService := service.NewMessageService(mockMessageRepo, mockChatRepo, mockHub)
+	_, err := messageService.EditMessage(messageID, senderID, content)
+
+	assert.Error(t, err)
+	assert.Equal(t, "db error", err.Error())
+}

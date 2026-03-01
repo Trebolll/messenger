@@ -11,10 +11,10 @@ import (
 
 type ChatHandler struct {
 	chatService    *service.ChatService
-	storageService *service.StorageService
+	storageService service.Storage
 }
 
-func NewChatHandler(chatService *service.ChatService, storageService *service.StorageService) *ChatHandler {
+func NewChatHandler(chatService *service.ChatService, storageService service.Storage) *ChatHandler {
 	return &ChatHandler{chatService: chatService, storageService: storageService}
 }
 

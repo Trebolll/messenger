@@ -9,6 +9,10 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
+type Storage interface {
+	Upload(ctx context.Context, objectName string, file io.Reader, size int64, contentType string) (string, error)
+}
+
 type StorageService struct {
 	client     *minio.Client
 	bucketName string

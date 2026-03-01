@@ -388,3 +388,67 @@ func TestSearchUsers_RepositoryError(t *testing.T) {
 	mockRepo.AssertCalled(t, "SearchByUsername", "test")
 	mockRepo.AssertExpectations(t)
 }
+
+func TestUpdateProfile_Success(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	userID := uuid.New()
+	existingUser := &model.User{ID: userID, Username: "olduser"}
+	newName := "New Name"
+	newUsername := "newuser"
+
+	mockRepo.On("GetById", userID).Return(existingUser, nil)
+	mockRepo.On("UpdateProfile", mock.Anything).Return(nil)
+
+	userService := service.NewUserService(mockRepo)
+	result, err := userService.UpdateProfile(userID, nil, &newName, &newUsername, nil, nil, nil)
+
+	assert.NoError(t, err)
+	assert.Equal(t, newName, result.FullName)
+	assert.Equal(t, newUsername, result.Username)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUpdateStatus_Success(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	userID := uuid.New()
+	status := "online"
+	user := &model.User{ID: userID, Status: status}
+
+	mockRepo.On("UpdateStatus", userID, status).Return(user, nil)
+
+	userService := service.NewUserService(mockRepo)
+	result, err := userService.UpdateStatus(userID, status)
+
+	assert.NoError(t, err)
+	assert.Equal(t, status, result.Status)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUpdateAvatarUrl_Success(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	userID := uuid.New()
+	url := "http://example.com/avatar.png"
+
+	mockRepo.On("UpdateAvatarUrl", userID, url).Return(nil)
+
+	userService := service.NewUserService(mockRepo)
+	err := userService.UpdateAvatarUrl(userID, url)
+
+	assert.NoError(t, err)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestGetUserByID_Success(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	userID := uuid.New()
+	user := &model.User{ID: userID, Username: "testuser"}
+
+	mockRepo.On("GetById", userID).Return(user, nil)
+
+	userService := service.NewUserService(mockRepo)
+	result, err := userService.GetUserByID(userID)
+
+	assert.NoError(t, err)
+	assert.Equal(t, user, result)
+	mockRepo.AssertExpectations(t)
+}

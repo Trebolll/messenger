@@ -16,10 +16,10 @@ import (
 type UserHandler struct {
 	userService    *service.UserService
 	hub            *websocket.Hub
-	storageService *service.StorageService
+	storageService service.Storage
 }
 
-func NewUserHandler(userService *service.UserService, hub *websocket.Hub, storageService *service.StorageService) *UserHandler {
+func NewUserHandler(userService *service.UserService, hub *websocket.Hub, storageService service.Storage) *UserHandler {
 	return &UserHandler{userService: userService, hub: hub, storageService: storageService}
 }
 

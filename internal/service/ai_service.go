@@ -26,6 +26,16 @@ func NewAIService() *AIService {
 	}
 }
 
+// NewAIServiceWithClient for testing
+func NewAIServiceWithClient(apiKey, apiURL, model string, client *http.Client) *AIService {
+	return &AIService{
+		apiKey:     apiKey,
+		apiURL:     apiURL,
+		model:      model,
+		httpClient: client,
+	}
+}
+
 type AIAction string
 
 const (
