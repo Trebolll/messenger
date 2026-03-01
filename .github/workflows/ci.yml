@@ -26,17 +26,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
-          cache: true
+          go-version: '1.23'
+          cache: false
 
       - name: Download dependencies
         run: go mod download
 
       - name: Run tests
         run: |
-          go test -v -coverprofile=coverage.out ./...
+          go clean -testcache
+          go test -v -coverpkg=./internal/... -coverprofile=coverage.out ./...
           go tool cover -func=coverage.out
 
       - name: Check coverage file
