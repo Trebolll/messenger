@@ -1,0 +1,24 @@
+# Настройки Codecov для удобных отчетов в Pull Requests
+coverage:
+  status:
+    project:
+      default:
+        target: auto       # Базовое покрытие берется из последнего коммита в main
+        threshold: 1%      # Допускаем падение на 1% без провала проверки
+    patch:
+      default:
+        target: auto       # Проверяем покрытие только измененных строк
+        threshold: 0%
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false   # Оставлять комментарий, даже если покрытие не изменилось
+  require_base: false
+  require_head: true
+  hide_project_coverage: false
+
+# Игнорировать автогенерируемый код или ненужные папки
+ignore:
+  - "**/mock_*.go"
+  - "cmd/server/main.go"
