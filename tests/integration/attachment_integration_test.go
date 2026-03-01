@@ -102,7 +102,6 @@ func TestUploadAttachmentSuccess(t *testing.T) {
 
 func TestUploadAttachmentInvalidChat(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 

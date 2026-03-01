@@ -24,7 +24,6 @@ import (
 
 func TestWebSocketConnectionAndMessage(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
@@ -85,16 +84,25 @@ func TestWebSocketConnectionAndMessage(t *testing.T) {
 		Content: testMsg,
 	})
 
-	// Read message from WebSocket
-	_, message, err := conn.ReadMessage()
-	require.NoError(t, err)
-
+	// Read messages from WebSocket until we get "new_message"
 	var receivedWSMsg struct {
 		Type    string          `json:"type"`
 		Content json.RawMessage `json:"content"`
 	}
-	err = json.Unmarshal(message, &receivedWSMsg)
-	require.NoError(t, err)
+
+	for {
+		_, message, err := conn.ReadMessage()
+		require.NoError(t, err)
+
+		err = json.Unmarshal(message, &receivedWSMsg)
+		require.NoError(t, err)
+
+		if receivedWSMsg.Type == "new_message" {
+			break
+		}
+		// Skip other messages like "user_status"
+	}
+
 	assert.Equal(t, "new_message", receivedWSMsg.Type)
 
 	var receivedMsg model.Message
@@ -106,7 +114,6 @@ func TestWebSocketConnectionAndMessage(t *testing.T) {
 
 func TestWebSocketTypingStatus(t *testing.T) {
 	db := setupTestDB(t)
-	defer db.Close()
 	createTestTables(t, db)
 	defer cleanupTestTables(t, db)
 
