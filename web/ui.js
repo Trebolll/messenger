@@ -371,9 +371,18 @@ function handleSendMessage(e) {
 // ── Theme ──────────────────────────────────────────────────────────────────
 
 function handleToggleTheme() {
-  const btn = document.getElementById('theme-btn');
-  btn.classList.add('animating');
-  setTimeout(() => btn.classList.remove('animating'), 600);
+  const btnLanding = document.getElementById('theme-btn-landing');
+  const btnNav = document.getElementById('theme-btn');
+  
+  if (btnLanding) {
+    btnLanding.classList.add('animating');
+    setTimeout(() => btnLanding.classList.remove('animating'), 600);
+  }
+  if (btnNav) {
+    btnNav.classList.add('animating');
+    setTimeout(() => btnNav.classList.remove('animating'), 600);
+  }
+  
   window.app.toggleTheme();
 }
 

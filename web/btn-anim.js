@@ -18,7 +18,26 @@
     const cvs = document.createElement('canvas');
     cvs.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;border-radius:inherit;';
     btn.appendChild(cvs);
-    btn._anim = { canvas: cvs, ctx: cvs.getContext('2d'), type, ripples: [], t: 0 };
+
+    // Создаем хаотичные частицы для каждой кнопки
+    const particles = Array.from({ length: 8 }, () => ({
+      x: Math.random() * btn.offsetWidth,
+      y: Math.random() * btn.offsetHeight,
+      vx: (Math.random() - 0.5) * 0.8,
+      vy: (Math.random() - 0.5) * 0.8,
+      size: 8 + Math.random() * 6,
+      phase: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.05
+    }));
+
+    btn._anim = { 
+      canvas: cvs, 
+      ctx: cvs.getContext('2d'), 
+      type, 
+      ripples: [], 
+      particles,
+      t: 0 
+    };
 
     // Resize canvas px
     function resize() {
@@ -70,22 +89,33 @@
     const H    = btn.offsetHeight;
     ctx.clearRect(0, 0, W, H);
 
-    // — Бегущие λ-частицы вдоль края ———————————————————————————————————
-    const perimeter = 2 * (W + H);
-    const count     = 6;
-    for (let i = 0; i < count; i++) {
-      const progress = ((t * 0.18 + i / count + phaseOffset * 0.05) % 1);
-      const pos      = progress * perimeter;
-      let px, py;
+    // — Хаотично движущиеся λ-частицы ———————————————————————————————————
+    a.particles.forEach((p, i) => {
+      // 1. Движение с легким "шумом"
+      p.x += p.vx + Math.sin(t * 0.8 + p.phase) * 0.4;
+      p.y += p.vy + Math.cos(t * 0.8 + p.phase) * 0.4;
 
-      if (pos < W)             { px = pos;          py = 0; }
-      else if (pos < W + H)    { px = W;             py = pos - W; }
-      else if (pos < 2 * W + H){ px = W - (pos - W - H); py = H; }
-      else                     { px = 0;             py = H - (pos - 2 * W - H); }
+      // 2. Отскок от границ
+      if (p.x < 0 || p.x > W) p.vx *= -1;
+      if (p.y < 0 || p.y > H) p.vy *= -1;
 
-      const alpha = 0.15 + 0.2 * Math.abs(Math.sin(t * 2 + i));
-      drawMiniLambda(ctx, px, py, 7, alpha, a.type);
-    }
+      // 3. Плавное мерцание
+      const alpha = 0.2 + 0.25 * Math.sin(t * 1.5 + p.phase);
+      const rotation = t * 1.5 + p.phase;
+      
+      drawMiniLambda(ctx, p.x, p.y, p.size, alpha, a.type, rotation, a.hovered);
+
+      // 4. Шанс побега частицы (затягивание в черную дыру)
+      if (Math.random() < 0.005) {
+        const rect = btn.getBoundingClientRect();
+        if (window.spawnEscapedParticle) {
+          window.spawnEscapedParticle(rect.left + p.x, rect.top + p.y, Math.random() > 0.5);
+          // Возвращаем частицу на случайное место в кнопке
+          p.x = Math.random() * W;
+          p.y = Math.random() * H;
+        }
+      }
+    });
 
     // — Пульсирующее свечение по центру при hover ————————————————————
     if (a.hovered) {
@@ -113,13 +143,22 @@
   }
 
   // ── Маленькая λ ──────────────────────────────────────────────────────────
-  function drawMiniLambda(ctx, x, y, size, alpha, type) {
+  function drawMiniLambda(ctx, x, y, size, alpha, type, rotation = 0, hovered = false) {
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(x, y);
-    const color = type === 'solid' ? 'rgba(255,255,255,1)' : 'rgba(59,130,246,1)';
+    ctx.rotate(rotation);
+    
+    // По умолчанию используем акцентный цвет, чтобы частицы были видны на прозрачном фоне
+    let color = getComputedStyle(document.body).getPropertyValue('--accent-color').trim() || '#3b82f6';
+    
+    // Если кнопка "solid" и мы на неё навели — цвет белый (т.к. фон становится акцентным)
+    if (hovered && type === 'solid') {
+      color = 'rgba(255,255,255,1)';
+    }
+    
     ctx.strokeStyle = color;
-    ctx.lineWidth   = Math.max(0.8, size * 0.1);
+    ctx.lineWidth   = Math.max(1, size * 0.12);
     ctx.lineCap     = 'round';
 
     ctx.beginPath();

@@ -21,122 +21,246 @@
     cy = H / 2;
   }
 
+  let mx = -1000, my = -1000;
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mx = e.clientX - rect.left;
+    my = e.clientY - rect.top;
+  });
+  canvas.addEventListener('mouseleave', () => { mx = -1000; my = -1000; });
+
   window.addEventListener('resize', resize);
   resize();
 
   // ── Цвет из CSS-переменной (поддержка тем) ────────────────────────────
   function accentColor(alpha) {
-    return `rgba(59,130,246,${alpha})`;   // blue-500
+    const computed = getComputedStyle(document.body).getPropertyValue('--accent-color').trim() || '#3b82f6';
+    if (computed.startsWith('#')) {
+      const r = parseInt(computed.slice(1, 3), 16);
+      const g = parseInt(computed.slice(3, 5), 16);
+      const b = parseInt(computed.slice(5, 7), 16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+    return computed.replace('rgb', 'rgba').replace(')', `,${alpha})`);
   }
 
-  // ── Рисуем λ через Path2D с параметрическими деформациями ────────────
-  function drawLambda(x, y, size, skewX, skewY, alpha) {
+  // ── Рисуем λ ──────────────────────────────────────────────────────────
+  function drawLambda(x, y, size, angle, alpha) {
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(x, y);
-    ctx.transform(1, skewY, skewX, 1, 0, 0);
+    ctx.rotate(angle);
 
     const s  = size;
-    const sw = Math.max(1, s * 0.07);   // толщина штриха
+    const sw = Math.max(0.8, s * 0.08);
 
     ctx.strokeStyle = accentColor(1);
     ctx.lineWidth   = sw;
     ctx.lineCap     = 'round';
-    ctx.lineJoin    = 'round';
 
-    // Левый штрих: сверху-центр → влево-низ
     ctx.beginPath();
     ctx.moveTo(0, -s * 0.5);
-    ctx.lineTo(-s * 0.42, s * 0.5);
+    ctx.lineTo(-s * 0.4, s * 0.5);
     ctx.stroke();
 
-    // Правый штрих: чуть правее центра-верх → вправо-низ
     ctx.beginPath();
-    ctx.moveTo(s * 0.08, -s * 0.1);
-    ctx.lineTo(s * 0.44, s * 0.5);
+    ctx.moveTo(s * 0.1, -s * 0.1);
+    ctx.lineTo(s * 0.4, s * 0.5);
     ctx.stroke();
 
     ctx.restore();
   }
 
-  // ── Частицы ───────────────────────────────────────────────────────────
-  const PARTICLE_COUNT = 28;
-  const particles = Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
-    angle : (i / PARTICLE_COUNT) * Math.PI * 2,
-    r     : 80 + Math.random() * 60,
-    speed : 0.003 + Math.random() * 0.004,
-    size  : 1.5 + Math.random() * 2.5,
-    phase : Math.random() * Math.PI * 2,
-  }));
+  // ── Частицы (Физически корректный аккреционный диск) ───────────────────
+  const PARTICLE_COUNT = 1500; 
 
-  // ── Главный цикл ──────────────────────────────────────────────────────
-  function draw() {
-    ctx.clearRect(0, 0, W, H);
-    t += 0.016;
+  function createParticle(i, isNew = false) {
+    const screenMax = Math.max(W, H);
+    // При старте частицы распределяем ближе к видимой зоне
+    const r = isNew 
+      ? (screenMax * 1.5 + Math.random() * screenMax) 
+      : (10 + Math.random() * screenMax * 1.8);
+    
+    return {
+      r: r,
+      angle: Math.random() * Math.PI * 2,
+      size: 0.25 + Math.random() * 0.8, // Оптимальный размер
+      phase: Math.random() * Math.PI * 2,
+      isLambda: i % 8 === 0,
+      shrinkSpeed: (0.01 + Math.random() * 0.04) * 0.3, 
+      tilt: (Math.random() - 0.5) * 0.22,
+      pitch: 0.15 + Math.random() * 0.15,
+      cosT: 0, 
+      sinT: 0
+    };
+  }
 
-    // — Орбитальные частицы —
-    particles.forEach(p => {
-      p.angle += p.speed;
-      const rx    = p.r * (1 + 0.12 * Math.sin(t * 0.7 + p.phase));
-      const ry    = p.r * 0.55 * (1 + 0.12 * Math.cos(t * 0.5 + p.phase));
-      const px    = cx + Math.cos(p.angle) * rx;
-      const py    = cy + Math.sin(p.angle) * ry;
-      const fade  = 0.25 + 0.45 * Math.abs(Math.sin(t * 1.1 + p.phase));
-      ctx.beginPath();
-      ctx.arc(px, py, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = accentColor(fade);
-      ctx.fill();
+  // Предрассчитываем тригонометрию для наклона
+  const particles = Array.from({ length: PARTICLE_COUNT }, (v, i) => {
+    const p = createParticle(i);
+    p.cosT = Math.cos(p.tilt);
+    p.sinT = Math.sin(p.tilt);
+    return p;
+  });
+
+  // Экспортируем функцию для добавления внешних частиц (из кнопок)
+  window.spawnEscapedParticle = function(pageX, pageY, isLambda) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (pageX - rect.left) * dpr;
+    const y = (pageY - rect.top) * dpr;
+    
+    // Рассчитываем полярные координаты относительно центра диска
+    const dx = x - (W * dpr / 2);
+    const dy = (y - (H * dpr / 2)) / 0.28; // учитываем сплюснутость
+    
+    const r = Math.sqrt(dx * dx + dy * dy) / dpr;
+    const angle = Math.atan2(dy, dx);
+    
+    const tilt = (Math.random() - 0.5) * 0.5;
+    particles.push({
+      r: r,
+      angle: angle,
+      size: 0.8 + Math.random() * 1.2,
+      phase: Math.random() * Math.PI * 2,
+      isLambda: isLambda,
+      shrinkSpeed: 0.15 + Math.random() * 0.25, // Плавнее полет
+      tilt: tilt,
+      pitch: 0.2 + Math.random() * 0.1,
+      cosT: Math.cos(tilt), 
+      sinT: Math.sin(tilt),
+      isEscaped: true 
     });
+    
+    // Ограничиваем общее число чтобы не тормозило
+    if (particles.length > 600) particles.shift();
+  };
 
-    // — Пульсирующие кольца —
-    for (let i = 0; i < 3; i++) {
-      const phase   = (t * 0.6) + i * (Math.PI * 2 / 3);
-      const radius  = 72 + 22 * Math.sin(phase);
-      const ringA   = 0.06 + 0.06 * Math.abs(Math.sin(phase));
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.strokeStyle = accentColor(ringA);
-      ctx.lineWidth   = 1.5;
-      ctx.stroke();
-    }
+  function draw() {
+    const bodyStyle = getComputedStyle(document.body);
+    const bgColor = bodyStyle.getPropertyValue('--bg-main').trim() || '#ffffff';
+    const isDark = bgColor.includes('rgb(0,') || bgColor.includes('#0') || bgColor.length > 7 || bgColor === '#1f2937' || bgColor === '#1e1b2e' || bgColor === '#0a1628';
 
-    // — Волновые линии под лямбдой —
-    for (let wave = 0; wave < 2; wave++) {
-      ctx.beginPath();
-      const waveAlpha = 0.07 + wave * 0.04;
-      ctx.strokeStyle = accentColor(waveAlpha);
-      ctx.lineWidth   = 1;
-      for (let px = 0; px <= W; px += 3) {
-        const dist = (px - cx) / (W * 0.4);
-        const py2  = cy + 55 + wave * 22
-                    + 14 * Math.sin(dist * 4 + t * 1.2 + wave * 1.5)
-                    * Math.exp(-dist * dist * 0.8);
-        px === 0 ? ctx.moveTo(px, py2) : ctx.lineTo(px, py2);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = bgColor;
+    ctx.globalAlpha = isDark ? 0.3 : 0.5; // Увеличиваем альфу, чтобы шлейф был короче
+    ctx.fillRect(0, 0, W * dpr, H * dpr);
+
+    ctx.globalCompositeOperation = isDark ? 'lighter' : 'source-over';
+    ctx.globalAlpha = 1.0;
+    
+    t += 0.0006; // Максимальное замедление времени
+
+    const currentCx = W / 2;
+    const currentCy = H / 2;
+
+    // Используем обратный цикл для безопасного удаления частиц (splice)
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      
+      // 1. Динамика вращения (еще плавнее переход скоростей)
+      const gravityFactor = 1.6 / Math.pow(Math.max(20, p.r), 0.9);
+      p.angle += gravityFactor;
+      
+      // 2. Гравитационное ускорение падения (делаем мягче)
+      const fallSpeed = p.shrinkSpeed * (1 + 120 / (Math.max(0.1, p.r) + 2)); 
+      p.r -= fallSpeed;
+
+      // 3. Сингулярность: пропадают мгновенно и гарантированно
+      if (p.r < 12 || isNaN(p.r)) {
+        if (p.isEscaped) {
+          particles.splice(i, 1);
+        } else {
+          Object.assign(p, createParticle(i, true));
+          p.cosT = Math.cos(p.tilt);
+          p.sinT = Math.sin(p.tilt);
+        }
+        continue; // Критично: не рисовать частицу в этом кадре после перемещения/удаления
       }
-      ctx.stroke();
+
+      const cosA = Math.cos(p.angle);
+      const sinA = Math.sin(p.angle);
+      const rx = p.r * (1 + 0.01 * Math.sin(t * 1.5 + p.phase));
+      const ry = rx * p.pitch; 
+      const lx = cosA * rx;
+      const ly = sinA * ry;
+
+      let px = currentCx + (lx * p.cosT - ly * p.sinT);
+      let py = currentCy + (lx * p.sinT + ly * p.cosT);
+
+      const doppler = 1.0 - (sinA * 0.4); 
+      const viewAlpha = Math.min(1, (1800 - p.r) / 700); 
+      const distRatio = 1 - (Math.min(p.r, 1200) / 1200);
+      let alpha = (0.15 + 0.7 * distRatio) * doppler * viewAlpha;
+      let size = p.size * (1.0 + distRatio * 0.4);
+
+      // Более агрессивное уменьшение и исчезновение при приближении к сингулярности
+      if (p.r < 100) {
+        const factor = Math.max(0, (p.r - 12) / 88);
+        size *= factor;
+        alpha *= factor;
+      }
+
+      if (sinA < 0) alpha *= 0.75;
+
+      const dx = px - mx;
+      const dy = py - my;
+      const mouseDist = Math.sqrt(dx * dx + dy * dy);
+      if (mouseDist < 80 && alpha > 0.02) {
+        const glow = Math.pow(1 - mouseDist / 80, 2) * Math.min(1, alpha * 4); 
+        ctx.save();
+        const coreGrad = ctx.createRadialGradient(px, py, 0, px, py, size * 2);
+        coreGrad.addColorStop(0, `rgba(255,255,255,${glow})`); 
+        coreGrad.addColorStop(0.5, accentColor(glow));
+        coreGrad.addColorStop(1, 'transparent');
+        ctx.beginPath();
+        ctx.arc(px, py, size * 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = coreGrad;
+        ctx.fill();
+
+        const auraGrad = ctx.createRadialGradient(px, py, size * 2, px, py, size * 15);
+        auraGrad.addColorStop(0, accentColor(glow * 0.4));
+        auraGrad.addColorStop(1, accentColor(0));
+        ctx.beginPath();
+        ctx.arc(px, py, size * 15, 0, Math.PI * 2);
+        ctx.fillStyle = auraGrad;
+        if (isDark) ctx.globalCompositeOperation = 'lighter';
+        ctx.fill();
+
+        if (glow > 0.3) {
+          ctx.beginPath();
+          ctx.strokeStyle = isDark ? `rgba(255,255,255,${glow * 0.3})` : accentColor(glow * 0.4);
+          ctx.lineWidth = 0.5;
+          ctx.moveTo(px, py - size * 12 * glow);
+          ctx.lineTo(px, py + size * 12 * glow);
+          ctx.moveTo(px - size * 12 * glow, py);
+          ctx.lineTo(px + size * 12 * glow, py);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      if (p.isLambda) {
+        const s = size * 6;
+        const a = alpha * (0.7 + 0.3 * Math.sin(t * 2 + p.phase));
+        drawLambda(px, py, s, p.angle, a);
+      } else {
+        ctx.beginPath();
+        ctx.arc(px, py, size, 0, Math.PI * 2);
+        ctx.fillStyle = accentColor(alpha);
+        ctx.fill();
+      }
+
+      if (sinA < -0.2) {
+        const lensY = (Math.abs(sinA) * p.r * 0.6);
+        const lensAlpha = alpha * 0.35 * (1 - lensY / 200);
+        if (lensAlpha > 0) {
+           ctx.beginPath();
+           ctx.arc(currentCx + cosA * rx * 0.8, currentCy - 28 - lensY * 0.4, size * 0.6, 0, Math.PI * 2);
+           ctx.fillStyle = accentColor(lensAlpha);
+           ctx.fill();
+        }
+      }
     }
-
-    // — Главная λ (пульсирует + лёгкий skew) —
-    const pulse = 1 + 0.06 * Math.sin(t * 1.8);
-    const skewX = 0.04 * Math.sin(t * 0.9);
-    const skewY = 0.02 * Math.cos(t * 1.3);
-    drawLambda(cx, cy, 110 * pulse, skewX, skewY, 1);
-
-    // — Отражение (призрак снизу) —
-    ctx.save();
-    ctx.translate(cx, cy + 110 * pulse * 0.6);
-    ctx.scale(1, -0.22);
-    ctx.globalAlpha = 0.12;
-    ctx.filter = 'blur(2px)';
-    ctx.restore();
-    drawLambda(cx, cy + 68, 110 * pulse * 0.55, skewX, skewY, 0.1);
-
-    // — Вторичная λ (медленно вращается по кругу) —
-    const orbitAngle = t * 0.25;
-    const orbitR     = 130;
-    const ox = cx + Math.cos(orbitAngle) * orbitR;
-    const oy = cy + Math.sin(orbitAngle) * orbitR * 0.35;
-    drawLambda(ox, oy, 20, 0, 0, 0.13 + 0.07 * Math.sin(t + 1));
 
     raf = requestAnimationFrame(draw);
   }

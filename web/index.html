@@ -70,6 +70,39 @@
       --message-sent-bg: #0d9488; --message-sent-text: #ffffff;
       --message-received-bg: #b8f0ed; --message-received-text: #0d3330;
     }
+    /* ── Эффект блеска для логотипа ── */
+    @keyframes logo-shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    .logo-glow {
+      background: linear-gradient(90deg, 
+        var(--accent-color) 0%, 
+        var(--accent-color) 40%, 
+        #fff 50%, 
+        var(--accent-color) 60%, 
+        var(--accent-color) 100%
+      );
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: logo-shimmer 4s linear infinite;
+      display: inline-block;
+    }
+    body.theme-gray .logo-glow,
+    body.theme-twilight .logo-glow,
+    body.theme-ocean .logo-glow {
+      background: linear-gradient(90deg, 
+        var(--accent-color) 0%, 
+        var(--accent-color) 40%, 
+        #fff 50%, 
+        var(--accent-color) 60%, 
+        var(--accent-color) 100%
+      );
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+    }
+
     body { font-family: 'Inter', sans-serif; overflow: hidden; background-color: var(--bg-main); color: var(--text-main); transition: background-color 0.3s, color 0.3s; }
     .gradient-bg { background: linear-gradient(135deg, var(--bg-sidebar) 0%, var(--bg-main) 100%); }
     .fade-in { animation: fadeIn 0.5s ease-in-out; }
@@ -1882,19 +1915,40 @@
 <div id="app" class="h-screen w-full relative">
 
   <!-- Landing -->
-  <div id="landing-page" class="h-full w-full gradient-bg flex flex-col fade-in">
-    <header class="container mx-auto px-6 py-8 flex justify-between items-center relative z-10">
-      <div class="flex items-center space-x-2">
-        <span class="text-4xl font-bold text-blue-600">λ</span>
-        <span class="text-2xl font-bold tracking-tight text-custom-main">Alpha</span>
+  <div id="landing-page" class="h-full w-full flex flex-col fade-in">
+    <div class="absolute top-0 left-0 right-0 p-12 flex justify-between items-start z-20 pointer-events-none">
+      <div class="flex items-center select-none pointer-events-auto">
+        <div id="logo-wrap" class="relative flex items-center justify-center" style="width: 400px; height: 400px; margin-left: -160px; margin-top: -160px;">
+           <canvas id="logo-canvas" style="width:100%; height:100%; pointer-events:none;"></canvas>
+        </div>
       </div>
-    </header>
+      <button id="theme-btn-landing" onclick="handleToggleTheme()" title="Сменить тему" class="p-3 rounded-2xl bg-custom-main/50 backdrop-blur-md border border-custom hover:bg-custom-sidebar transition duration-300 pointer-events-auto">
+        <span class="theme-icon-wrap flex items-center justify-center">
+            <svg class="theme-icon theme-sun w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
+            <svg class="theme-icon theme-moon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+            <svg class="theme-icon theme-twilight-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+            <svg class="theme-icon theme-dawn-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v3M6.343 6.343L4.222 4.222M3 12H0m21 0h-3M19.778 4.222l-2.121 2.121M12 18a6 6 0 100-12 6 6 0 000 12zm0 0v3M4.929 19.071l1.414-1.414M17.657 17.657l1.414 1.414"/></svg>
+            <svg class="theme-icon theme-sunset-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"/></svg>
+            <svg class="theme-icon theme-coral-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+            <svg class="theme-icon theme-ocean-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15s1.5-2 4.5-2 4.5 2 4.5 2 1.5-2 4.5-2 4.5 2 4.5 2M3 9s1.5-2 4.5-2 4.5 2 4.5 2 1.5-2 4.5-2 4.5 2 4.5 2"/></svg>
+            <svg class="theme-icon theme-mint-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/></svg>
+        </span>
+      </button>
+    </div>
     <main class="flex-grow flex items-center justify-center relative overflow-hidden">
       <canvas id="lambda-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;"></canvas>
       <div class="relative z-10 flex flex-col items-center" style="position:absolute;bottom:12%;left:50%;transform:translateX(-50%);width:100%;">
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 px-6">
-          <button id="btn-register" onclick="openAuthModal('register')" class="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white font-semibold rounded-2xl shadow-lg transition duration-300" style="position:relative;overflow:hidden;">Регистрация</button>
-          <button id="btn-login" onclick="openAuthModal('login')" class="w-full sm:w-auto px-8 py-4 bg-custom-main text-blue-600 border-2 border-blue-600 font-semibold rounded-2xl transition duration-300" style="position:relative;overflow:hidden;">Вход</button>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-8 px-6">
+          <button id="btn-register" onclick="openAuthModal('register')" 
+                  class="w-full sm:w-auto px-10 py-4 bg-transparent text-transparent border-2 border-transparent font-bold rounded-2xl transition-all duration-700 hover:bg-[var(--accent-color)] hover:text-white hover:border-[var(--accent-color)]" 
+                  style="position:relative;overflow:hidden;">
+            Регистрация
+          </button>
+          <button id="btn-login" onclick="openAuthModal('login')" 
+                  class="w-full sm:w-auto px-10 py-4 bg-transparent text-transparent border-2 border-transparent font-bold rounded-2xl transition-all duration-700 hover:border-[var(--accent-color)] hover:text-[var(--accent-color)]" 
+                  style="position:relative;overflow:hidden;">
+            Вход
+          </button>
         </div>
       </div>
     </main>
@@ -1906,8 +1960,8 @@
     <!-- ═══ Left icon navbar ═══ -->
     <div class="app-navbar flex flex-col items-center py-4 gap-1" style="z-index:10;">
       <!-- Logo -->
-      <div class="app-nav-logo mb-3">
-        <span class="text-2xl font-extrabold text-blue-600">λ</span>
+      <div class="app-nav-logo mb-3 select-none pointer-events-none">
+        <span class="text-2xl font-extrabold logo-glow">λ</span>
       </div>
 
       <!-- Лента активности -->
@@ -2277,6 +2331,7 @@
 <script src="/web/neural-ai-btn.js"></script>
 <script src="/web/ui.js"></script>
 <script src="/web/file-upload.js"></script>
+<script src="/web/logo-anim.js"></script>
 <script src="/web/lambda-anim.js"></script>
 <script src="/web/btn-anim.js"></script>
 </body>
