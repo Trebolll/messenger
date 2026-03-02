@@ -52,14 +52,14 @@ function renderChats() {
         const displayName = chatDisplayName(chat);
         const lastMsg = chat.last_message || 'Нет сообщений';
 
-        // Групповой чат — аватарка + название (как приватный чат)
+        // Групповой чат
         if (chat.is_group) {
             const groupLetter = (chat.name || 'G')[0].toUpperCase();
             const groupAvatarInner = chat.avatar_url
                 ? `<img src="${chat.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`
                 : groupLetter;
 
-            return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}">
+            return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
                 <div class="relative flex-shrink-0">
                     <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
                         ${groupAvatarInner}
@@ -81,7 +81,7 @@ function renderChats() {
         </div>
         ${chat.is_online ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>' : ''}`;
 
-        return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}">
+        return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
             <div class="relative flex-shrink-0">${avatarHtml}</div>
             <div class="flex-grow overflow-hidden">
                 <div class="flex justify-between items-baseline">
@@ -92,6 +92,12 @@ function renderChats() {
             </div>
         </div>`;
     }).join('');
+
+    // Восстанавливаем подсветку непрочитанных после перерисовки
+    const unread = window.app._unreadHighlight;
+    if (unread && unread.size) {
+        unread.forEach(chatId => _applyUnreadHighlight(chatId));
+    }
 }
 
 function renderMessages() {
@@ -103,41 +109,174 @@ function renderMessages() {
         [...container.querySelectorAll('[data-msg-id]')].map(el => el.dataset.msgId)
     );
 
+    // Строим карту онлайн-статусов из чатов
+    const onlineMap = {};
+    (app.chats || []).forEach(chat => {
+        if (chat.interlocutor_id) {
+            onlineMap[String(chat.interlocutor_id)] = !!chat.is_online;
+        }
+        if (chat.members) {
+            chat.members.forEach(m => { onlineMap[String(m.id)] = !!m.is_online; });
+        }
+    });
+
     container.innerHTML = app.messages.map((msg, idx) => {
         const isMe     = String(msg.sender_id) === String(app.currentUser?.id);
         const isRead   = msg.read_at   != null;
         const isEdited = msg.edited_at != null;
         const isNew    = !existing.has(String(msg.id));
 
-        // Задержка каскадом только при первичной загрузке (все новые)
         const delay = (existing.size === 0 && isNew)
             ? `animation-delay:${Math.min(idx * 35, 400)}ms`
             : '';
 
         const animClass = isNew ? (isMe ? 'msg-anim-sent' : 'msg-anim-received') : '';
 
-        return `
-            <div class="flex ${isMe ? 'justify-end' : 'justify-start'} ${animClass}"
-                 style="${delay}"
-                 data-msg-id="${msg.id}"
-                 oncontextmenu="showMessageMenu(event, '${msg.id}', ${isMe})">
-                <div class="message-bubble p-3.5 ${isMe ? 'message-sent' : 'message-received'}">
-                    <p class="text-sm leading-relaxed" id="msg-content-${msg.id}">${escapeHtml(msg.content)}</p>
-                    <div class="flex items-center justify-end gap-1.5 mt-1.5">
-                        ${isEdited ? `<span class="msg-edited-label">изменено</span>` : ''}
-                        <span class="text-[10px] ${isMe ? 'opacity-60' : 'text-custom-muted'}">
-                            ${new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                        ${isMe ? `
-                            <span class="text-[11px] ${isRead ? 'opacity-90' : 'opacity-40'}" style="letter-spacing:-0.5em;display:inline-block;">
-                                ${isRead ? '✓✓' : '✓'}
-                            </span>
-                        ` : ''}
+        // Аватар отправителя (только для входящих)
+        let senderAvatarHtml = '';
+        if (!isMe) {
+            const isOnline = !!onlineMap[String(msg.sender_id)];
+            const avatarInner = msg.sender_avatar_url
+                ? `<img src="${msg.sender_avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+                : `<span>${(msg.sender_name || '?')[0].toUpperCase()}</span>`;
+            const onlineDot = isOnline
+                ? `<span style="position:absolute;bottom:0;right:0;width:9px;height:9px;background:#22c55e;border:2px solid var(--bg-main,#fff);border-radius:50%;display:block;" data-online-uid="${msg.sender_id}"></span>`
+                : `<span style="position:absolute;bottom:0;right:0;width:9px;height:9px;background:#9ca3af;border:2px solid var(--bg-main,#fff);border-radius:50%;display:block;" data-online-uid="${msg.sender_id}"></span>`;
+
+            const senderData = JSON.stringify({ id: msg.sender_id, username: msg.sender_name, avatar_url: msg.sender_avatar_url || '' }).replace(/"/g, '&quot;');
+            senderAvatarHtml = `
+                <div style="position:relative;flex-shrink:0;align-self:flex-end;cursor:pointer;"
+                     onclick="openMemberAvatarViewer(JSON.parse(this.dataset.member))"
+                     data-member="${senderData}"
+                     title="${escapeHtml(msg.sender_name || '')}">
+                    <div style="width:30px;height:30px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#2563eb;overflow:hidden;">
+                        ${avatarInner}
                     </div>
+                    ${onlineDot}
+                </div>`;
+        }
+
+        // Никнейм над сообщением (только для входящих в группе)
+        const activeChat = app.chats.find(c => String(c.id) === String(app.activeChatId));
+        const isGroup = activeChat && activeChat.is_group;
+        const nicknameHtml = (!isMe && isGroup && msg.sender_name)
+            ? `<div style="font-size:11px;font-weight:600;color:var(--text-muted,#6b7280);margin-bottom:2px;padding-left:2px;display:flex;align-items:center;gap:4px;">
+                ${escapeHtml(msg.sender_name)}
+                ${renderRatingBadge(msg.sender_rating || 0)}
+               </div>`
+            : '';
+
+        // Кнопки голосования — только для чужих сообщений, появляются при hover
+        const votesHtml = !isMe
+            ? `<div class="msg-votes">${renderVotesHtml(msg.likes||0, msg.dislikes||0, msg.my_vote||0, msg.id)}</div>`
+            : '';
+
+        return `
+            <div class="flex items-end gap-2 ${animClass}"
+                 style="justify-content:${isMe ? 'flex-end' : 'flex-start'};${delay}"
+                 data-msg-id="${msg.id}"
+                 data-sender-id="${msg.sender_id}"
+                 oncontextmenu="showMessageMenu(event, '${msg.id}', ${isMe})">
+                ${!isMe ? senderAvatarHtml : ''}
+                <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};min-width:0;max-width:75%;">
+                    ${nicknameHtml}
+                    <div class="message-bubble p-3.5 ${isMe ? 'message-sent' : 'message-received'}">
+                        <p class="text-sm leading-relaxed" id="msg-content-${msg.id}" style="display:inline;">${escapeHtml(msg.content)}</p>
+                        <span style="display:inline-block;width:${isMe ? '52px' : '32px'};height:1px;"></span>
+                        <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:-2px;flex-wrap:nowrap;float:right;clear:both;">
+                            ${isEdited ? `<span class="msg-edited-label">изменено</span>` : ''}
+                            <span style="font-size:10px;white-space:nowrap;flex-shrink:0;opacity:${isMe ? '0.7' : '1'};" class="${isMe ? '' : 'text-custom-muted'}">
+                                ${new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            ${isMe ? `
+                                <span style="font-size:11px;letter-spacing:-0.5em;display:inline-block;flex-shrink:0;opacity:${isRead ? '0.9' : '0.4'};">
+                                    ${isRead ? '✓✓' : '✓'}
+                                </span>
+                            ` : ''}
+                        </div>
+                    </div>
+                    ${votesHtml}
                 </div>
             </div>
         `;
     }).join('');
+}
+
+// ─── Рейтинговый бейдж ────────────────────────────────────────────────────────
+function renderRatingBadge(rating) {
+    if (!rating || rating <= 0) return '';
+    const ranks = [
+        { min: 1000, name: 'Легенда',   color: '#f59e0b' },
+        { min: 500,  name: 'Авторитет', color: '#8b5cf6' },
+        { min: 200,  name: 'Активный',  color: '#22c55e' },
+        { min: 50,   name: 'Участник',  color: '#3b82f6' },
+        { min: 1,    name: 'Новичок',   color: '#9ca3af' },
+    ];
+    const rank = ranks.find(r => rating >= r.min) || ranks[ranks.length - 1];
+    return `<span class="msg-rating-badge" title="${rank.name}"
+        style="display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:600;
+               color:${rank.color};background:${rank.color}18;
+               padding:1px 5px;border-radius:3px;line-height:1.4;">
+        ★ ${rating}
+    </span>`;
+}
+
+// ─── HTML кнопок голосования ──────────────────────────────────────────────────
+function renderVotesHtml(likes, dislikes, myVote, messageId) {
+    const likeActive    = myVote === 1;
+    const dislikeActive = myVote === -1;
+    return `
+        <button class="vote-btn vote-like ${likeActive ? 'vote-active-like' : ''}"
+                data-vote-msg="${messageId}" data-vote="1"
+                onclick="voteMessage(event, '${messageId}', 1)"
+                title="Лайк">
+            <span class="vote-icon">+</span>
+            <span class="vote-ring"></span>
+            ${likes > 0 ? `<span class="vote-count">${likes}</span>` : ''}
+        </button>
+        <button class="vote-btn vote-dislike ${dislikeActive ? 'vote-active-dislike' : ''}"
+                data-vote-msg="${messageId}" data-vote="-1"
+                onclick="voteMessage(event, '${messageId}', -1)"
+                title="Дизлайк">
+            <span class="vote-icon">−</span>
+            <span class="vote-ring"></span>
+            ${dislikes > 0 ? `<span class="vote-count">${dislikes}</span>` : ''}
+        </button>
+    `;
+}
+
+// ─── Обработчик клика на голосование ─────────────────────────────────────────
+async function voteMessage(e, messageId, vote) {
+    e.stopPropagation();
+    const btn = e.currentTarget;
+    const isLike = vote === 1;
+
+    // Находим пузырь сообщения
+    const msgWrap = btn.closest('[data-msg-id]');
+    const bubble  = msgWrap ? msgWrap.querySelector('.message-bubble') : null;
+
+    // Анимация кнопки — вспышка + пульс кольца
+    btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
+    void btn.offsetWidth; // reflow
+    btn.classList.add(isLike ? 'vote-flash-like' : 'vote-flash-dislike');
+
+    // Через 180ms — свечение пузыря
+    setTimeout(() => {
+        if (bubble) {
+            bubble.classList.remove('bubble-glow-like', 'bubble-glow-dislike');
+            void bubble.offsetWidth;
+            bubble.classList.add(isLike ? 'bubble-glow-like' : 'bubble-glow-dislike');
+            setTimeout(() => bubble.classList.remove('bubble-glow-like', 'bubble-glow-dislike'), 1000);
+        }
+    }, 180);
+
+    try {
+        await apiVoteMessage(messageId, vote);
+    } catch(err) {
+        // убираем анимацию если ошибка
+        btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
+        window.app && window.app.notify('Нельзя голосовать за своё сообщение', 'error');
+    }
 }
 
 function renderChatHeader() {

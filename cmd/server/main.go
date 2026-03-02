@@ -1,7 +1,11 @@
 package main
 
 import (
+	"database/sql"
+	"errors"
 	"log"
+	"os"
+
 	"messenger/internal/db"
 	"messenger/internal/handler"
 	"messenger/internal/middleware"
@@ -9,27 +13,24 @@ import (
 	"messenger/internal/service"
 	"messenger/internal/service/websocket"
 
-	"database/sql"
-	"os"
-
 	"github.com/gin-gonic/gin"
+	"github.com/golang-migrate/migrate/v4"
+	migratepg "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 func main() {
-
 	godotenv.Load()
 
 	database, err := db.InitDB()
-
 	if err != nil {
-		panic(err)
+		log.Fatalf("Ошибка подключения к БД: %v", err)
 	}
-	defer func(database *sql.DB) {
-		err := database.Close()
-		if err != nil {
-			log.Printf("Server not find active database at port: 5432")
-			panic(err)
+	defer func(d *sql.DB) {
+		if err := d.Close(); err != nil {
+			log.Printf("Ошибка закрытия БД: %v", err)
 		}
 	}(database)
 
@@ -60,6 +61,11 @@ func main() {
 	messageService := service.NewMessageService(messageRepository, chatRepository, hub)
 	messageHandler := handler.NewMessageHandler(messageService)
 
+	ratingRepository := repository.NewRatingRepository(database)
+	ratingService := service.NewRatingService(ratingRepository, chatRepository, hub)
+	ratingHandler := handler.NewRatingHandler(ratingService)
+	messageService.SetVoteEnricher(ratingRepository)
+
 	aiService := service.NewAIService()
 	aiHandler := handler.NewAIHandler(aiService)
 
@@ -73,14 +79,7 @@ func main() {
 	r.LoadHTMLGlob("web/*.html")
 	r.Static("/web", "./web")
 
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(200, "index.html", nil)
-	})
-
-	r.GET("/chat", func(c *gin.Context) {
-		// Placeholder for chat page
-		c.String(200, "Welcome to the Chat!")
-	})
+	r.GET("/", func(c *gin.Context) { c.HTML(200, "index.html", nil) })
 
 	r.POST("/api/register", userHandler.Register)
 	r.POST("/api/login", userHandler.Login)
@@ -107,6 +106,8 @@ func main() {
 		api.POST("/chats/:chat_id/read", messageHandler.MarkAsRead)
 		api.POST("/ai/suggest", aiHandler.Suggest)
 		api.POST("/chats/:chat_id/attachments", attachmentHandler.Upload)
+		api.POST("/messages/:message_id/vote", ratingHandler.Vote)
+		api.GET("/users/:user_id/rating", ratingHandler.GetUserRating)
 	}
 
 	r.GET("/api/ws", wsHandler.HandleWebSocket)
@@ -117,16 +118,77 @@ func main() {
 	}
 }
 
-func applyMigrations(db *sql.DB) {
-	query, err := os.ReadFile("internal/db/migration/001_init.sql")
-	if err != nil {
-		log.Fatalf("Ошибка чтения файла миграции: %v", err)
+// dbExists проверяет что таблица users уже существует (старая БД)
+func dbExists(database *sql.DB) bool {
+	var exists bool
+	database.QueryRow(`
+		SELECT EXISTS (
+			SELECT FROM information_schema.tables
+			WHERE table_schema = 'public' AND table_name = 'users'
+		)
+	`).Scan(&exists)
+	return exists
+}
+
+func applyMigrations(database *sql.DB) {
+	// ШАГ 1: Подготавливаем schema_migrations ДО инициализации migrate
+	// чтобы он правильно читал текущую версию при старте
+
+	var smExists bool
+	database.QueryRow(`
+		SELECT EXISTS (
+			SELECT FROM information_schema.tables
+			WHERE table_schema = 'public' AND table_name = 'schema_migrations'
+		)
+	`).Scan(&smExists)
+
+	if !smExists && dbExists(database) {
+		// Старая БД без migrate — создаём schema_migrations и ставим версию 1
+		log.Printf("migrate: старая БД без версионирования — инициализируем на версии 1")
+		if _, err := database.Exec(`
+			CREATE TABLE schema_migrations (version bigint NOT NULL, dirty boolean NOT NULL);
+			INSERT INTO schema_migrations (version, dirty) VALUES (1, false);
+		`); err != nil {
+			log.Fatalf("migrate: не удалось создать schema_migrations: %v", err)
+		}
+	} else if smExists {
+		// Сбрасываем dirty флаг если есть (от предыдущих неудачных запусков)
+		var dirty bool
+		var version int64
+		database.QueryRow(`SELECT version, dirty FROM schema_migrations LIMIT 1`).Scan(&version, &dirty)
+		if dirty {
+			log.Printf("migrate: сбрасываем dirty флаг на версии %d", version)
+			database.Exec(`UPDATE schema_migrations SET dirty = false`)
+		}
 	}
 
-	_, err = db.Exec(string(query))
+	// ШАГ 2: Инициализируем migrate с уже корректной schema_migrations
+	driver, err := migratepg.WithInstance(database, &migratepg.Config{})
 	if err != nil {
-		log.Fatalf("Ошибка применения миграции: %v", err)
+		log.Fatalf("migrate: не удалось создать драйвер: %v", err)
 	}
 
-	log.Println("Миграции успешно применены!")
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://internal/db/migration",
+		"postgres",
+		driver,
+	)
+	if err != nil {
+		log.Fatalf("migrate: не удалось инициализировать: %v", err)
+	}
+
+	// ШАГ 3: Применяем новые миграции
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		log.Fatalf("migrate: ошибка применения миграций: %v", err)
+	}
+
+	version, dirty, err := m.Version()
+	if err != nil && !errors.Is(err, migrate.ErrNilVersion) {
+		log.Printf("migrate: не удалось получить версию: %v", err)
+		return
+	}
+	if dirty {
+		log.Fatalf("migrate: БД в грязном состоянии на версии %d", version)
+	}
+	log.Printf("migrate: БД на версии %d ✓", version)
 }
