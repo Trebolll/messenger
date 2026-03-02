@@ -52,14 +52,14 @@ function renderChats() {
     const displayName = chatDisplayName(chat);
     const lastMsg = chat.last_message || 'Нет сообщений';
 
-        // Групповой чат
-        if (chat.is_group) {
-            const groupLetter = (chat.name || 'G')[0].toUpperCase();
-            const groupAvatarInner = chat.avatar_url
-                ? `<img src="${chat.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`
-                : groupLetter;
+    // Групповой чат
+    if (chat.is_group) {
+      const groupLetter = (chat.name || 'G')[0].toUpperCase();
+      const groupAvatarInner = chat.avatar_url
+          ? `<img src="${chat.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`
+          : groupLetter;
 
-            return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
+      return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
                 <div class="relative flex-shrink-0">
                     <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
                         ${groupAvatarInner}
