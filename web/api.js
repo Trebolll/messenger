@@ -26,6 +26,8 @@ async function apiLoadChats() {
 
 async function apiLoadMessages(chatId) {
     window.app.activeChatId = chatId;
+    // Снимаем подсветку непрочитанных при входе в чат
+    if (typeof _clearUnreadHighlight === 'function') _clearUnreadHighlight(chatId);
     document.getElementById('no-chat-selected').classList.add('hidden');
     const inputArea = document.getElementById('input-area');
     inputArea.classList.remove('hidden');

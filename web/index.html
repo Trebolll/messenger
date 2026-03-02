@@ -78,9 +78,25 @@
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .chat-list-item:hover { background-color: var(--bg-item-hover); cursor: pointer; }
     .chat-list-item.active { background-color: var(--bg-item-active); border-right: 3px solid var(--accent-color); }
+
+    /* ── Подсветка чата при новом входящем сообщении ── */
+    @keyframes chatUnreadPulse {
+      0%   { background-color: transparent; }
+      30%  { background-color: color-mix(in srgb, var(--accent-color) 18%, transparent); }
+      60%  { background-color: transparent; }
+      80%  { background-color: color-mix(in srgb, var(--accent-color) 10%, transparent); }
+      100% { background-color: color-mix(in srgb, var(--accent-color) 10%, transparent); }
+    }
+    .chat-unread-flash {
+      animation: chatUnreadPulse 1.2s ease-out forwards;
+      background-color: color-mix(in srgb, var(--accent-color) 10%, transparent);
+    }
+    .chat-unread-flash:hover {
+      background-color: var(--bg-item-hover) !important;
+    }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    .message-bubble { max-width: 75%; display: inline-block; width: fit-content; word-break: break-word; }
+    .message-bubble { max-width: 75%; display: inline-block; width: fit-content; min-width: 0; word-break: break-word; }
 
     /* ── Появление сообщений ───────────────────────────────────────── */
     @keyframes msgSlideRight {
@@ -1606,6 +1622,86 @@
       background: #22c55e;
       border: 2px solid var(--bg-main, #fff);
       box-shadow: 0 0 0 1px rgba(34,197,94,0.25);
+    }
+
+    /* ══════════════════════════════════════════════════════
+       UI — тени вместо линий, лёгкие скругления
+    ══════════════════════════════════════════════════════ */
+
+    /* Аватары и статус-точки — круглые */
+    .rounded-full,
+    .spinner, .pulse-ring,
+    .member-online-dot,
+    #avatar-viewer-circle,
+    .ai-btn-inner,
+    [data-online-uid] {
+      border-radius: 50% !important;
+    }
+
+    /* ── Убираем border-линии между панелями ── */
+    .border-custom,
+    .border-r, .border-l, .border-b, .border-t {
+      border: none !important;
+    }
+
+    /* ── Тени вместо разделителей ── */
+    .app-navbar {
+      border: none !important;
+      box-shadow: 4px 0 16px rgba(0,0,0,0.08) !important;
+    }
+    body.theme-gray .app-navbar,
+    body.theme-twilight .app-navbar,
+    body.theme-ocean .app-navbar { box-shadow: 4px 0 20px rgba(0,0,0,0.25) !important; }
+
+    .chats-sidebar {
+      border: none !important;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.07) !important;
+    }
+    body.theme-gray .chats-sidebar,
+    body.theme-twilight .chats-sidebar,
+    body.theme-ocean .chats-sidebar { box-shadow: 4px 0 24px rgba(0,0,0,0.22) !important; }
+
+    #chat-header {
+      border: none !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.07) !important;
+      position: relative; z-index: 3;
+    }
+    body.theme-gray #chat-header,
+    body.theme-twilight #chat-header,
+    body.theme-ocean #chat-header { box-shadow: 0 4px 20px rgba(0,0,0,0.22) !important; }
+
+    #chats-sidebar > div:first-child {
+      border: none !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+      position: relative; z-index: 2;
+    }
+
+    #input-area {
+      border: none !important;
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.07) !important;
+      position: relative; z-index: 4;
+    }
+    body.theme-gray #input-area,
+    body.theme-twilight #input-area,
+    body.theme-ocean #input-area { box-shadow: 0 -4px 20px rgba(0,0,0,0.22) !important; }
+
+    #info-panel {
+      border: none !important;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.07) !important;
+    }
+    body.theme-gray #info-panel,
+    body.theme-twilight #info-panel,
+    body.theme-ocean #info-panel { box-shadow: -4px 0 24px rgba(0,0,0,0.22) !important; }
+
+    #info-panel > div:first-child {
+      border: none !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+    }
+
+    /* Активный чат — акцент слева */
+    .chat-list-item.active {
+      border-left: 3px solid var(--accent-color) !important;
+      border-right: none !important;
     }
 
   </style>

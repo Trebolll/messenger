@@ -52,14 +52,14 @@ function renderChats() {
     const displayName = chatDisplayName(chat);
     const lastMsg = chat.last_message || 'Нет сообщений';
 
-    // Групповой чат — аватарка + название (как приватный чат)
+    // Групповой чат
     if (chat.is_group) {
       const groupLetter = (chat.name || 'G')[0].toUpperCase();
       const groupAvatarInner = chat.avatar_url
           ? `<img src="${chat.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`
           : groupLetter;
 
-      return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}">
+      return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
                 <div class="relative flex-shrink-0">
                     <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
                         ${groupAvatarInner}
@@ -81,7 +81,7 @@ function renderChats() {
         </div>
         ${chat.is_online ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>' : ''}`;
 
-    return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}">
+    return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
             <div class="relative flex-shrink-0">${avatarHtml}</div>
             <div class="flex-grow overflow-hidden">
                 <div class="flex justify-between items-baseline">
@@ -92,6 +92,12 @@ function renderChats() {
             </div>
         </div>`;
   }).join('');
+
+  // Восстанавливаем подсветку непрочитанных после перерисовки
+  const unread = window.app._unreadHighlight;
+  if (unread && unread.size) {
+    unread.forEach(chatId => _applyUnreadHighlight(chatId));
+  }
 }
 
 function renderMessages() {
@@ -163,7 +169,7 @@ function renderMessages() {
                  data-msg-id="${msg.id}"
                  oncontextmenu="showMessageMenu(event, '${msg.id}', ${isMe})">
                 ${!isMe ? senderAvatarHtml : ''}
-                <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};max-width:calc(100% - 42px);">
+                <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};min-width:0;max-width:75%;">
                     ${nicknameHtml}
                     <div class="message-bubble p-3.5 ${isMe ? 'message-sent' : 'message-received'}">
                         <p class="text-sm leading-relaxed" id="msg-content-${msg.id}" style="display:inline;">${escapeHtml(msg.content)}</p>

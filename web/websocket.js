@@ -73,6 +73,13 @@ function _handleNewMessage(msg) {
         if (String(msg.sender_id) !== String(app.currentUser?.id)) {
             apiMarkChatAsRead(app.activeChatId);
         }
+    } else {
+        // Подсвечиваем чат в списке только если сообщение не от меня
+        if (String(msg.sender_id) !== String(app.currentUser?.id)) {
+            if (!app._unreadHighlight) app._unreadHighlight = new Set();
+            app._unreadHighlight.add(String(msg.chat_id));
+            _applyUnreadHighlight(String(msg.chat_id));
+        }
     }
     updateLastMessageInChatList(msg);
 }
@@ -157,7 +164,23 @@ function updateUserStatus(status) {
     });
 }
 
-// ─── Обработка событий участников группы ────────────────────────────────────
+// ─── Подсветка чата при новом входящем сообщении ────────────────────────────
+
+function _applyUnreadHighlight(chatId) {
+    const el = document.querySelector(`.chat-list-item[data-chat-id="${chatId}"]`);
+    if (el) {
+        el.classList.add('chat-unread-flash');
+    }
+}
+
+function _clearUnreadHighlight(chatId) {
+    const app = window.app;
+    if (app._unreadHighlight) app._unreadHighlight.delete(String(chatId));
+    const el = document.querySelector(`.chat-list-item[data-chat-id="${chatId}"]`);
+    if (el) el.classList.remove('chat-unread-flash');
+}
+
+
 
 function _handleMemberAdded(data) {
     const app  = window.app;
