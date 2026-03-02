@@ -17,6 +17,7 @@ type User struct {
 	Location  string     `json:"location"`
 	Status    string     `json:"status"`
 	AvatarUrl string     `json:"avatar_url"`
+	Rating    int        `json:"rating"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 }

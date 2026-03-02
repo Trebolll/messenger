@@ -56,7 +56,7 @@ func (h *MessageHandler) GetMessages(c *gin.Context) {
 	_ = h.messageService.MarkChatAsRead(chatID, userID)
 
 	// 2. Получаем историю сообщений
-	messages, err := h.messageService.GetMessagesByChatID(chatID)
+	messages, err := h.messageService.GetMessagesByChatID(chatID, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"ошибка": err.Error()})
 		return
