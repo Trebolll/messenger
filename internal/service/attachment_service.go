@@ -28,6 +28,7 @@ func (s *AttachmentService) Upload(
 	ctx context.Context,
 	senderID uuid.UUID,
 	chatID uuid.UUID,
+	messageID *uuid.UUID,
 	file io.Reader,
 	filename string,
 	size int64,
@@ -44,6 +45,7 @@ func (s *AttachmentService) Upload(
 	attachment := &model.Attachment{
 		ChatID:    chatID,
 		SenderID:  senderID,
+		MessageID: messageID,
 		Url:       url,
 		Filename:  filename,
 		MimeType:  mimeType,

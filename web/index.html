@@ -4,7 +4,7 @@
   <link rel="icon" type="image/svg+xml" href="/web/favicon.svg">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>λ Messenger</title>
+  <title>λ</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -78,6 +78,22 @@
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .chat-list-item:hover { background-color: var(--bg-item-hover); cursor: pointer; }
     .chat-list-item.active { background-color: var(--bg-item-active); border-right: 3px solid var(--accent-color); }
+
+    /* ── Подсветка чата при новом входящем сообщении ── */
+    @keyframes chatUnreadPulse {
+      0%   { background-color: transparent; }
+      30%  { background-color: color-mix(in srgb, var(--accent-color) 18%, transparent); }
+      60%  { background-color: transparent; }
+      80%  { background-color: color-mix(in srgb, var(--accent-color) 10%, transparent); }
+      100% { background-color: color-mix(in srgb, var(--accent-color) 10%, transparent); }
+    }
+    .chat-unread-flash {
+      animation: chatUnreadPulse 1.2s ease-out forwards;
+      background-color: color-mix(in srgb, var(--accent-color) 10%, transparent);
+    }
+    .chat-unread-flash:hover {
+      background-color: var(--bg-item-hover) !important;
+    }
 
     /* ══ Система голосования ══════════════════════════════════════════ */
 
@@ -1870,6 +1886,7 @@
     <header class="container mx-auto px-6 py-8 flex justify-between items-center relative z-10">
       <div class="flex items-center space-x-2">
         <span class="text-4xl font-bold text-blue-600">λ</span>
+        <span class="text-2xl font-bold tracking-tight text-custom-main">Alpha</span>
       </div>
     </header>
     <main class="flex-grow flex items-center justify-center relative overflow-hidden">
@@ -2011,31 +2028,15 @@
           </div>
         </div>
 
+        <!-- File Preview Panel -->
+        <div id="file-preview-panel"></div>
+
         <form id="message-form" class="flex items-end gap-3" onsubmit="handleSendMessage(event)">
-          <button type="button" id="attach-btn" class="p-3" style="position:relative;z-index:20;" title="Прикрепить файл">
-            <div id="pin-wrap">
-              <svg id="pin-svg" width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Тень под булавкой -->
-                <ellipse id="pin-shadow" cx="19" cy="22" rx="3.5" ry="1.1"
-                         fill="currentColor" opacity="0.12"/>
-                <!-- Острие булавки — тонкое, слегка изогнутое -->
-                <path stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
-                      d="M14.5 13.5 Q17 17 20 21.5"/>
-                <!-- Тело — цилиндр под углом 45° -->
-                <path stroke="currentColor" stroke-width="3.8" stroke-linecap="round"
-                      d="M6.5 6.5 L14.5 13.5" opacity="0.22"/>
-                <path stroke="currentColor" stroke-width="3" stroke-linecap="round"
-                      d="M6.5 6.5 L14.5 13.5"/>
-                <!-- Кольцо-ограничитель на стержне -->
-                <circle cx="11" cy="11" r="1.8"
-                        fill="var(--bg-main, white)" stroke="currentColor" stroke-width="1.4"/>
-                <!-- Головка — шарик -->
-                <circle cx="5.8" cy="5.8" r="3.8" fill="currentColor" opacity="0.85"/>
-                <!-- Блик на шарике -->
-                <circle cx="4.6" cy="4.5" r="1.4" fill="white" opacity="0.6"/>
-                <circle cx="5.3" cy="3.9" r="0.5" fill="white" opacity="0.8"/>
-              </svg>
-            </div>
+          <input type="file" id="file-input" multiple style="display:none;" accept="image/jpeg,image/png,image/gif,audio/webm,audio/ogg,audio/mpeg,video/webm,video/mp4">
+          <button type="button" id="attach-btn" onclick="triggerFileInput()" class="p-3" style="position:relative;z-index:20;" title="Прикрепить файл">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+            </svg>
           </button>
 
           <div class="flex-grow msg-input-wrap" style="position:relative;z-index:20;">
@@ -2264,12 +2265,18 @@
   <div id="notification-center" class="fixed top-6 right-6 z-[100] space-y-3 w-80"></div>
 </div>
 
+<!-- Image Lightbox -->
+<div id="img-lightbox" onclick="closeImgLightbox()">
+  <img id="img-lightbox-img" src="" alt="">
+</div>
+
 <script src="/web/api.js"></script>
 <script src="/web/websocket.js"></script>
 <script src="/web/render.js"></script>
 <script src="/web/app.js"></script>
 <script src="/web/neural-ai-btn.js"></script>
 <script src="/web/ui.js"></script>
+<script src="/web/file-upload.js"></script>
 <script src="/web/lambda-anim.js"></script>
 <script src="/web/btn-anim.js"></script>
 </body>
