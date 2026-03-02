@@ -70,6 +70,39 @@
       --message-sent-bg: #0d9488; --message-sent-text: #ffffff;
       --message-received-bg: #b8f0ed; --message-received-text: #0d3330;
     }
+    /* ── Эффект блеска для логотипа ── */
+    @keyframes logo-shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    .logo-glow {
+      background: linear-gradient(90deg, 
+        var(--accent-color) 0%, 
+        var(--accent-color) 40%, 
+        #fff 50%, 
+        var(--accent-color) 60%, 
+        var(--accent-color) 100%
+      );
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: logo-shimmer 4s linear infinite;
+      display: inline-block;
+    }
+    body.theme-gray .logo-glow,
+    body.theme-twilight .logo-glow,
+    body.theme-ocean .logo-glow {
+      background: linear-gradient(90deg, 
+        var(--accent-color) 0%, 
+        var(--accent-color) 40%, 
+        #fff 50%, 
+        var(--accent-color) 60%, 
+        var(--accent-color) 100%
+      );
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+    }
+
     body { font-family: 'Inter', sans-serif; overflow: hidden; background-color: var(--bg-main); color: var(--text-main); transition: background-color 0.3s, color 0.3s; }
     .gradient-bg { background: linear-gradient(135deg, var(--bg-sidebar) 0%, var(--bg-main) 100%); }
     .fade-in { animation: fadeIn 0.5s ease-in-out; }
@@ -1882,13 +1915,14 @@
 <div id="app" class="h-screen w-full relative">
 
   <!-- Landing -->
-  <div id="landing-page" class="h-full w-full gradient-bg flex flex-col fade-in">
-    <header class="container mx-auto px-6 py-8 flex justify-between items-center relative z-20">
-      <div class="flex items-center space-x-2">
-        <span class="text-4xl font-bold text-blue-600">λ</span>
-        <span class="text-2xl font-bold tracking-tight text-custom-main">Alpha</span>
+  <div id="landing-page" class="h-full w-full flex flex-col fade-in">
+    <div class="absolute top-0 left-0 right-0 p-12 flex justify-between items-start z-20 pointer-events-none">
+      <div class="flex items-center select-none pointer-events-auto">
+        <div id="logo-wrap" class="relative flex items-center justify-center" style="width: 400px; height: 400px; margin-left: -160px; margin-top: -160px;">
+           <canvas id="logo-canvas" style="width:100%; height:100%; pointer-events:none;"></canvas>
+        </div>
       </div>
-      <button id="theme-btn-landing" onclick="handleToggleTheme()" title="Сменить тему" class="p-3 rounded-2xl bg-custom-main/50 backdrop-blur-md border border-custom hover:bg-custom-sidebar transition duration-300">
+      <button id="theme-btn-landing" onclick="handleToggleTheme()" title="Сменить тему" class="p-3 rounded-2xl bg-custom-main/50 backdrop-blur-md border border-custom hover:bg-custom-sidebar transition duration-300 pointer-events-auto">
         <span class="theme-icon-wrap flex items-center justify-center">
             <svg class="theme-icon theme-sun w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
             <svg class="theme-icon theme-moon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
@@ -1900,13 +1934,21 @@
             <svg class="theme-icon theme-mint-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/></svg>
         </span>
       </button>
-    </header>
+    </div>
     <main class="flex-grow flex items-center justify-center relative overflow-hidden">
       <canvas id="lambda-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;"></canvas>
       <div class="relative z-10 flex flex-col items-center" style="position:absolute;bottom:12%;left:50%;transform:translateX(-50%);width:100%;">
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 px-6">
-          <button id="btn-register" onclick="openAuthModal('register')" class="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white font-semibold rounded-2xl shadow-lg transition duration-300" style="position:relative;overflow:hidden;">Регистрация</button>
-          <button id="btn-login" onclick="openAuthModal('login')" class="w-full sm:w-auto px-8 py-4 bg-custom-main text-blue-600 border-2 border-blue-600 font-semibold rounded-2xl transition duration-300" style="position:relative;overflow:hidden;">Вход</button>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-8 px-6">
+          <button id="btn-register" onclick="openAuthModal('register')" 
+                  class="w-full sm:w-auto px-10 py-4 bg-transparent text-transparent border-2 border-transparent font-bold rounded-2xl transition-all duration-700 hover:bg-[var(--accent-color)] hover:text-white hover:border-[var(--accent-color)]" 
+                  style="position:relative;overflow:hidden;">
+            Регистрация
+          </button>
+          <button id="btn-login" onclick="openAuthModal('login')" 
+                  class="w-full sm:w-auto px-10 py-4 bg-transparent text-transparent border-2 border-transparent font-bold rounded-2xl transition-all duration-700 hover:border-[var(--accent-color)] hover:text-[var(--accent-color)]" 
+                  style="position:relative;overflow:hidden;">
+            Вход
+          </button>
         </div>
       </div>
     </main>
@@ -1918,8 +1960,8 @@
     <!-- ═══ Left icon navbar ═══ -->
     <div class="app-navbar flex flex-col items-center py-4 gap-1" style="z-index:10;">
       <!-- Logo -->
-      <div class="app-nav-logo mb-3">
-        <span class="text-2xl font-extrabold text-blue-600">λ</span>
+      <div class="app-nav-logo mb-3 select-none pointer-events-none">
+        <span class="text-2xl font-extrabold logo-glow">λ</span>
       </div>
 
       <!-- Лента активности -->
@@ -2289,6 +2331,7 @@
 <script src="/web/neural-ai-btn.js"></script>
 <script src="/web/ui.js"></script>
 <script src="/web/file-upload.js"></script>
+<script src="/web/logo-anim.js"></script>
 <script src="/web/lambda-anim.js"></script>
 <script src="/web/btn-anim.js"></script>
 </body>

@@ -21,6 +21,14 @@
     cy = H / 2;
   }
 
+  let mx = -1000, my = -1000;
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mx = e.clientX - rect.left;
+    my = e.clientY - rect.top;
+  });
+  canvas.addEventListener('mouseleave', () => { mx = -1000; my = -1000; });
+
   window.addEventListener('resize', resize);
   resize();
 
@@ -64,22 +72,24 @@
   }
 
   // ── Частицы (Физически корректный аккреционный диск) ───────────────────
-  const PARTICLE_COUNT = 400; 
+  const PARTICLE_COUNT = 1500; 
 
   function createParticle(i, isNew = false) {
-    const spawnRadius = Math.max(W, H) * 0.8;
-    const r = isNew ? (spawnRadius + Math.random() * spawnRadius) : (35 + Math.random() * spawnRadius * 1.5);
+    const screenMax = Math.max(W, H);
+    // При старте частицы распределяем ближе к видимой зоне
+    const r = isNew 
+      ? (screenMax * 1.5 + Math.random() * screenMax) 
+      : (10 + Math.random() * screenMax * 1.8);
     
     return {
       r: r,
       angle: Math.random() * Math.PI * 2,
-      size: 0.4 + Math.random() * 1.8,
+      size: 0.25 + Math.random() * 0.8, // Оптимальный размер
       phase: Math.random() * Math.PI * 2,
-      isLambda: i % 7 === 0,
-      shrinkSpeed: (0.02 + Math.random() * 0.08) * 0.4,
-      // Индивидуальные параметры орбиты для каждой частицы
-      tilt: (Math.random() - 0.5) * 0.3,    // Наклон орбиты (угол)
-      pitch: 0.2 + Math.random() * 0.12,   // Сплюснутость орбиты (перспектива)
+      isLambda: i % 8 === 0,
+      shrinkSpeed: (0.01 + Math.random() * 0.04) * 0.3, 
+      tilt: (Math.random() - 0.5) * 0.22,
+      pitch: 0.15 + Math.random() * 0.15,
       cosT: 0, 
       sinT: 0
     };
@@ -93,6 +103,38 @@
     return p;
   });
 
+  // Экспортируем функцию для добавления внешних частиц (из кнопок)
+  window.spawnEscapedParticle = function(pageX, pageY, isLambda) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (pageX - rect.left) * dpr;
+    const y = (pageY - rect.top) * dpr;
+    
+    // Рассчитываем полярные координаты относительно центра диска
+    const dx = x - (W * dpr / 2);
+    const dy = (y - (H * dpr / 2)) / 0.28; // учитываем сплюснутость
+    
+    const r = Math.sqrt(dx * dx + dy * dy) / dpr;
+    const angle = Math.atan2(dy, dx);
+    
+    const tilt = (Math.random() - 0.5) * 0.5;
+    particles.push({
+      r: r,
+      angle: angle,
+      size: 0.8 + Math.random() * 1.2,
+      phase: Math.random() * Math.PI * 2,
+      isLambda: isLambda,
+      shrinkSpeed: 0.15 + Math.random() * 0.25, // Плавнее полет
+      tilt: tilt,
+      pitch: 0.2 + Math.random() * 0.1,
+      cosT: Math.cos(tilt), 
+      sinT: Math.sin(tilt),
+      isEscaped: true 
+    });
+    
+    // Ограничиваем общее число чтобы не тормозило
+    if (particles.length > 600) particles.shift();
+  };
+
   function draw() {
     const bodyStyle = getComputedStyle(document.body);
     const bgColor = bodyStyle.getPropertyValue('--bg-main').trim() || '#ffffff';
@@ -100,56 +142,102 @@
 
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = bgColor;
-    ctx.globalAlpha = isDark ? 0.15 : 0.3; 
+    ctx.globalAlpha = isDark ? 0.3 : 0.5; // Увеличиваем альфу, чтобы шлейф был короче
     ctx.fillRect(0, 0, W * dpr, H * dpr);
 
     ctx.globalCompositeOperation = isDark ? 'lighter' : 'source-over';
     ctx.globalAlpha = 1.0;
     
-    t += 0.0012;
+    t += 0.0006; // Максимальное замедление времени
 
     const currentCx = W / 2;
     const currentCy = H / 2;
 
-    particles.forEach((p, i) => {
-      // 1. Динамика вращения (законы Кеплера): чем ближе, тем быстрее
-      // Увеличил влияние массы в центре для "эффекта гравитации"
-      const gravityFactor = 2.2 / Math.pow(p.r, 0.95);
+    // Используем обратный цикл для безопасного удаления частиц (splice)
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      
+      // 1. Динамика вращения (еще плавнее переход скоростей)
+      const gravityFactor = 1.6 / Math.pow(Math.max(20, p.r), 0.9);
       p.angle += gravityFactor;
       
-      // 2. Гравитационное ускорение падения: чем ближе к центру, тем сильнее тянет
-      const fallSpeed = p.shrinkSpeed * (1 + 150 / (p.r + 10));
+      // 2. Гравитационное ускорение падения (делаем мягче)
+      const fallSpeed = p.shrinkSpeed * (1 + 120 / (Math.max(0.1, p.r) + 2)); 
       p.r -= fallSpeed;
 
-      // 3. Сингулярность: пропадают почти в самой точке (радиус 5 вместо 26)
-      if (p.r < 5) {
-        Object.assign(p, createParticle(i, true));
-        p.cosT = Math.cos(p.tilt);
-        p.sinT = Math.sin(p.tilt);
+      // 3. Сингулярность: пропадают мгновенно и гарантированно
+      if (p.r < 12 || isNaN(p.r)) {
+        if (p.isEscaped) {
+          particles.splice(i, 1);
+        } else {
+          Object.assign(p, createParticle(i, true));
+          p.cosT = Math.cos(p.tilt);
+          p.sinT = Math.sin(p.tilt);
+        }
+        continue; // Критично: не рисовать частицу в этом кадре после перемещения/удаления
       }
 
       const cosA = Math.cos(p.angle);
       const sinA = Math.sin(p.angle);
-
-      // Локальные координаты на плоскости орбиты частицы
       const rx = p.r * (1 + 0.01 * Math.sin(t * 1.5 + p.phase));
       const ry = rx * p.pitch; 
-
       const lx = cosA * rx;
       const ly = sinA * ry;
 
-      // Поворачиваем локальные координаты согласно наклону (tilt) этой конкретной частицы
       let px = currentCx + (lx * p.cosT - ly * p.sinT);
       let py = currentCy + (lx * p.sinT + ly * p.cosT);
 
       const doppler = 1.0 - (sinA * 0.4); 
-      const viewAlpha = Math.min(1, (1200 - p.r) / 500); 
-      const distRatio = 1 - (Math.min(p.r, 800) / 800);
-      let alpha = (0.02 + 0.85 * distRatio) * doppler * viewAlpha;
-      let size = p.size * (0.6 + distRatio * 1.4);
+      const viewAlpha = Math.min(1, (1800 - p.r) / 700); 
+      const distRatio = 1 - (Math.min(p.r, 1200) / 1200);
+      let alpha = (0.15 + 0.7 * distRatio) * doppler * viewAlpha;
+      let size = p.size * (1.0 + distRatio * 0.4);
 
-      // Более мягкое скрытие задней части
-      if (sinA < 0) alpha *= 0.5;
+      // Более агрессивное уменьшение и исчезновение при приближении к сингулярности
+      if (p.r < 100) {
+        const factor = Math.max(0, (p.r - 12) / 88);
+        size *= factor;
+        alpha *= factor;
+      }
+
+      if (sinA < 0) alpha *= 0.75;
+
+      const dx = px - mx;
+      const dy = py - my;
+      const mouseDist = Math.sqrt(dx * dx + dy * dy);
+      if (mouseDist < 80 && alpha > 0.02) {
+        const glow = Math.pow(1 - mouseDist / 80, 2) * Math.min(1, alpha * 4); 
+        ctx.save();
+        const coreGrad = ctx.createRadialGradient(px, py, 0, px, py, size * 2);
+        coreGrad.addColorStop(0, `rgba(255,255,255,${glow})`); 
+        coreGrad.addColorStop(0.5, accentColor(glow));
+        coreGrad.addColorStop(1, 'transparent');
+        ctx.beginPath();
+        ctx.arc(px, py, size * 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = coreGrad;
+        ctx.fill();
+
+        const auraGrad = ctx.createRadialGradient(px, py, size * 2, px, py, size * 15);
+        auraGrad.addColorStop(0, accentColor(glow * 0.4));
+        auraGrad.addColorStop(1, accentColor(0));
+        ctx.beginPath();
+        ctx.arc(px, py, size * 15, 0, Math.PI * 2);
+        ctx.fillStyle = auraGrad;
+        if (isDark) ctx.globalCompositeOperation = 'lighter';
+        ctx.fill();
+
+        if (glow > 0.3) {
+          ctx.beginPath();
+          ctx.strokeStyle = isDark ? `rgba(255,255,255,${glow * 0.3})` : accentColor(glow * 0.4);
+          ctx.lineWidth = 0.5;
+          ctx.moveTo(px, py - size * 12 * glow);
+          ctx.lineTo(px, py + size * 12 * glow);
+          ctx.moveTo(px - size * 12 * glow, py);
+          ctx.lineTo(px + size * 12 * glow, py);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
 
       if (p.isLambda) {
         const s = size * 6;
@@ -162,7 +250,6 @@
         ctx.fill();
       }
 
-      // Линзирование только для тех, кто реально за объектом
       if (sinA < -0.2) {
         const lensY = (Math.abs(sinA) * p.r * 0.6);
         const lensAlpha = alpha * 0.35 * (1 - lensY / 200);
@@ -173,7 +260,7 @@
            ctx.fill();
         }
       }
-    });
+    }
 
     raf = requestAnimationFrame(draw);
   }
