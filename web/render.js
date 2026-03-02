@@ -52,14 +52,14 @@ function renderChats() {
     const displayName = chatDisplayName(chat);
     const lastMsg = chat.last_message || 'Нет сообщений';
 
-    // Групповой чат — аватарка + название (как приватный чат)
-    if (chat.is_group) {
-      const groupLetter = (chat.name || 'G')[0].toUpperCase();
-      const groupAvatarInner = chat.avatar_url
-          ? `<img src="${chat.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`
-          : groupLetter;
+        // Групповой чат
+        if (chat.is_group) {
+            const groupLetter = (chat.name || 'G')[0].toUpperCase();
+            const groupAvatarInner = chat.avatar_url
+                ? `<img src="${chat.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`
+                : groupLetter;
 
-      return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}">
+            return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
                 <div class="relative flex-shrink-0">
                     <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
                         ${groupAvatarInner}
@@ -92,6 +92,12 @@ function renderChats() {
             </div>
         </div>`;
   }).join('');
+
+  // Восстанавливаем подсветку непрочитанных после перерисовки
+  const unread = window.app._unreadHighlight;
+  if (unread && unread.size) {
+    unread.forEach(chatId => _applyUnreadHighlight(chatId));
+  }
 }
 
 function renderMessages() {
@@ -103,7 +109,7 @@ function renderMessages() {
       [...container.querySelectorAll('[data-msg-id]')].map(el => el.dataset.msgId)
   );
 
-  // Строим карту онлайн-статусов из чатов
+// Строим карту онлайн-статусов из чатов
   const onlineMap = {};
   (app.chats || []).forEach(chat => {
     if (chat.interlocutor_id) {
@@ -157,6 +163,12 @@ function renderMessages() {
         ? `<div style="font-size:11px;font-weight:600;color:var(--text-muted,#6b7280);margin-bottom:2px;padding-left:2px;">${escapeHtml(msg.sender_name)}</div>`
         : '';
 
+
+    // Кнопки голосования — только для чужих сообщений, появляются при hover
+    const votesHtml = !isMe
+        ? `<div class="msg-votes">${renderVotesHtml(msg.likes||0, msg.dislikes||0, msg.my_vote||0, msg.id)}</div>`
+        : '';
+
     return `
             <div class="flex items-end gap-2 ${animClass}"
                  style="justify-content:${isMe ? 'flex-end' : 'flex-start'};${delay}"
@@ -184,6 +196,85 @@ function renderMessages() {
             </div>
         `;
   }).join('');
+}
+
+
+
+// ─── Рейтинговый бейдж ────────────────────────────────────────────────────────
+function renderRatingBadge(rating) {
+    if (!rating || rating <= 0) return '';
+    const ranks = [
+        { min: 1000, name: 'Легенда',   color: '#f59e0b' },
+        { min: 500,  name: 'Авторитет', color: '#8b5cf6' },
+        { min: 200,  name: 'Активный',  color: '#22c55e' },
+        { min: 50,   name: 'Участник',  color: '#3b82f6' },
+        { min: 1,    name: 'Новичок',   color: '#9ca3af' },
+    ];
+    const rank = ranks.find(r => rating >= r.min) || ranks[ranks.length - 1];
+    return `<span class="msg-rating-badge" title="${rank.name}"
+        style="display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:600;
+               color:${rank.color};background:${rank.color}18;
+               padding:1px 5px;border-radius:3px;line-height:1.4;">
+        ★ ${rating}
+    </span>`;
+}
+
+// ─── HTML кнопок голосования ──────────────────────────────────────────────────
+function renderVotesHtml(likes, dislikes, myVote, messageId) {
+    const likeActive    = myVote === 1;
+    const dislikeActive = myVote === -1;
+    return `
+        <button class="vote-btn vote-like ${likeActive ? 'vote-active-like' : ''}"
+                data-vote-msg="${messageId}" data-vote="1"
+                onclick="voteMessage(event, '${messageId}', 1)"
+                title="Лайк">
+            <span class="vote-icon">+</span>
+            <span class="vote-ring"></span>
+            ${likes > 0 ? `<span class="vote-count">${likes}</span>` : ''}
+        </button>
+        <button class="vote-btn vote-dislike ${dislikeActive ? 'vote-active-dislike' : ''}"
+                data-vote-msg="${messageId}" data-vote="-1"
+                onclick="voteMessage(event, '${messageId}', -1)"
+                title="Дизлайк">
+            <span class="vote-icon">−</span>
+            <span class="vote-ring"></span>
+            ${dislikes > 0 ? `<span class="vote-count">${dislikes}</span>` : ''}
+        </button>
+    `;
+}
+
+// ─── Обработчик клика на голосование ─────────────────────────────────────────
+async function voteMessage(e, messageId, vote) {
+    e.stopPropagation();
+    const btn = e.currentTarget;
+    const isLike = vote === 1;
+
+    // Находим пузырь сообщения
+    const msgWrap = btn.closest('[data-msg-id]');
+    const bubble  = msgWrap ? msgWrap.querySelector('.message-bubble') : null;
+
+    // Анимация кнопки — вспышка + пульс кольца
+    btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
+    void btn.offsetWidth; // reflow
+    btn.classList.add(isLike ? 'vote-flash-like' : 'vote-flash-dislike');
+
+    // Через 180ms — свечение пузыря
+    setTimeout(() => {
+        if (bubble) {
+            bubble.classList.remove('bubble-glow-like', 'bubble-glow-dislike');
+            void bubble.offsetWidth;
+            bubble.classList.add(isLike ? 'bubble-glow-like' : 'bubble-glow-dislike');
+            setTimeout(() => bubble.classList.remove('bubble-glow-like', 'bubble-glow-dislike'), 1000);
+        }
+    }, 180);
+
+    try {
+        await apiVoteMessage(messageId, vote);
+    } catch(err) {
+        // убираем анимацию если ошибка
+        btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
+        window.app && window.app.notify('Нельзя голосовать за своё сообщение', 'error');
+    }
 }
 
 function renderChatHeader() {

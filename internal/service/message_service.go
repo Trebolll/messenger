@@ -22,18 +22,27 @@ type ChatRepository interface {
 	Exists(chatID uuid.UUID) (bool, error)
 }
 
+type VoteEnricher interface {
+	GetVotesForMessagesFixed(msgs []model.Message, voterID uuid.UUID) (map[uuid.UUID]int, error)
+}
+
 type Hub interface {
 	SendToUser(userID uuid.UUID, msg websocket.Message)
 }
 
 type MessageService struct {
-	repo     MessageRepository
-	chatRepo ChatRepository
-	hub      Hub
+	repo         MessageRepository
+	chatRepo     ChatRepository
+	hub          Hub
+	voteEnricher VoteEnricher
 }
 
 func NewMessageService(repo MessageRepository, chatRepo ChatRepository, hub Hub) *MessageService {
 	return &MessageService{repo: repo, chatRepo: chatRepo, hub: hub}
+}
+
+func (s *MessageService) SetVoteEnricher(ve VoteEnricher) {
+	s.voteEnricher = ve
 }
 
 func (s *MessageService) SendMessage(message *model.Message) error {
@@ -62,7 +71,7 @@ func (s *MessageService) SendMessage(message *model.Message) error {
 	return nil
 }
 
-func (s *MessageService) GetMessagesByChatID(chatID uuid.UUID) ([]model.Message, error) {
+func (s *MessageService) GetMessagesByChatID(chatID, viewerID uuid.UUID) ([]model.Message, error) {
 	exists, err := s.chatRepo.Exists(chatID)
 	if err != nil {
 		return nil, err
@@ -70,7 +79,22 @@ func (s *MessageService) GetMessagesByChatID(chatID uuid.UUID) ([]model.Message,
 	if !exists {
 		return nil, errors.New("чат не существует")
 	}
-	return s.repo.GetMessagesByChatID(chatID)
+	msgs, err := s.repo.GetMessagesByChatID(chatID)
+	if err != nil {
+		return nil, err
+	}
+	// Проставляем my_vote для текущего пользователя
+	if s.voteEnricher != nil && len(msgs) > 0 {
+		votes, err2 := s.voteEnricher.GetVotesForMessagesFixed(msgs, viewerID)
+		if err2 == nil {
+			for i := range msgs {
+				if v, ok := votes[msgs[i].ID]; ok {
+					msgs[i].MyVote = v
+				}
+			}
+		}
+	}
+	return msgs, nil
 }
 
 func (s *MessageService) EditMessage(messageID, senderID uuid.UUID, content string) (*model.Message, error) {

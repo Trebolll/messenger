@@ -30,6 +30,8 @@ function connectWebSocket() {
                 _handleMessageDeleted(wrapper.content);
             } else if (wrapper.type === 'user_status') {
                 updateUserStatus(wrapper.content);
+            } else if (wrapper.type === 'vote_updated') {
+                _handleVoteUpdated(wrapper.content);
             } else if (wrapper.type === 'user_profile_updated') {
                 updateUserProfile(wrapper.content);
             } else if (wrapper.type === 'member_added') {
@@ -72,6 +74,13 @@ function _handleNewMessage(msg) {
         }
         if (String(msg.sender_id) !== String(app.currentUser?.id)) {
             apiMarkChatAsRead(app.activeChatId);
+        }
+    } else {
+        // Подсвечиваем чат в списке только если сообщение не от меня
+        if (String(msg.sender_id) !== String(app.currentUser?.id)) {
+            if (!app._unreadHighlight) app._unreadHighlight = new Set();
+            app._unreadHighlight.add(String(msg.chat_id));
+            _applyUnreadHighlight(String(msg.chat_id));
         }
     }
     updateLastMessageInChatList(msg);
@@ -157,7 +166,23 @@ function updateUserStatus(status) {
     });
 }
 
-// ─── Обработка событий участников группы ────────────────────────────────────
+// ─── Подсветка чата при новом входящем сообщении ────────────────────────────
+
+function _applyUnreadHighlight(chatId) {
+    const el = document.querySelector(`.chat-list-item[data-chat-id="${chatId}"]`);
+    if (el) {
+        el.classList.add('chat-unread-flash');
+    }
+}
+
+function _clearUnreadHighlight(chatId) {
+    const app = window.app;
+    if (app._unreadHighlight) app._unreadHighlight.delete(String(chatId));
+    const el = document.querySelector(`.chat-list-item[data-chat-id="${chatId}"]`);
+    if (el) el.classList.remove('chat-unread-flash');
+}
+
+
 
 function _handleMemberAdded(data) {
     const app  = window.app;
@@ -235,4 +260,29 @@ function _handleMemberRemoved(data) {
     if (chat && String(app.activeChatId) === String(data.chat_id)) {
         renderChatHeader();
     }
+}
+// ─── Обновление голосов в реальном времени ───────────────────────────────────
+
+function _handleVoteUpdated(data) {
+    const app = window.app;
+    const msg = (app.messages || []).find(m => String(m.id) === String(data.message_id));
+    if (msg) {
+        msg.likes    = data.likes;
+        msg.dislikes = data.dislikes;
+        msg.my_vote  = data.my_vote;
+    }
+    // Точечное обновление DOM
+    const el = document.querySelector(`[data-msg-id="${data.message_id}"]`);
+    if (el) {
+        const votesEl = el.querySelector('.msg-votes');
+        if (votesEl) {
+            votesEl.innerHTML = renderVotesHtml(data.likes, data.dislikes, data.my_vote, data.message_id);
+            // has-active — фолбэк для браузеров без :has()
+            votesEl.classList.toggle('has-active', data.my_vote !== 0);
+        }
+    }
+    // Обновляем бейджи рейтинга отправителя
+    document.querySelectorAll(`[data-sender-id="${data.sender_id}"] .msg-rating-badge`).forEach(b => {
+        b.outerHTML = renderRatingBadge(data.sender_rating);
+    });
 }

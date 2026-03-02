@@ -4,7 +4,7 @@
   <link rel="icon" type="image/svg+xml" href="/web/favicon.svg">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>λ Messenger</title>
+  <title>λ</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -78,6 +78,174 @@
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .chat-list-item:hover { background-color: var(--bg-item-hover); cursor: pointer; }
     .chat-list-item.active { background-color: var(--bg-item-active); border-right: 3px solid var(--accent-color); }
+
+    /* ══ Система голосования ══════════════════════════════════════════ */
+
+    /* Контейнер кнопок — скрыт, появляется при hover на сообщение */
+    .msg-votes {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+      opacity: 0;
+      transform: translateY(4px) scale(0.92);
+      transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34,1.4,0.64,1);
+      pointer-events: none;
+    }
+    [data-msg-id]:hover .msg-votes,
+    .msg-votes:has(.vote-active-like),
+    .msg-votes:has(.vote-active-dislike) {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+    /* Фолбэк для браузеров без :has() */
+    .msg-votes.has-active {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    /* Базовая кнопка голосования */
+    .vote-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      width: 28px; height: 28px;
+      border: none;
+      border-radius: 50% !important;
+      cursor: pointer;
+      background: var(--bg-sidebar);
+      color: var(--text-muted);
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1;
+      transition: color 0.2s, background 0.2s, transform 0.18s, box-shadow 0.25s;
+      outline: none;
+      overflow: visible;
+    }
+    .vote-btn .vote-icon {
+      display: block;
+      transform: skewX(0) !important; /* сбрасываем глобальный skew на кнопках */
+      line-height: 1;
+      font-style: normal;
+    }
+    .vote-count {
+      position: absolute;
+      top: -6px; right: -6px;
+      font-size: 9px; font-weight: 700;
+      background: var(--bg-sidebar);
+      color: var(--text-muted);
+      border-radius: 8px !important;
+      padding: 0 3px;
+      line-height: 14px;
+      min-width: 14px;
+      text-align: center;
+      pointer-events: none;
+      border: 1px solid var(--border-color);
+    }
+
+    /* Пульсирующее кольцо (как у new-chat-btn) */
+    .vote-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50% !important;
+      pointer-events: none;
+    }
+
+    /* Лайк — зелёный */
+    .vote-like:hover {
+      color: #22c55e;
+      background: rgba(34,197,94,0.12);
+      transform: scale(1.12);
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.18);
+    }
+    .vote-active-like {
+      color: #16a34a !important;
+      background: rgba(34,197,94,0.15) !important;
+      box-shadow: 0 0 0 2px rgba(34,197,94,0.3) !important;
+    }
+    .vote-active-like .vote-count { color: #16a34a; border-color: rgba(34,197,94,0.4); }
+
+    /* Дизлайк — красный */
+    .vote-dislike:hover {
+      color: #ef4444;
+      background: rgba(239,68,68,0.1);
+      transform: scale(1.12);
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.15);
+    }
+    .vote-active-dislike {
+      color: #dc2626 !important;
+      background: rgba(239,68,68,0.12) !important;
+      box-shadow: 0 0 0 2px rgba(239,68,68,0.28) !important;
+    }
+    .vote-active-dislike .vote-count { color: #dc2626; border-color: rgba(239,68,68,0.4); }
+
+    /* Анимация вспышки лайка — как newChatFlash но зелёная */
+    @keyframes voteLikeFlash {
+      0%   { box-shadow: 0 0 0 0   rgba(34,197,94,0.7);  transform: scale(0.88); color: #22c55e; }
+      30%  { box-shadow: 0 0 0 8px rgba(34,197,94,0.3);  transform: scale(1.18); }
+      60%  { box-shadow: 0 0 0 16px rgba(34,197,94,0.1); transform: scale(1.06); }
+      100% { box-shadow: 0 0 0 22px rgba(34,197,94,0);   transform: scale(1); }
+    }
+    .vote-flash-like {
+      animation: voteLikeFlash 0.52s cubic-bezier(0.22,1,0.36,1) forwards;
+      color: #16a34a !important;
+      background: rgba(34,197,94,0.15) !important;
+    }
+
+    /* Анимация вспышки дизлайка — красная */
+    @keyframes voteDislikeFlash {
+      0%   { box-shadow: 0 0 0 0   rgba(239,68,68,0.7);  transform: scale(0.88); color: #ef4444; }
+      30%  { box-shadow: 0 0 0 8px rgba(239,68,68,0.28); transform: scale(1.18); }
+      60%  { box-shadow: 0 0 0 16px rgba(239,68,68,0.1); transform: scale(1.06); }
+      100% { box-shadow: 0 0 0 22px rgba(239,68,68,0);   transform: scale(1); }
+    }
+    .vote-flash-dislike {
+      animation: voteDislikeFlash 0.52s cubic-bezier(0.22,1,0.36,1) forwards;
+      color: #dc2626 !important;
+      background: rgba(239,68,68,0.12) !important;
+    }
+
+    /* Свечение пузыря — лайк зелёный */
+    @keyframes bubbleGlowLike {
+      0%   { box-shadow: 0 0 0   0  rgba(34,197,94,0);   }
+      25%  { box-shadow: 0 0 18px 4px rgba(34,197,94,0.45); }
+      60%  { box-shadow: 0 0 28px 8px rgba(34,197,94,0.25); }
+      100% { box-shadow: 0 0 0   0  rgba(34,197,94,0);   }
+    }
+    .bubble-glow-like {
+      animation: bubbleGlowLike 0.9s ease-out forwards !important;
+    }
+
+    /* Свечение пузыря — дизлайк красный */
+    @keyframes bubbleGlowDislike {
+      0%   { box-shadow: 0 0 0   0  rgba(239,68,68,0);   }
+      25%  { box-shadow: 0 0 18px 4px rgba(239,68,68,0.4); }
+      60%  { box-shadow: 0 0 28px 8px rgba(239,68,68,0.22); }
+      100% { box-shadow: 0 0 0   0  rgba(239,68,68,0);   }
+    }
+    .bubble-glow-dislike {
+      animation: bubbleGlowDislike 0.9s ease-out forwards !important;
+    }
+
+
+    @keyframes chatUnreadPulse {
+      0%   { background-color: transparent; }
+      30%  { background-color: color-mix(in srgb, var(--accent-color) 18%, transparent); }
+      60%  { background-color: transparent; }
+      80%  { background-color: color-mix(in srgb, var(--accent-color) 10%, transparent); }
+      100% { background-color: color-mix(in srgb, var(--accent-color) 10%, transparent); }
+    }
+    .chat-unread-flash {
+      animation: chatUnreadPulse 1.2s ease-out forwards;
+      background-color: color-mix(in srgb, var(--accent-color) 10%, transparent);
+    }
+    .chat-unread-flash:hover {
+      background-color: var(--bg-item-hover) !important;
+    }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     .message-bubble { max-width: 75%; display: inline-block; width: fit-content; word-break: break-word; }
@@ -1608,6 +1776,86 @@
       box-shadow: 0 0 0 1px rgba(34,197,94,0.25);
     }
 
+    /* ══════════════════════════════════════════════════════
+       UI — тени вместо линий, лёгкие скругления
+    ══════════════════════════════════════════════════════ */
+
+    /* Аватары и статус-точки — круглые */
+    .rounded-full,
+    .spinner, .pulse-ring,
+    .member-online-dot,
+    #avatar-viewer-circle,
+    .ai-btn-inner,
+    [data-online-uid] {
+      border-radius: 50% !important;
+    }
+
+    /* ── Убираем border-линии между панелями ── */
+    .border-custom,
+    .border-r, .border-l, .border-b, .border-t {
+      border: none !important;
+    }
+
+    /* ── Тени вместо разделителей ── */
+    .app-navbar {
+      border: none !important;
+      box-shadow: 4px 0 16px rgba(0,0,0,0.08) !important;
+    }
+    body.theme-gray .app-navbar,
+    body.theme-twilight .app-navbar,
+    body.theme-ocean .app-navbar { box-shadow: 4px 0 20px rgba(0,0,0,0.25) !important; }
+
+    .chats-sidebar {
+      border: none !important;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.07) !important;
+    }
+    body.theme-gray .chats-sidebar,
+    body.theme-twilight .chats-sidebar,
+    body.theme-ocean .chats-sidebar { box-shadow: 4px 0 24px rgba(0,0,0,0.22) !important; }
+
+    #chat-header {
+      border: none !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.07) !important;
+      position: relative; z-index: 3;
+    }
+    body.theme-gray #chat-header,
+    body.theme-twilight #chat-header,
+    body.theme-ocean #chat-header { box-shadow: 0 4px 20px rgba(0,0,0,0.22) !important; }
+
+    #chats-sidebar > div:first-child {
+      border: none !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+      position: relative; z-index: 2;
+    }
+
+    #input-area {
+      border: none !important;
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.07) !important;
+      position: relative; z-index: 4;
+    }
+    body.theme-gray #input-area,
+    body.theme-twilight #input-area,
+    body.theme-ocean #input-area { box-shadow: 0 -4px 20px rgba(0,0,0,0.22) !important; }
+
+    #info-panel {
+      border: none !important;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.07) !important;
+    }
+    body.theme-gray #info-panel,
+    body.theme-twilight #info-panel,
+    body.theme-ocean #info-panel { box-shadow: -4px 0 24px rgba(0,0,0,0.22) !important; }
+
+    #info-panel > div:first-child {
+      border: none !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+    }
+
+    /* Активный чат — акцент слева */
+    .chat-list-item.active {
+      border-left: 3px solid var(--accent-color) !important;
+      border-right: none !important;
+    }
+
   </style>
 </head>
 <body class="bg-custom-main min-h-screen text-custom-main">
@@ -1622,6 +1870,7 @@
     <header class="container mx-auto px-6 py-8 flex justify-between items-center relative z-10">
       <div class="flex items-center space-x-2">
         <span class="text-4xl font-bold text-blue-600">λ</span>
+        <span class="text-2xl font-bold tracking-tight text-custom-main">Alpha</span>
       </div>
     </header>
     <main class="flex-grow flex items-center justify-center relative overflow-hidden">
