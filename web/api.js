@@ -222,6 +222,41 @@ async function apiAddChatMember(chatId, username) {
 async function apiGetGroupMembers(chatId) {
     return await apiFetch(`/api/chats/${chatId}/members`);
 }
+
+// ─── File Upload API ────────────────────────────────────────────────────────
+
+async function apiUploadFile(chatId, file, messageId, onProgress) {
+    const token = localStorage.getItem('alpha_token');
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        const formData = new FormData();
+        formData.append('file', file);
+        if (messageId) formData.append('message_id', messageId);
+
+        xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable && onProgress) {
+                onProgress(e.loaded, e.total);
+            }
+        });
+
+        xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try { resolve(JSON.parse(xhr.responseText)); }
+                catch { reject(new Error('Invalid response')); }
+            } else {
+                try {
+                    const err = JSON.parse(xhr.responseText);
+                    reject(new Error(err.error || 'Upload failed'));
+                } catch { reject(new Error('Upload failed')); }
+            }
+        });
+        xhr.addEventListener('error', () => reject(new Error('Network error')));
+
+        xhr.open('POST', `/api/chats/${chatId}/attachments`);
+        if (token) xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        xhr.send(formData);
+    });
+}
 async function apiVoteMessage(messageId, vote) {
     return await apiFetch(`/api/messages/${messageId}/vote`, {
         method: 'POST',

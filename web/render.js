@@ -81,7 +81,7 @@ function renderChats() {
         </div>
         ${chat.is_online ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>' : ''}`;
 
-    return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}">
+    return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
             <div class="relative flex-shrink-0">${avatarHtml}</div>
             <div class="flex-grow overflow-hidden">
                 <div class="flex justify-between items-baseline">
@@ -163,11 +163,93 @@ function renderMessages() {
         ? `<div style="font-size:11px;font-weight:600;color:var(--text-muted,#6b7280);margin-bottom:2px;padding-left:2px;">${escapeHtml(msg.sender_name)}</div>`
         : '';
 
+    // Если сообщение загружается — показываем прогресс
+    if (msg._uploading) {
+      const fileName = escapeHtml(msg._fileName || 'Файл');
+      const fileSize = (typeof formatFileSize === 'function') ? formatFileSize(msg._fileSize || 0) : '';
+      return `
+            <div class="flex items-end gap-2 ${animClass}"
+                 style="justify-content:flex-end;${delay}"
+                 data-msg-id="${msg.id}"
+                 data-sender-id="${msg.sender_id}">
+                <div style="display:flex;flex-direction:column;align-items:flex-end;min-width:0;max-width:75%;">
+                    <div class="message-bubble p-3.5 message-sent">
+                        <div class="upload-progress-msg">
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                                <svg width="18" height="18" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                                <span style="font-size:12px;font-weight:600;opacity:0.9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;">${fileName}</span>
+                            </div>
+                            <div class="upload-progress-bar-wrap">
+                                <div class="upload-progress-bar" style="width:${msg._progress || 0}%"></div>
+                            </div>
+                            <div class="upload-progress-info">
+                                <span>${(typeof formatFileSize === 'function') ? formatFileSize(msg._loadedBytes || 0) + ' / ' + fileSize : ''}</span>
+                                <span>~${msg._timeLeft || '...'}</span>
+                            </div>
+                            ${msg.content ? `<p style="font-size:13px;margin-top:4px;">${escapeHtml(msg.content)}</p>` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    }
 
-    // Кнопки голосования — только для чужих сообщений, появляются при hover
-    const votesHtml = !isMe
-        ? `<div class="msg-votes">${renderVotesHtml(msg.likes||0, msg.dislikes||0, msg.my_vote||0, msg.id)}</div>`
-        : '';
+    // Рендер вложения (если есть)
+    let attachmentHtml = '';
+    let isMediaAttachment = false;
+    if (msg._attachment || msg.attachment) {
+      const att = msg._attachment || msg.attachment;
+      const mime = att.mime_type || '';
+      const attUrl = att.url || '';
+      const attName = escapeHtml(att.filename || 'Файл');
+      const attSize = (typeof formatFileSize === 'function') ? formatFileSize(att.size_bytes || 0) : '';
+
+      const isGif   = mime === 'image/gif';
+      const isImage = !isGif && mime.startsWith('image/');
+      const isVideo = mime.startsWith('video/');
+      const isAudio = mime.startsWith('audio/');
+
+      if (isGif) {
+        isMediaAttachment = true;
+        attachmentHtml = `<img src="${attUrl}" class="msg-attachment-gif" alt="${attName}" loading="lazy">`;
+      } else if (isImage) {
+        isMediaAttachment = true;
+        attachmentHtml = `<img src="${attUrl}" class="msg-attachment-image" alt="${attName}" onclick="openImgLightbox('${attUrl}')" loading="lazy">`;
+      } else if (isVideo) {
+        isMediaAttachment = true;
+        attachmentHtml = `<video class="msg-attachment-video" controls preload="metadata">
+                    <source src="${attUrl}" type="${mime}">
+                </video>`;
+      } else if (isAudio) {
+        attachmentHtml = `<audio controls style="width:100%;min-width:220px;margin-bottom:4px;border-radius:8px;outline:none;">
+                    <source src="${attUrl}" type="${mime}">
+                </audio>`;
+      } else {
+        attachmentHtml = `<a href="${attUrl}" class="msg-attachment-file" target="_blank" download>
+                    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <div class="msg-attachment-file-info">
+                        <span class="msg-attachment-file-name">${attName}</span>
+                        <span class="msg-attachment-file-size">${attSize}</span>
+                    </div>
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="opacity:0.6;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                </a>`;
+      }
+    }
+
+    // Для медиа — пузырь без горизонтальных паддингов чтобы изображение заполняло его целиком
+    const bubblePadding = isMediaAttachment ? 'p-1.5' : 'p-3.5';
+    // Контент (подпись или текст) под медиа — с паддингом
+    let captionWrap;
+    if (isMediaAttachment) {
+      if ((msg.content || '').trim()) {
+        captionWrap = '<p class="text-sm leading-relaxed" id="msg-content-' + msg.id + '" style="padding:2px 8px 4px;">' + escapeHtml(msg.content) + '</p>';
+      } else {
+        captionWrap = '<span id="msg-content-' + msg.id + '" style="display:none;"></span>';
+      }
+    } else if (msg.content || !attachmentHtml) {
+      captionWrap = '<p class="text-sm leading-relaxed" id="msg-content-' + msg.id + '" style="display:inline;">' + escapeHtml(msg.content) + '</p>';
+    } else {
+      captionWrap = '<span id="msg-content-' + msg.id + '" style="display:none;"></span>';
+    }
 
     return `
             <div class="flex items-end gap-2 ${animClass}"
@@ -175,12 +257,12 @@ function renderMessages() {
                  data-msg-id="${msg.id}"
                  oncontextmenu="showMessageMenu(event, '${msg.id}', ${isMe})">
                 ${!isMe ? senderAvatarHtml : ''}
-                <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};max-width:calc(100% - 42px);">
+                <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};min-width:0;max-width:75%;">
                     ${nicknameHtml}
-                    <div class="message-bubble p-3.5 ${isMe ? 'message-sent' : 'message-received'}">
-                        <p class="text-sm leading-relaxed" id="msg-content-${msg.id}" style="display:inline;">${escapeHtml(msg.content)}</p>
-                        <span style="display:inline-block;width:${isMe ? '52px' : '32px'};height:1px;"></span>
-                        <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:-2px;flex-wrap:nowrap;float:right;clear:both;">
+                    <div class="message-bubble ${bubblePadding} ${isMe ? 'message-sent' : 'message-received'}" style="${isMediaAttachment ? 'overflow:hidden;' : ''}">
+                        ${attachmentHtml}
+                        ${captionWrap}
+                        <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:2px;flex-wrap:nowrap;${isMediaAttachment ? 'padding:0 6px 4px;' : ''}">
                             ${isEdited ? `<span class="msg-edited-label">изменено</span>` : ''}
                             <span style="font-size:10px;white-space:nowrap;flex-shrink:0;opacity:${isMe ? '0.7' : '1'};" class="${isMe ? '' : 'text-custom-muted'}">
                                 ${new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -198,20 +280,18 @@ function renderMessages() {
   }).join('');
 }
 
-
-
 // ─── Рейтинговый бейдж ────────────────────────────────────────────────────────
 function renderRatingBadge(rating) {
-    if (!rating || rating <= 0) return '';
-    const ranks = [
-        { min: 1000, name: 'Легенда',   color: '#f59e0b' },
-        { min: 500,  name: 'Авторитет', color: '#8b5cf6' },
-        { min: 200,  name: 'Активный',  color: '#22c55e' },
-        { min: 50,   name: 'Участник',  color: '#3b82f6' },
-        { min: 1,    name: 'Новичок',   color: '#9ca3af' },
-    ];
-    const rank = ranks.find(r => rating >= r.min) || ranks[ranks.length - 1];
-    return `<span class="msg-rating-badge" title="${rank.name}"
+  if (!rating || rating <= 0) return '';
+  const ranks = [
+    { min: 1000, name: 'Легенда',   color: '#f59e0b' },
+    { min: 500,  name: 'Авторитет', color: '#8b5cf6' },
+    { min: 200,  name: 'Активный',  color: '#22c55e' },
+    { min: 50,   name: 'Участник',  color: '#3b82f6' },
+    { min: 1,    name: 'Новичок',   color: '#9ca3af' },
+  ];
+  const rank = ranks.find(r => rating >= r.min) || ranks[ranks.length - 1];
+  return `<span class="msg-rating-badge" title="${rank.name}"
         style="display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:600;
                color:${rank.color};background:${rank.color}18;
                padding:1px 5px;border-radius:3px;line-height:1.4;">
@@ -221,9 +301,9 @@ function renderRatingBadge(rating) {
 
 // ─── HTML кнопок голосования ──────────────────────────────────────────────────
 function renderVotesHtml(likes, dislikes, myVote, messageId) {
-    const likeActive    = myVote === 1;
-    const dislikeActive = myVote === -1;
-    return `
+  const likeActive    = myVote === 1;
+  const dislikeActive = myVote === -1;
+  return `
         <button class="vote-btn vote-like ${likeActive ? 'vote-active-like' : ''}"
                 data-vote-msg="${messageId}" data-vote="1"
                 onclick="voteMessage(event, '${messageId}', 1)"
@@ -245,36 +325,36 @@ function renderVotesHtml(likes, dislikes, myVote, messageId) {
 
 // ─── Обработчик клика на голосование ─────────────────────────────────────────
 async function voteMessage(e, messageId, vote) {
-    e.stopPropagation();
-    const btn = e.currentTarget;
-    const isLike = vote === 1;
+  e.stopPropagation();
+  const btn = e.currentTarget;
+  const isLike = vote === 1;
 
-    // Находим пузырь сообщения
-    const msgWrap = btn.closest('[data-msg-id]');
-    const bubble  = msgWrap ? msgWrap.querySelector('.message-bubble') : null;
+  // Находим пузырь сообщения
+  const msgWrap = btn.closest('[data-msg-id]');
+  const bubble  = msgWrap ? msgWrap.querySelector('.message-bubble') : null;
 
-    // Анимация кнопки — вспышка + пульс кольца
-    btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
-    void btn.offsetWidth; // reflow
-    btn.classList.add(isLike ? 'vote-flash-like' : 'vote-flash-dislike');
+  // Анимация кнопки — вспышка + пульс кольца
+  btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
+  void btn.offsetWidth; // reflow
+  btn.classList.add(isLike ? 'vote-flash-like' : 'vote-flash-dislike');
 
-    // Через 180ms — свечение пузыря
-    setTimeout(() => {
-        if (bubble) {
-            bubble.classList.remove('bubble-glow-like', 'bubble-glow-dislike');
-            void bubble.offsetWidth;
-            bubble.classList.add(isLike ? 'bubble-glow-like' : 'bubble-glow-dislike');
-            setTimeout(() => bubble.classList.remove('bubble-glow-like', 'bubble-glow-dislike'), 1000);
-        }
-    }, 180);
-
-    try {
-        await apiVoteMessage(messageId, vote);
-    } catch(err) {
-        // убираем анимацию если ошибка
-        btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
-        window.app && window.app.notify('Нельзя голосовать за своё сообщение', 'error');
+  // Через 180ms — свечение пузыря
+  setTimeout(() => {
+    if (bubble) {
+      bubble.classList.remove('bubble-glow-like', 'bubble-glow-dislike');
+      void bubble.offsetWidth;
+      bubble.classList.add(isLike ? 'bubble-glow-like' : 'bubble-glow-dislike');
+      setTimeout(() => bubble.classList.remove('bubble-glow-like', 'bubble-glow-dislike'), 1000);
     }
+  }, 180);
+
+  try {
+    await apiVoteMessage(messageId, vote);
+  } catch(err) {
+    // убираем анимацию если ошибка
+    btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
+    window.app && window.app.notify('Нельзя голосовать за своё сообщение', 'error');
+  }
 }
 
 function renderChatHeader() {

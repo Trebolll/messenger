@@ -61,13 +61,28 @@ function _handleNewMessage(msg) {
     console.log('New message:', msg, '| activeChatId:', app.activeChatId);
 
     if (app.activeChatId && String(msg.chat_id) === String(app.activeChatId)) {
+        // Проверяем по id — и по множеству уже добавленных нами сообщений
         const already = app.messages.find(m =>
-            (m.id && msg.id && String(m.id) === String(msg.id)) ||
-            (m.content === msg.content &&
-                String(m.sender_id) === String(msg.sender_id) &&
-                m.created_at === msg.created_at)
+            m.id && msg.id && String(m.id) === String(msg.id)
         );
-        if (!already) {
+        const alreadySent = window._sentMsgIds && window._sentMsgIds.has(String(msg.id));
+        if (alreadySent) window._sentMsgIds.delete(String(msg.id)); // чистим
+
+        // Если tempMsg ещё ждёт — WS пришёл раньше загрузки файла
+        // Запоминаем данные сообщения чтобы file-upload мог применить вложение
+        const pendingTemp = app.messages.find(m =>
+            m._realMsgId && String(m._realMsgId) === String(msg.id)
+        );
+        if (pendingTemp) {
+            // Не добавляем — file-upload сам заменит tempMsg когда закончит загрузку
+            // Сохраняем данные sender/time из WS-сообщения в tempMsg
+            pendingTemp._wsMsg = msg;
+        } else if (!already && !alreadySent) {
+            // Парсим вложение если есть
+            if (typeof parseAttachmentFromContent === 'function') {
+                const att = parseAttachmentFromContent(msg.content);
+                if (att) { msg._attachment = att; msg.content = extractCaptionFromContent(msg.content); }
+            }
             app.messages.push(msg);
             renderMessages();
             scrollToBottom();

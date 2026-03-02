@@ -60,10 +60,18 @@ func (h *AttachmentHandler) Upload(c *gin.Context) {
 	}
 	defer file.Close()
 
+	var messageID *uuid.UUID
+	if msgIDStr := c.PostForm("message_id"); msgIDStr != "" {
+		if parsed, err := uuid.Parse(msgIDStr); err == nil {
+			messageID = &parsed
+		}
+	}
+
 	attachment, err := h.attachmentService.Upload(
 		c.Request.Context(),
 		senderID,
 		chatID,
+		messageID,
 		file,
 		fileHeader.Filename,
 		fileHeader.Size,

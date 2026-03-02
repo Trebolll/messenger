@@ -401,16 +401,37 @@ let _menuTimeout = null;
 
 function showMessageMenu(event, messageId, isMe) {
   event.preventDefault();
-  if (!isMe) return; // редактировать можно только свои
 
   closeMessageMenu();
 
+  const msg = window.app?.messages?.find(m => String(m.id) === String(messageId));
+  const msgText = msg?.content || '';
+
   const menu = document.createElement('div');
   menu.id = 'msg-context-menu';
-  menu.className = 'fixed z-[300] bg-custom-main border border-custom rounded-2xl shadow-xl py-1 min-w-[140px]';
+  menu.className = 'fixed z-[300] bg-custom-main border border-custom rounded-2xl shadow-xl py-1 min-w-[160px]';
   menu.style.left = event.clientX + 'px';
   menu.style.top  = event.clientY + 'px';
-  menu.innerHTML = `
+
+  let menuHtml = '';
+
+  // Копировать — для всех сообщений с текстом
+  if (msgText) {
+    menuHtml += `
+        <button onclick="copyMessageText('${messageId}')"
+            class="w-full text-left px-4 py-2.5 text-sm text-custom-main hover:bg-custom-sidebar transition flex items-center gap-2">
+            <svg class="w-4 h-4 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+            Копировать
+        </button>`;
+  }
+
+  // Редактировать и удалить — только для своих
+  if (isMe) {
+    if (menuHtml) menuHtml += '<div class="mx-3 my-1 border-t border-custom opacity-50"></div>';
+    menuHtml += `
         <button onclick="startEditMessage('${messageId}')"
             class="w-full text-left px-4 py-2.5 text-sm text-custom-main hover:bg-custom-sidebar transition flex items-center gap-2">
             <svg class="w-4 h-4 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -427,8 +448,11 @@ function showMessageMenu(event, messageId, isMe) {
                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
             </svg>
             Удалить
-        </button>
-    `;
+        </button>`;
+  }
+
+  if (!menuHtml) return; // нечего показывать
+  menu.innerHTML = menuHtml;
   document.body.appendChild(menu);
 
   // Коррекция позиции если меню выходит за экран
@@ -438,6 +462,24 @@ function showMessageMenu(event, messageId, isMe) {
 
   // Закрытие по клику вне меню
   setTimeout(() => document.addEventListener('click', closeMessageMenu, { once: true }), 0);
+}
+
+function copyMessageText(messageId) {
+  closeMessageMenu();
+  const msg = window.app?.messages?.find(m => String(m.id) === String(messageId));
+  if (!msg || !msg.content) return;
+  navigator.clipboard.writeText(msg.content).then(() => {
+    window.app?.notify?.('Текст скопирован', 'success');
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = msg.content;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    window.app?.notify?.('Текст скопирован', 'success');
+  });
 }
 
 function closeMessageMenu() {

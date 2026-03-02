@@ -37,7 +37,14 @@ class AlphaApp {
     document.addEventListener('keydown', (e) => {
       if (e.target.id === 'message-input' && e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        this.sendMessage();
+        // Создаём синтетическое событие для handleSendMessage
+        const form = document.getElementById('message-form');
+        if (form && typeof handleSendMessage === 'function') {
+          const fakeEvent = { preventDefault: () => {} };
+          handleSendMessage(fakeEvent);
+        } else {
+          this.sendMessage();
+        }
       }
     });
 

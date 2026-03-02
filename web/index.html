@@ -248,7 +248,7 @@
     }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    .message-bubble { max-width: 75%; display: inline-block; width: fit-content; word-break: break-word; }
+    .message-bubble { max-width: 75%; display: inline-block; width: fit-content; min-width: 0; word-break: break-word; }
 
     /* ── Появление сообщений ───────────────────────────────────────── */
     @keyframes msgSlideRight {
@@ -2012,31 +2012,15 @@
           </div>
         </div>
 
+        <!-- File Preview Panel -->
+        <div id="file-preview-panel"></div>
+
         <form id="message-form" class="flex items-end gap-3" onsubmit="handleSendMessage(event)">
-          <button type="button" id="attach-btn" class="p-3" style="position:relative;z-index:20;" title="Прикрепить файл">
-            <div id="pin-wrap">
-              <svg id="pin-svg" width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Тень под булавкой -->
-                <ellipse id="pin-shadow" cx="19" cy="22" rx="3.5" ry="1.1"
-                         fill="currentColor" opacity="0.12"/>
-                <!-- Острие булавки — тонкое, слегка изогнутое -->
-                <path stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
-                      d="M14.5 13.5 Q17 17 20 21.5"/>
-                <!-- Тело — цилиндр под углом 45° -->
-                <path stroke="currentColor" stroke-width="3.8" stroke-linecap="round"
-                      d="M6.5 6.5 L14.5 13.5" opacity="0.22"/>
-                <path stroke="currentColor" stroke-width="3" stroke-linecap="round"
-                      d="M6.5 6.5 L14.5 13.5"/>
-                <!-- Кольцо-ограничитель на стержне -->
-                <circle cx="11" cy="11" r="1.8"
-                        fill="var(--bg-main, white)" stroke="currentColor" stroke-width="1.4"/>
-                <!-- Головка — шарик -->
-                <circle cx="5.8" cy="5.8" r="3.8" fill="currentColor" opacity="0.85"/>
-                <!-- Блик на шарике -->
-                <circle cx="4.6" cy="4.5" r="1.4" fill="white" opacity="0.6"/>
-                <circle cx="5.3" cy="3.9" r="0.5" fill="white" opacity="0.8"/>
-              </svg>
-            </div>
+          <input type="file" id="file-input" multiple style="display:none;" accept="image/jpeg,image/png,image/gif,audio/webm,audio/ogg,audio/mpeg,video/webm,video/mp4">
+          <button type="button" id="attach-btn" onclick="triggerFileInput()" class="p-3" style="position:relative;z-index:20;" title="Прикрепить файл">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+            </svg>
           </button>
 
           <div class="flex-grow msg-input-wrap" style="position:relative;z-index:20;">
@@ -2265,12 +2249,18 @@
   <div id="notification-center" class="fixed top-6 right-6 z-[100] space-y-3 w-80"></div>
 </div>
 
+<!-- Image Lightbox -->
+<div id="img-lightbox" onclick="closeImgLightbox()">
+  <img id="img-lightbox-img" src="" alt="">
+</div>
+
 <script src="/web/api.js"></script>
 <script src="/web/websocket.js"></script>
 <script src="/web/render.js"></script>
 <script src="/web/app.js"></script>
 <script src="/web/neural-ai-btn.js"></script>
 <script src="/web/ui.js"></script>
+<script src="/web/file-upload.js"></script>
 <script src="/web/lambda-anim.js"></script>
 <script src="/web/btn-anim.js"></script>
 </body>
