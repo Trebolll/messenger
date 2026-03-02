@@ -1010,6 +1010,32 @@ function openMemberAvatarViewer(member) {
     circleEl.textContent = (member.username || '?')[0].toUpperCase();
   }
   document.getElementById('avatar-viewer-name').textContent   = member.username || '';
-  document.getElementById('avatar-viewer-status').textContent = member.full_name || '';
+  document.getElementById('avatar-viewer-status').textContent = member.full_name || member.status || '';
+
+  // Определяем онлайн-статус
+  const app = window.app;
+  let isOnline = typeof member.is_online !== 'undefined' ? member.is_online : false;
+  if (!isOnline && member.id) {
+    const chat = (app.chats || []).find(c => String(c.interlocutor_id) === String(member.id));
+    if (chat) isOnline = !!chat.is_online;
+    if (!isOnline) {
+      for (const c of (app.chats || [])) {
+        const m = (c.members || []).find(m => String(m.id) === String(member.id));
+        if (m) { isOnline = !!m.is_online; break; }
+      }
+    }
+  }
+
+  const dot   = document.getElementById('avatar-viewer-online-dot');
+  const label = document.getElementById('avatar-viewer-online-label');
+  if (dot && label) {
+    dot.style.display    = 'block';
+    label.style.display  = 'inline-block';
+    dot.style.background = isOnline ? '#22c55e' : '#9ca3af';
+    label.textContent    = isOnline ? 'онлайн' : 'офлайн';
+    label.style.background  = isOnline ? 'rgba(34,197,94,0.15)' : 'rgba(156,163,175,0.15)';
+    label.style.color        = isOnline ? '#16a34a' : '#6b7280';
+  }
+
   document.getElementById('avatar-viewer-overlay').classList.remove('hidden');
 }

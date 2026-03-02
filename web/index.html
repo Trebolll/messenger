@@ -4,7 +4,7 @@
   <link rel="icon" type="image/svg+xml" href="/web/favicon.svg">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alpha Messenger</title>
+  <title>λ Messenger</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -80,7 +80,7 @@
     .chat-list-item.active { background-color: var(--bg-item-active); border-right: 3px solid var(--accent-color); }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    .message-bubble { max-width: 75%; }
+    .message-bubble { max-width: 75%; display: inline-block; width: fit-content; word-break: break-word; }
 
     /* ── Появление сообщений ───────────────────────────────────────── */
     @keyframes msgSlideRight {
@@ -1622,19 +1622,14 @@
     <header class="container mx-auto px-6 py-8 flex justify-between items-center relative z-10">
       <div class="flex items-center space-x-2">
         <span class="text-4xl font-bold text-blue-600">λ</span>
-        <span class="text-2xl font-bold tracking-tight text-custom-main">Alpha</span>
       </div>
     </header>
     <main class="flex-grow flex items-center justify-center relative overflow-hidden">
-      <div class="container mx-auto px-6 text-center relative z-10">
-        <div class="mb-4">
-          <h1 class="text-6xl font-extrabold text-custom-main mb-4 tracking-tight">Alpha</h1>
-          <p class="text-xl text-custom-muted font-light">Новый взгляд на общение. Просто. Быстро. Без лишнего.</p>
-        </div>
-        <div class="text-9xl text-blue-600/10 font-light select-none -mb-8">λ</div>
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12">
-          <button onclick="openAuthModal('register')" class="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white font-semibold rounded-2xl shadow-lg hover:bg-blue-700 transition duration-300">Регистрация</button>
-          <button onclick="openAuthModal('login')" class="w-full sm:w-auto px-8 py-4 bg-custom-main text-blue-600 border-2 border-blue-600 font-semibold rounded-2xl hover:bg-custom-sidebar transition duration-300">Вход</button>
+      <canvas id="lambda-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;"></canvas>
+      <div class="relative z-10 flex flex-col items-center" style="position:absolute;bottom:12%;left:50%;transform:translateX(-50%);width:100%;">
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 px-6">
+          <button id="btn-register" onclick="openAuthModal('register')" class="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white font-semibold rounded-2xl shadow-lg transition duration-300" style="position:relative;overflow:hidden;">Регистрация</button>
+          <button id="btn-login" onclick="openAuthModal('login')" class="w-full sm:w-auto px-8 py-4 bg-custom-main text-blue-600 border-2 border-blue-600 font-semibold rounded-2xl transition duration-300" style="position:relative;overflow:hidden;">Вход</button>
         </div>
       </div>
     </main>
@@ -1858,7 +1853,7 @@
     <div id="auth-modal" class="bg-custom-main w-full max-w-md rounded-3xl shadow-2xl relative overflow-hidden transform scale-95 transition-all duration-300">
       <button onclick="closeAuthModal()" class="absolute top-6 right-6 text-custom-muted hover:text-custom-main transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
       <div id="login-form-container" class="p-8 sm:p-12">
-        <div class="text-center mb-8"><span class="text-3xl font-bold text-blue-600 mb-2 block">λ</span><h2 class="text-2xl font-bold text-custom-main">Войти в Alpha</h2></div>
+        <div class="text-center mb-8"><span class="text-3xl font-bold text-blue-600 mb-2 block">λ</span><h2 class="text-2xl font-bold text-custom-main">Войти в λ</h2></div>
         <form onsubmit="app.auth(event, 'login')" class="space-y-4">
           <div id="login-error" class="hidden text-red-500 text-sm bg-red-50 p-3 rounded-xl border border-red-100"></div>
           <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Email">
@@ -2006,8 +2001,14 @@
   <!-- Avatar Viewer -->
   <div id="avatar-viewer-overlay" class="fixed inset-0 z-[200] hidden flex items-center justify-center" onclick="closeAvatarViewer()">
     <div class="flex flex-col items-center select-none">
-      <div id="avatar-viewer-circle">?</div>
-      <p id="avatar-viewer-name"></p>
+      <div style="position:relative;display:inline-block;">
+        <div id="avatar-viewer-circle">?</div>
+        <span id="avatar-viewer-online-dot" style="display:none;position:absolute;bottom:6px;right:6px;width:14px;height:14px;border-radius:50%;border:3px solid rgba(0,0,0,0.5);"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+        <p id="avatar-viewer-name"></p>
+        <span id="avatar-viewer-online-label" style="display:none;font-size:12px;padding:2px 8px;border-radius:999px;font-weight:600;"></span>
+      </div>
       <p id="avatar-viewer-status"></p>
     </div>
   </div>
@@ -2021,5 +2022,7 @@
 <script src="/web/app.js"></script>
 <script src="/web/neural-ai-btn.js"></script>
 <script src="/web/ui.js"></script>
+<script src="/web/lambda-anim.js"></script>
+<script src="/web/btn-anim.js"></script>
 </body>
 </html>

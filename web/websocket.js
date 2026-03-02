@@ -138,10 +138,23 @@ function updateUserStatus(status) {
         chat.user_status = status.status || '';
         renderChats();
     }
+    // Обновляем онлайн-статус в членах групп
+    app.chats.forEach(c => {
+        if (c.members) {
+            c.members.forEach(m => {
+                if (String(m.id) === String(status.user_id)) m.is_online = status.online;
+            });
+        }
+    });
     const activeChat = app.chats.find(c => String(c.id) === String(app.activeChatId));
     if (activeChat && String(activeChat.interlocutor_id) === String(status.user_id)) {
         renderStatusElements(status.online, status.status || '');
     }
+    // Обновляем индикаторы онлайн в сообщениях без перерисовки всего списка
+    const dots = document.querySelectorAll(`[data-online-uid="${status.user_id}"]`);
+    dots.forEach(dot => {
+        dot.style.background = status.online ? '#22c55e' : '#9ca3af';
+    });
 }
 
 // ─── Обработка событий участников группы ────────────────────────────────────
