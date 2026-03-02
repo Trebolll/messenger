@@ -40,6 +40,24 @@ class AlphaApp {
         this.sendMessage();
       }
     });
+
+    // Авто-расширение textarea
+    document.addEventListener('input', (e) => {
+      if (e.target.id !== 'message-input') return;
+      const ta = e.target;
+      ta.style.height = 'auto';
+      const newHeight = Math.min(ta.scrollHeight, 160);
+      ta.style.height = newHeight + 'px';
+      ta.classList.toggle('has-text', ta.value.trim().length > 0);
+    });
+
+    // Сброс высоты после отправки
+    document.addEventListener('_msgSent', () => {
+      const ta = document.getElementById('message-input');
+      if (!ta) return;
+      ta.style.height = '';
+      ta.classList.remove('has-text');
+    });
   }
 
   // ── Роутинг ────────────────────────────────────────────────────────────
@@ -55,6 +73,7 @@ class AlphaApp {
     loadUserData();
     this.loadChats();
     this.connectWebSocket();
+    switchView('home');
   }
 
   // ── Тема ───────────────────────────────────────────────────────────────
@@ -138,3 +157,46 @@ class AlphaApp {
 
 // ── Глобальный экземпляр ───────────────────────────────────────────────────
 new AlphaApp();
+
+// ── Переключение вида ──────────────────────────────────────────────────────
+
+function switchView(view) {
+  const viewHome = document.getElementById('view-home');
+  const viewChat = document.getElementById('view-chat');
+  const navHome  = document.getElementById('nav-home');
+  const navChats = document.getElementById('nav-chats');
+
+  [navHome, navChats].forEach(b => b && b.classList.remove('active'));
+
+  if (view === 'home') {
+    viewHome && viewHome.classList.remove('hidden');
+    viewChat.classList.add('hidden');
+    navHome && navHome.classList.add('active');
+    document.querySelectorAll('.chat-list-item').forEach(el => el.classList.remove('active'));
+    window.app && (window.app.activeChatId = null);
+
+  } else if (view === 'chat') {
+    viewHome && viewHome.classList.add('hidden');
+    viewChat.classList.remove('hidden');
+    navChats && navChats.classList.add('active');
+  }
+}
+
+function toggleChatsSidebar() {
+  const sidebar  = document.getElementById('chats-sidebar');
+  const viewChat = document.getElementById('view-chat');
+  const navChats = document.getElementById('nav-chats');
+  const isOpen   = !sidebar.classList.contains('collapsed');
+
+  if (!viewChat.classList.contains('hidden')) {
+    switchView('home');
+  }
+
+  if (isOpen) {
+    sidebar.classList.add('collapsed');
+    navChats && navChats.classList.remove('active');
+  } else {
+    sidebar.classList.remove('collapsed');
+    navChats && navChats.classList.add('active');
+  }
+}
