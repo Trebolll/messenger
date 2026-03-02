@@ -84,7 +84,8 @@
       else                     { px = 0;             py = H - (pos - 2 * W - H); }
 
       const alpha = 0.15 + 0.2 * Math.abs(Math.sin(t * 2 + i));
-      drawMiniLambda(ctx, px, py, 7, alpha, a.type);
+      const rotation = t * 2 + i;
+      drawMiniLambda(ctx, px, py, 12, alpha, a.type, rotation);
     }
 
     // — Пульсирующее свечение по центру при hover ————————————————————
@@ -113,11 +114,12 @@
   }
 
   // ── Маленькая λ ──────────────────────────────────────────────────────────
-  function drawMiniLambda(ctx, x, y, size, alpha, type) {
+  function drawMiniLambda(ctx, x, y, size, alpha, type, rotation = 0) {
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(x, y);
-    const color = type === 'solid' ? 'rgba(255,255,255,1)' : 'rgba(59,130,246,1)';
+    ctx.rotate(rotation);
+    const color = type === 'solid' ? 'rgba(255,255,255,1)' : (getComputedStyle(document.body).getPropertyValue('--accent-color').trim() || '#3b82f6');
     ctx.strokeStyle = color;
     ctx.lineWidth   = Math.max(0.8, size * 0.1);
     ctx.lineCap     = 'round';
