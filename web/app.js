@@ -80,7 +80,8 @@ class AlphaApp {
     loadUserData();
     this.loadChats();
     this.connectWebSocket();
-    switchView('home');
+    // По умолчанию показываем ленту
+    switchLeftTab('home');
   }
 
   // ── Тема ───────────────────────────────────────────────────────────────
@@ -168,42 +169,39 @@ new AlphaApp();
 // ── Переключение вида ──────────────────────────────────────────────────────
 
 function switchView(view) {
-  const viewHome = document.getElementById('view-home');
-  const viewChat = document.getElementById('view-chat');
-  const navHome  = document.getElementById('nav-home');
-  const navChats = document.getElementById('nav-chats');
-
-  [navHome, navChats].forEach(b => b && b.classList.remove('active'));
-
+  // В новом layout view-chat всегда видна справа, просто переключаем состояние
   if (view === 'home') {
-    viewHome && viewHome.classList.remove('hidden');
-    viewChat.classList.add('hidden');
-    navHome && navHome.classList.add('active');
+    // Сбрасываем активный чат
     document.querySelectorAll('.chat-list-item').forEach(el => el.classList.remove('active'));
     window.app && (window.app.activeChatId = null);
+    // Скрываем no-chat-selected (он и так показан по умолчанию)
+    const noChat = document.getElementById('no-chat-selected');
+    if (noChat) noChat.classList.remove('hidden');
+    const inputArea = document.getElementById('input-area');
+    if (inputArea) inputArea.classList.add('hidden');
+  }
+}
 
-  } else if (view === 'chat') {
-    viewHome && viewHome.classList.add('hidden');
-    viewChat.classList.remove('hidden');
-    navChats && navChats.classList.add('active');
+function switchLeftTab(tab) {
+  const viewHome    = document.getElementById('view-home');
+  const chatsSidebar = document.getElementById('chats-sidebar');
+  const tabHome     = document.getElementById('tab-home');
+  const tabChats    = document.getElementById('tab-chats');
+
+  if (tab === 'home') {
+    viewHome    && viewHome.classList.remove('hidden');
+    chatsSidebar && chatsSidebar.classList.add('hidden');
+    tabHome  && tabHome.classList.add('active');
+    tabChats && tabChats.classList.remove('active');
+  } else {
+    viewHome    && viewHome.classList.add('hidden');
+    chatsSidebar && chatsSidebar.classList.remove('hidden');
+    tabHome  && tabHome.classList.remove('active');
+    tabChats && tabChats.classList.add('active');
   }
 }
 
 function toggleChatsSidebar() {
-  const sidebar  = document.getElementById('chats-sidebar');
-  const viewChat = document.getElementById('view-chat');
-  const navChats = document.getElementById('nav-chats');
-  const isOpen   = !sidebar.classList.contains('collapsed');
-
-  if (!viewChat.classList.contains('hidden')) {
-    switchView('home');
-  }
-
-  if (isOpen) {
-    sidebar.classList.add('collapsed');
-    navChats && navChats.classList.remove('active');
-  } else {
-    sidebar.classList.remove('collapsed');
-    navChats && navChats.classList.add('active');
-  }
+  // В новом layout эта функция переключает на вкладку чатов
+  switchLeftTab('chats');
 }
