@@ -12,7 +12,7 @@ class AlphaApp {
     const userId = this.currentUser?.id || 'default';
     this.theme   = localStorage.getItem(`alpha_theme_${userId}`) || 'light';
 
-    // Присваиваем window.app ДО init() — модули могут обращаться к app в процессе инициализации
+    // Присваиваем window.app ДО init() — через setter в index.html
     window.app = this;
 
     this.init();
@@ -37,11 +37,9 @@ class AlphaApp {
     document.addEventListener('keydown', (e) => {
       if (e.target.id === 'message-input' && e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        // Создаём синтетическое событие для handleSendMessage
         const form = document.getElementById('message-form');
         if (form && typeof handleSendMessage === 'function') {
-          const fakeEvent = { preventDefault: () => {} };
-          handleSendMessage(fakeEvent);
+          handleSendMessage({ preventDefault: () => {} });
         } else {
           this.sendMessage();
         }
@@ -53,12 +51,10 @@ class AlphaApp {
       if (e.target.id !== 'message-input') return;
       const ta = e.target;
       ta.style.height = 'auto';
-      const newHeight = Math.min(ta.scrollHeight, 160);
-      ta.style.height = newHeight + 'px';
+      ta.style.height = Math.min(ta.scrollHeight, 160) + 'px';
       ta.classList.toggle('has-text', ta.value.trim().length > 0);
     });
 
-    // Сброс высоты после отправки
     document.addEventListener('_msgSent', () => {
       const ta = document.getElementById('message-input');
       if (!ta) return;
@@ -80,8 +76,6 @@ class AlphaApp {
     loadUserData();
     this.loadChats();
     this.connectWebSocket();
-    // По умолчанию показываем ленту
-    switchLeftTab('home');
   }
 
   // ── Тема ───────────────────────────────────────────────────────────────
@@ -165,43 +159,3 @@ class AlphaApp {
 
 // ── Глобальный экземпляр ───────────────────────────────────────────────────
 new AlphaApp();
-
-// ── Переключение вида ──────────────────────────────────────────────────────
-
-function switchView(view) {
-  // В новом layout view-chat всегда видна справа, просто переключаем состояние
-  if (view === 'home') {
-    // Сбрасываем активный чат
-    document.querySelectorAll('.chat-list-item').forEach(el => el.classList.remove('active'));
-    window.app && (window.app.activeChatId = null);
-    // Скрываем no-chat-selected (он и так показан по умолчанию)
-    const noChat = document.getElementById('no-chat-selected');
-    if (noChat) noChat.classList.remove('hidden');
-    const inputArea = document.getElementById('input-area');
-    if (inputArea) inputArea.classList.add('hidden');
-  }
-}
-
-function switchLeftTab(tab) {
-  const viewHome    = document.getElementById('view-home');
-  const chatsSidebar = document.getElementById('chats-sidebar');
-  const tabHome     = document.getElementById('tab-home');
-  const tabChats    = document.getElementById('tab-chats');
-
-  if (tab === 'home') {
-    viewHome    && viewHome.classList.remove('hidden');
-    chatsSidebar && chatsSidebar.classList.add('hidden');
-    tabHome  && tabHome.classList.add('active');
-    tabChats && tabChats.classList.remove('active');
-  } else {
-    viewHome    && viewHome.classList.add('hidden');
-    chatsSidebar && chatsSidebar.classList.remove('hidden');
-    tabHome  && tabHome.classList.remove('active');
-    tabChats && tabChats.classList.add('active');
-  }
-}
-
-function toggleChatsSidebar() {
-  // В новом layout эта функция переключает на вкладку чатов
-  switchLeftTab('chats');
-}

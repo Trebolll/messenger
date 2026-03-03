@@ -1937,66 +1937,56 @@
     }
 
     /* ══════════════════════════════════════════════════════
-       ══ Floating Bottom Dock ══
+       ══ Layout: left panel + right feed panel
+    ══════════════════════════════════════════════════════ */
+    #left-panel { flex-shrink: 0; }
+    #feed-right-panel { flex-shrink: 1; }
+
+    /* ══════════════════════════════════════════════════════
+       ══ Floating Bottom Dock
     ══════════════════════════════════════════════════════ */
 
-    /* Невидимая зона-триггер снизу экрана */
-    #bottom-dock-zone {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 64px;
-      z-index: 199;
-      pointer-events: all;
-    }
+    /* Dock скрыт пока main-chat не виден (лендинг) и в открытом чате */
+    #main-chat.hidden ~ #bottom-dock { display: none !important; }
+    body.chat-open #bottom-dock { display: none !important; }
 
-    /* Сам плавающий бар */
+    /* Сам бар */
     #bottom-dock {
       position: fixed;
-      bottom: 18px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%) translateY(calc(100% + 24px));
       z-index: 200;
-
       display: flex;
       flex-direction: row;
       align-items: center;
-      gap: 4px;
-      padding: 10px 16px;
-
-      background: rgba(255, 255, 255, 0.18);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      border-radius: 24px;
+      gap: 2px;
+      padding: 8px 12px;
+      /* Полностью прозрачный фон — только blur */
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.20);
+      border-radius: 22px;
       box-shadow:
-          0 8px 32px rgba(0, 0, 0, 0.12),
-          0 2px 8px rgba(0, 0, 0, 0.08),
-          inset 0 1px 0 rgba(255, 255, 255, 0.5);
-
+          0 8px 32px rgba(0, 0, 0, 0.08),
+          0 1px 6px rgba(0, 0, 0, 0.05),
+          inset 0 1px 0 rgba(255, 255, 255, 0.35);
       opacity: 0;
       pointer-events: none;
       transition:
-          transform 0.38s cubic-bezier(0.34, 1.45, 0.64, 1),
+          transform 0.40s cubic-bezier(0.34, 1.45, 0.64, 1),
           opacity 0.28s ease;
-      white-space: nowrap;
     }
 
-    /* Тёмные темы */
     body.theme-gray #bottom-dock,
     body.theme-twilight #bottom-dock,
     body.theme-ocean #bottom-dock {
-      background: rgba(15, 20, 35, 0.45);
-      border-color: rgba(255, 255, 255, 0.1);
-      box-shadow:
-          0 8px 32px rgba(0, 0, 0, 0.4),
-          0 2px 8px rgba(0, 0, 0, 0.3),
-          inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      background: rgba(15, 20, 40, 0.22);
+      border-color: rgba(255, 255, 255, 0.07);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.04);
     }
 
-    /* Показываем при наведении на зону или сам бар */
-    #bottom-dock-zone:hover ~ #bottom-dock,
     #bottom-dock:hover,
     #bottom-dock.visible {
       transform: translateX(-50%) translateY(0);
@@ -2004,93 +1994,63 @@
       pointer-events: all;
     }
 
-    /* Кнопки дока */
+    /* Кнопки — только иконки */
     .dock-btn {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      padding: 8px 14px;
+      width: 44px;
+      height: 44px;
       border: none;
       background: transparent;
-      border-radius: 16px;
+      border-radius: 14px;
       cursor: pointer;
       color: var(--text-muted);
-      transition: background 0.18s, color 0.18s, transform 0.18s;
-      min-width: 56px;
-    }
-
-    .dock-btn:hover {
-      background: rgba(var(--accent-rgb, 59, 130, 246), 0.12);
-      color: var(--text-main);
-      transform: translateY(-2px) scale(1.06);
-    }
-
-    .dock-btn:active {
-      transform: translateY(0) scale(0.96);
-    }
-
-    .dock-btn.dock-active {
-      color: var(--accent-color);
-      background: rgba(var(--accent-rgb, 59, 130, 246), 0.1);
-    }
-
-    .dock-btn--logout:hover {
-      background: rgba(239, 68, 68, 0.1);
-      color: #ef4444;
-    }
-
-    body.theme-gray .dock-btn--logout:hover { background: rgba(239, 68, 68, 0.15); }
-    body.theme-twilight .dock-btn--logout:hover { background: rgba(239, 68, 68, 0.12); }
-
-    .dock-btn-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 20px;
-      height: 20px;
+      transition: background 0.16s, color 0.16s, transform 0.16s;
       flex-shrink: 0;
     }
-
-    .dock-btn-label {
-      font-size: 10px;
-      font-weight: 500;
-      letter-spacing: 0.01em;
-      line-height: 1;
+    .dock-btn:hover {
+      background: rgba(59,130,246,0.11);
+      color: var(--text-main);
+      transform: translateY(-2px) scale(1.08);
     }
+    body.theme-gray .dock-btn:hover,
+    body.theme-twilight .dock-btn:hover,
+    body.theme-ocean .dock-btn:hover { background: rgba(255,255,255,0.09); }
+    .dock-btn:active { transform: scale(0.94); }
+    .dock-btn.dock-active {
+      color: var(--accent-color);
+      background: rgba(59,130,246,0.10);
+    }
+    .dock-btn--logout:hover { background: rgba(239,68,68,0.11); color: #ef4444; }
 
     /* Разделитель */
     .dock-divider {
-      width: 1px;
-      height: 32px;
+      width: 1px; height: 26px;
       background: var(--border-color);
-      opacity: 0.5;
-      margin: 0 6px;
-      flex-shrink: 0;
+      opacity: 0.4; margin: 0 4px; flex-shrink: 0;
     }
-
     body.theme-gray .dock-divider,
     body.theme-twilight .dock-divider,
-    body.theme-ocean .dock-divider {
-      background: rgba(255,255,255,0.15);
-      opacity: 1;
-    }
+    body.theme-ocean .dock-divider { background: rgba(255,255,255,0.15); opacity:1; }
 
-    /* theme-btn внутри дока — убираем лишние стили */
-    #bottom-dock .theme-btn {
-      width: auto;
-      height: auto;
-      overflow: visible;
-    }
-    #bottom-dock .theme-btn::after { display: none; }
+    /* Тема-кнопка в доке */
+    #bottom-dock .theme-btn { width:44px; height:44px; overflow:visible; }
+    #bottom-dock .theme-btn::after { display:none; }
+    #bottom-dock .theme-icon-wrap { display:block; position:relative; width:20px; height:20px; }
 
-    /* Убираем тень от app-navbar */
+    /* Скрываем старый левый навбар и нижние вкладки */
     .app-navbar { display: none !important; }
+    .left-panel-tabs { display: none !important; }
+
+    /* Кнопка назад в шапке чата */
+    #back-btn { display: flex; }
 
   </style>
 </head>
 <body class="bg-custom-main min-h-screen text-custom-main">
+<!-- Скрытые элементы для совместимости со старым кодом -->
+<span id="current-user-name" style="display:none;"></span>
 
 <!-- Canvas рисуется поверх интерфейса (z=6), но pointer-events:none -->
 <canvas id="neural-canvas"></canvas>
@@ -2166,46 +2126,15 @@
 
         <!-- Список чатов -->
         <div id="chats-sidebar" class="chats-sidebar-inner flex flex-col h-full hidden">
-          <div class="p-4 flex items-center justify-between" style="border-bottom: 1px solid rgba(0,0,0,0.04);">
-            <div class="flex items-center gap-2">
-              <span id="current-user-name" class="font-semibold text-custom-main leading-tight cursor-pointer hover:text-blue-600 transition text-sm" onclick="openProfileModal()">User</span>
-              <span class="text-xs text-green-500">· онлайн</span>
-            </div>
-            <button id="new-chat-btn" onclick="handleNewChatBtn()" title="Новый чат">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            </button>
-          </div>
-          <div class="p-3">
-            <div class="relative">
-              <input type="text" id="chat-search" placeholder="Поиск чатов..." class="w-full pl-9 pr-4 py-2 bg-custom-main border border-custom rounded-xl focus:ring-2 focus:ring-blue-100 outline-none text-sm transition">
-              <svg class="w-4 h-4 absolute left-3 top-2.5 text-custom-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            </div>
-          </div>
-          <div id="chats-list" class="flex-grow overflow-y-auto scrollbar-hide"></div>
+          <div id="chats-list" class="flex-grow overflow-y-auto scrollbar-hide pt-2"></div>
         </div>
 
       </div>
 
-      <!-- Нижние вкладки: Лента / Чаты -->
-      <div class="left-panel-tabs flex" style="border-top: 1px solid rgba(0,0,0,0.06);">
-        <button id="tab-home" onclick="switchLeftTab('home')" class="left-tab-btn active flex-1 flex flex-col items-center gap-1 py-3 transition" title="Лента активности">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-5.356-3.779M9 20H4v-2a4 4 0 015.356-3.779M15 7a4 4 0 11-8 0 4 4 0 018 0zm6 3a3 3 0 11-6 0 3 3 0 016 0zM3 10a3 3 0 116 0 3 3 0 01-6 0z"/>
-          </svg>
-          <span class="text-xs font-medium">Лента</span>
-        </button>
-        <button id="tab-chats" onclick="switchLeftTab('chats')" class="left-tab-btn flex-1 flex flex-col items-center gap-1 py-3 transition" title="Сообщения">
-          <span style="position:relative;display:inline-flex;">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-            <span id="nav-chats-badge" class="nav-badge hidden" style="top:-4px;right:-4px;"></span>
-          </span>
-          <span class="text-xs font-medium">Чаты</span>
-        </button>
-      </div>
     </div>
 
     <!-- ═══ Right: chat view ═══ -->
-    <div id="view-chat" class="flex-grow flex flex-col h-full bg-custom-main relative" style="z-index:2;">
+    <div id="view-chat" class="flex-grow flex flex-col h-full bg-custom-main relative hidden" style="z-index:2;">
       <div id="no-chat-selected" class="absolute inset-0 flex items-center justify-center bg-custom-main z-10">
         <div class="text-center">
           <div class="text-6xl mb-4 opacity-20">λ</div>
@@ -2215,6 +2144,10 @@
 
       <div id="chat-header" class="p-4 border-b border-custom flex items-center justify-between bg-custom-main" style="position:relative;z-index:2;">
         <div class="flex items-center gap-3">
+          <!-- Кнопка назад — закрыть чат -->
+          <button id="back-btn" onclick="handleBackBtn()" title="Назад" class="p-2 rounded-xl hover:bg-custom-sidebar transition text-custom-muted hover:text-custom-main" style="margin-left:-4px;flex-shrink:0;">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
           <div id="active-chat-avatar" onclick="openAvatarViewer()" class="w-10 h-10 rounded-full bg-custom-sidebar flex items-center justify-center font-bold text-custom-muted cursor-pointer hover:ring-2 hover:ring-blue-400 hover:ring-offset-2 transition">?</div>
           <div>
             <h3 id="active-chat-name" onclick="toggleInfoPanel()" class="font-bold text-custom-main leading-tight cursor-pointer hover:text-blue-600 transition">Чат</h3>
@@ -2312,230 +2245,218 @@
   </div>
 
 
-  <!-- ═══ Floating bottom dock (position:fixed, outside main layout) ═══ -->
-  <!-- ═══ Floating bottom dock ═══ -->
-  <div id="bottom-dock-zone" aria-hidden="true"></div>
+  <!-- ═══ Floating bottom dock (position:fixed) ═══ -->
   <div id="bottom-dock" role="toolbar" aria-label="Навигация">
 
     <!-- Чаты -->
     <button class="dock-btn" onclick="switchLeftTab('chats')" id="dock-chats" title="Чаты">
-        <span class="dock-btn-icon" style="position:relative;display:inline-flex;">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-          <span id="nav-chats-badge" class="nav-badge hidden"></span>
-        </span>
-      <span class="dock-btn-label">Чаты</span>
+      <span style="position:relative;display:inline-flex;">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        <span id="nav-chats-badge" class="nav-badge hidden"></span>
+      </span>
     </button>
 
     <!-- Лента -->
     <button class="dock-btn" onclick="switchLeftTab('home')" id="dock-home" title="Лента">
-        <span class="dock-btn-icon">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-5.356-3.779M9 20H4v-2a4 4 0 015.356-3.779M15 7a4 4 0 11-8 0 4 4 0 018 0zm6 3a3 3 0 11-6 0 3 3 0 016 0zM3 10a3 3 0 116 0 3 3 0 01-6 0z"/></svg>
-        </span>
-      <span class="dock-btn-label">Лента</span>
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-5.356-3.779M9 20H4v-2a4 4 0 015.356-3.779M15 7a4 4 0 11-8 0 4 4 0 018 0zm6 3a3 3 0 11-6 0 3 3 0 016 0zM3 10a3 3 0 116 0 3 3 0 01-6 0z"/></svg>
+    </button>
+
+    <!-- Новый чат -->
+    <button class="dock-btn" onclick="openNewChatMenu()" id="dock-new-chat" title="Новый чат">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
     </button>
 
     <div class="dock-divider"></div>
 
     <!-- Профиль -->
     <button class="dock-btn dock-btn--avatar" onclick="openProfileModal()" title="Профиль">
-        <span class="dock-btn-icon" style="position:relative;display:inline-flex;align-items:center;justify-content:center;">
-          <div id="current-user-avatar" class="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden text-xs">U</div>
-          <div id="my-status-dot" class="nav-status-dot" style="width:8px;height:8px;bottom:0;right:0;border-width:1.5px;"></div>
-        </span>
-      <span class="dock-btn-label">Профиль</span>
+      <span style="position:relative;display:inline-flex;align-items:center;justify-content:center;">
+        <div id="current-user-avatar" class="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden text-xs">U</div>
+        <div id="my-status-dot" class="nav-status-dot" style="width:8px;height:8px;bottom:0;right:0;border-width:1.5px;"></div>
+      </span>
     </button>
 
     <!-- Тема -->
     <button class="dock-btn theme-btn" id="theme-btn" onclick="handleToggleTheme()" title="Сменить тему">
-        <span class="dock-btn-icon theme-icon-wrap" style="width:20px;height:20px;display:block;position:relative;">
-          <svg class="theme-icon theme-sun w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
-          <svg class="theme-icon theme-moon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-          <svg class="theme-icon theme-twilight-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
-          <svg class="theme-icon theme-dawn-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v3M6.343 6.343L4.222 4.222M3 12H0m21 0h-3M19.778 4.222l-2.121 2.121M12 18a6 6 0 100-12 6 6 0 000 12zm0 0v3M4.929 19.071l1.414-1.414M17.657 17.657l1.414 1.414"/></svg>
-          <svg class="theme-icon theme-sunset-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"/></svg>
-          <svg class="theme-icon theme-coral-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-          <svg class="theme-icon theme-ocean-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15s1.5-2 4.5-2 4.5 2 4.5 2 1.5-2 4.5-2 4.5 2 4.5 2M3 9s1.5-2 4.5-2 4.5 2 4.5 2 1.5-2 4.5-2 4.5 2 4.5 2"/></svg>
-          <svg class="theme-icon theme-mint-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/></svg>
-        </span>
-      <span class="dock-btn-label">Тема</span>
+      <span class="theme-icon-wrap" style="width:20px;height:20px;display:block;position:relative;"><svg class="theme-icon theme-sun w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg><svg class="theme-icon theme-moon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg><svg class="theme-icon theme-twilight-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg><svg class="theme-icon theme-dawn-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v3M6.343 6.343L4.222 4.222M3 12H0m21 0h-3M19.778 4.222l-2.121 2.121M12 18a6 6 0 100-12 6 6 0 000 12zm0 0v3M4.929 19.071l1.414-1.414M17.657 17.657l1.414 1.414"/></svg><svg class="theme-icon theme-sunset-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z"/></svg><svg class="theme-icon theme-coral-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg><svg class="theme-icon theme-ocean-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15s1.5-2 4.5-2 4.5 2 4.5 2 1.5-2 4.5-2 4.5 2 4.5 2M3 9s1.5-2 4.5-2 4.5 2 4.5 2 1.5-2 4.5-2 4.5 2 4.5 2"/></svg><svg class="theme-icon theme-mint-icon w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/></svg></span>
     </button>
 
     <!-- Выход -->
     <button class="dock-btn dock-btn--logout" onclick="handleLogout()" title="Выйти">
-        <span class="dock-btn-icon">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-        </span>
-      <span class="dock-btn-label">Выйти</span>
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
     </button>
 
   </div>
 
-  <!-- Auth Modal -->
-  <div id="auth-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
-    <div id="auth-modal" class="bg-custom-main w-full max-w-md rounded-3xl shadow-2xl relative overflow-hidden transform scale-95 transition-all duration-300">
-      <button onclick="closeAuthModal()" class="absolute top-6 right-6 text-custom-muted hover:text-custom-main transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-      <div id="login-form-container" class="p-8 sm:p-12">
-        <div class="text-center mb-8"><span class="text-3xl font-bold text-blue-600 mb-2 block">λ</span><h2 class="text-2xl font-bold text-custom-main">Войти в λ</h2></div>
-        <form onsubmit="app.auth(event, 'login')" class="space-y-4">
-          <div id="login-error" class="hidden text-red-500 text-sm bg-red-50 p-3 rounded-xl border border-red-100"></div>
-          <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Email">
-          <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Пароль">
-          <button type="submit" class="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition">Войти</button>
-        </form>
-        <p class="mt-8 text-center text-custom-muted text-sm">Нет аккаунта? <button onclick="switchForm('register')" class="text-blue-600 font-semibold hover:underline">Зарегистрироваться</button></p>
-      </div>
-      <div id="register-form-container" class="p-8 sm:p-12 hidden">
-        <div class="text-center mb-8"><span class="text-3xl font-bold text-blue-600 mb-2 block">λ</span><h2 class="text-2xl font-bold text-custom-main">Создать аккаунт</h2></div>
-        <form onsubmit="app.auth(event, 'register')" class="space-y-4">
-          <div id="register-error" class="hidden text-red-500 text-sm bg-red-50 p-3 rounded-xl border border-red-100"></div>
-          <input type="text" name="username" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Имя пользователя">
-          <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Email">
-          <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Пароль (мин. 6 символов)">
-          <button type="submit" class="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition">Зарегистрироваться</button>
-        </form>
-        <p class="mt-8 text-center text-custom-muted text-sm">Уже есть аккаунт? <button onclick="switchForm('login')" class="text-blue-600 font-semibold hover:underline">Войти</button></p>
-      </div>
+</div><!-- /#app -->
+
+
+<!-- Auth Modal -->
+<div id="auth-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+  <div id="auth-modal" class="bg-custom-main w-full max-w-md rounded-3xl shadow-2xl relative overflow-hidden transform scale-95 transition-all duration-300">
+    <button onclick="closeAuthModal()" class="absolute top-6 right-6 text-custom-muted hover:text-custom-main transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+    <div id="login-form-container" class="p-8 sm:p-12">
+      <div class="text-center mb-8"><span class="text-3xl font-bold text-blue-600 mb-2 block">λ</span><h2 class="text-2xl font-bold text-custom-main">Войти в λ</h2></div>
+      <form onsubmit="app.auth(event, 'login')" class="space-y-4">
+        <div id="login-error" class="hidden text-red-500 text-sm bg-red-50 p-3 rounded-xl border border-red-100"></div>
+        <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Email">
+        <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Пароль">
+        <button type="submit" class="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition">Войти</button>
+      </form>
+      <p class="mt-8 text-center text-custom-muted text-sm">Нет аккаунта? <button onclick="switchForm('register')" class="text-blue-600 font-semibold hover:underline">Зарегистрироваться</button></p>
+    </div>
+    <div id="register-form-container" class="p-8 sm:p-12 hidden">
+      <div class="text-center mb-8"><span class="text-3xl font-bold text-blue-600 mb-2 block">λ</span><h2 class="text-2xl font-bold text-custom-main">Создать аккаунт</h2></div>
+      <form onsubmit="app.auth(event, 'register')" class="space-y-4">
+        <div id="register-error" class="hidden text-red-500 text-sm bg-red-50 p-3 rounded-xl border border-red-100"></div>
+        <input type="text" name="username" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Имя пользователя">
+        <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Email">
+        <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Пароль (мин. 6 символов)">
+        <button type="submit" class="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition">Зарегистрироваться</button>
+      </form>
+      <p class="mt-8 text-center text-custom-muted text-sm">Уже есть аккаунт? <button onclick="switchForm('login')" class="text-blue-600 font-semibold hover:underline">Войти</button></p>
     </div>
   </div>
+</div>
 
-  <!-- New Chat Modal -->
-  <div id="new-chat-overlay" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
-    <!-- Backdrop -->
-    <div class="absolute inset-0 new-chat-backdrop" onclick="closeNewChatModal()"></div>
+<!-- New Chat Modal -->
+<div id="new-chat-overlay" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+  <!-- Backdrop -->
+  <div class="absolute inset-0 new-chat-backdrop" onclick="closeNewChatModal()"></div>
 
-    <div id="new-chat-modal" class="new-chat-modal-card w-full max-w-md relative transform scale-95 transition-all duration-300 overflow-hidden">
+  <div id="new-chat-modal" class="new-chat-modal-card w-full max-w-md relative transform scale-95 transition-all duration-300 overflow-hidden">
 
-      <!-- Header -->
-      <div class="new-chat-header px-6 pt-6 pb-4 flex items-center justify-between">
-        <div>
-          <h2 class="text-lg font-bold text-custom-main tracking-tight">Новый чат</h2>
-          <p id="new-chat-subtitle" class="text-xs text-custom-muted mt-0.5">Найди пользователя для начала общения</p>
-        </div>
-        <button onclick="closeNewChatModal()" class="new-chat-close-btn w-8 h-8 flex items-center justify-center rounded-full">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
+    <!-- Header -->
+    <div class="new-chat-header px-6 pt-6 pb-4 flex items-center justify-between">
+      <div>
+        <h2 class="text-lg font-bold text-custom-main tracking-tight">Новый чат</h2>
+        <p id="new-chat-subtitle" class="text-xs text-custom-muted mt-0.5">Найди пользователя для начала общения</p>
       </div>
-
-      <!-- Selected users chips -->
-      <div id="selected-users-bar" class="hidden px-6 pb-3">
-        <div id="selected-chips" class="flex flex-wrap gap-2"></div>
-      </div>
-
-      <!-- Divider -->
-      <div class="new-chat-divider mx-6"></div>
-
-      <!-- Search -->
-      <div class="px-6 pt-4">
-        <div class="relative">
-          <svg class="w-4 h-4 absolute left-3 top-3.5 text-custom-muted pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-          <input type="text" id="user-search-input" oninput="app.searchUsers(this.value)" class="new-chat-search-input w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none" placeholder="Имя или email...">
-        </div>
-      </div>
-
-      <!-- Results -->
-      <div id="search-results" class="px-6 pt-3 pb-3 max-h-52 overflow-y-auto space-y-1 scrollbar-hide"></div>
-
-      <!-- Group name input (appears when 2+ selected) -->
-      <div id="group-name-wrap" class="hidden px-6 pb-2">
-        <div class="new-chat-divider mb-3"></div>
-        <input type="text" id="group-name-input" maxlength="60"
-               class="new-chat-search-input w-full px-4 py-2.5 rounded-xl text-sm outline-none"
-               placeholder="Название группы (необязательно)…">
-      </div>
-
-      <!-- Footer action button -->
-      <div id="new-chat-footer" class="hidden px-6 pb-6 pt-2">
-        <button id="create-chat-btn" onclick="handleCreateChat()" class="create-chat-btn w-full py-3 rounded-2xl font-semibold text-sm transition-all">
-          <span id="create-chat-label">Открыть чат</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- Profile Modal -->
-  <div id="profile-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
-    <div id="profile-modal" class="profile-modal w-full max-w-sm rounded-3xl relative transform scale-95 transition-all duration-300 p-8">
-      <button onclick="closeProfileModal()" class="absolute top-5 right-5 text-blue-300 hover:text-white transition">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      <button onclick="closeNewChatModal()" class="new-chat-close-btn w-8 h-8 flex items-center justify-center rounded-full">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
+    </div>
 
-      <!-- Avatar -->
-      <div class="flex flex-col items-center mb-6">
-        <div class="relative group cursor-pointer" onclick="triggerAvatarUpload()">
-          <div id="profile-avatar" class="w-24 h-24 rounded-full bg-blue-500/30 border-2 border-blue-400/50 flex items-center justify-center text-4xl font-bold text-blue-200 transition group-hover:border-blue-300 overflow-hidden">U</div>
-          <div class="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          </div>
-        </div>
-        <input type="file" id="avatar-upload" class="hidden" accept="image/*">
-        <p class="text-blue-300/70 text-xs mt-2">Нажмите чтобы сменить фото</p>
+    <!-- Selected users chips -->
+    <div id="selected-users-bar" class="hidden px-6 pb-3">
+      <div id="selected-chips" class="flex flex-wrap gap-2"></div>
+    </div>
+
+    <!-- Divider -->
+    <div class="new-chat-divider mx-6"></div>
+
+    <!-- Search -->
+    <div class="px-6 pt-4">
+      <div class="relative">
+        <svg class="w-4 h-4 absolute left-3 top-3.5 text-custom-muted pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="text" id="user-search-input" oninput="app.searchUsers(this.value)" class="new-chat-search-input w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none" placeholder="Имя или email...">
       </div>
+    </div>
 
-      <!-- Fields -->
-      <div class="space-y-3">
-        <div class="profile-field">
-          <label class="profile-label">Имя пользователя</label>
-          <input type="text" id="profile-username" class="profile-input" placeholder="username">
-        </div>
-        <div class="profile-field">
-          <label class="profile-label">Имя и фамилия</label>
-          <input type="text" id="profile-fullname" class="profile-input" placeholder="Иван Иванов">
-        </div>
-        <div class="profile-field">
-          <label class="profile-label">
-            <svg class="w-3.5 h-3.5 inline mr-1 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-            Номер телефона
-          </label>
-          <input type="tel" id="profile-phone" class="profile-input" placeholder="+7 (999) 000-00-00">
-        </div>
-        <div class="profile-field">
-          <label class="profile-label">Email</label>
-          <input type="email" id="profile-email" class="profile-input" placeholder="you@example.com" disabled>
-          <p class="text-blue-300/50 text-xs mt-1 pl-1">Изменение email недоступно</p>
-        </div>
-        <div class="profile-field">
-          <label class="profile-label">
-            <svg class="w-3.5 h-3.5 inline mr-1 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
-            Статус
-          </label>
-          <input type="text" id="profile-status-text" class="profile-input" placeholder="Настроение, цитата..." maxlength="100">
-          <p class="text-blue-300/50 text-xs mt-1 pl-1">Виден собеседникам в правой панели</p>
-        </div>
+    <!-- Results -->
+    <div id="search-results" class="px-6 pt-3 pb-3 max-h-52 overflow-y-auto space-y-1 scrollbar-hide"></div>
 
-        <!-- Верификация -->
-        <div class="profile-verify-block">
-          <div class="flex items-center gap-2 mb-2">
-            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-            <span class="text-blue-200 text-sm font-medium">Привязка к личности</span>
-            <span class="ml-auto text-xs bg-yellow-500/20 text-yellow-300 border border-yellow-400/30 px-2 py-0.5 rounded-full">Скоро</span>
-          </div>
-          <p class="text-blue-300/60 text-xs leading-relaxed">Верификация через Госуслуги или паспорт для подтверждения личности. Даёт синюю галочку профиля.</p>
-        </div>
-      </div>
+    <!-- Group name input (appears when 2+ selected) -->
+    <div id="group-name-wrap" class="hidden px-6 pb-2">
+      <div class="new-chat-divider mb-3"></div>
+      <input type="text" id="group-name-input" maxlength="60"
+             class="new-chat-search-input w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+             placeholder="Название группы (необязательно)…">
+    </div>
 
-      <!-- Save -->
-      <button onclick="saveProfile()" class="mt-6 w-full py-3 bg-blue-600/80 hover:bg-blue-600 text-white font-semibold rounded-2xl transition border border-blue-400/30 backdrop-blur-sm">
-        Сохранить изменения
+    <!-- Footer action button -->
+    <div id="new-chat-footer" class="hidden px-6 pb-6 pt-2">
+      <button id="create-chat-btn" onclick="handleCreateChat()" class="create-chat-btn w-full py-3 rounded-2xl font-semibold text-sm transition-all">
+        <span id="create-chat-label">Открыть чат</span>
       </button>
     </div>
   </div>
-  <!-- Avatar Viewer -->
-  <div id="avatar-viewer-overlay" class="fixed inset-0 z-[200] hidden flex items-center justify-center" onclick="closeAvatarViewer()">
-    <div class="flex flex-col items-center select-none">
-      <div style="position:relative;display:inline-block;">
-        <div id="avatar-viewer-circle">?</div>
-        <span id="avatar-viewer-online-dot" style="display:none;position:absolute;bottom:6px;right:6px;width:14px;height:14px;border-radius:50%;border:3px solid rgba(0,0,0,0.5);"></span>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
-        <p id="avatar-viewer-name"></p>
-        <span id="avatar-viewer-online-label" style="display:none;font-size:12px;padding:2px 8px;border-radius:999px;font-weight:600;"></span>
-      </div>
-      <p id="avatar-viewer-status"></p>
-    </div>
-  </div>
+</div>
 
-  <div id="notification-center" class="fixed top-6 right-6 z-[100] space-y-3 w-80"></div>
+
+<!-- Profile Modal -->
+<div id="profile-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+  <div id="profile-modal" class="profile-modal w-full max-w-sm rounded-3xl relative transform scale-95 transition-all duration-300 p-8">
+    <button onclick="closeProfileModal()" class="absolute top-5 right-5 text-blue-300 hover:text-white transition">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+
+    <!-- Avatar -->
+    <div class="flex flex-col items-center mb-6">
+      <div class="relative group cursor-pointer" onclick="triggerAvatarUpload()">
+        <div id="profile-avatar" class="w-24 h-24 rounded-full bg-blue-500/30 border-2 border-blue-400/50 flex items-center justify-center text-4xl font-bold text-blue-200 transition group-hover:border-blue-300 overflow-hidden">U</div>
+        <div class="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+      </div>
+      <input type="file" id="avatar-upload" class="hidden" accept="image/*">
+      <p class="text-blue-300/70 text-xs mt-2">Нажмите чтобы сменить фото</p>
+    </div>
+
+    <!-- Fields -->
+    <div class="space-y-3">
+      <div class="profile-field">
+        <label class="profile-label">Имя пользователя</label>
+        <input type="text" id="profile-username" class="profile-input" placeholder="username">
+      </div>
+      <div class="profile-field">
+        <label class="profile-label">Имя и фамилия</label>
+        <input type="text" id="profile-fullname" class="profile-input" placeholder="Иван Иванов">
+      </div>
+      <div class="profile-field">
+        <label class="profile-label">
+          <svg class="w-3.5 h-3.5 inline mr-1 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+          Номер телефона
+        </label>
+        <input type="tel" id="profile-phone" class="profile-input" placeholder="+7 (999) 000-00-00">
+      </div>
+      <div class="profile-field">
+        <label class="profile-label">Email</label>
+        <input type="email" id="profile-email" class="profile-input" placeholder="you@example.com" disabled>
+        <p class="text-blue-300/50 text-xs mt-1 pl-1">Изменение email недоступно</p>
+      </div>
+      <div class="profile-field">
+        <label class="profile-label">
+          <svg class="w-3.5 h-3.5 inline mr-1 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
+          Статус
+        </label>
+        <input type="text" id="profile-status-text" class="profile-input" placeholder="Настроение, цитата..." maxlength="100">
+        <p class="text-blue-300/50 text-xs mt-1 pl-1">Виден собеседникам в правой панели</p>
+      </div>
+
+      <!-- Верификация -->
+      <div class="profile-verify-block">
+        <div class="flex items-center gap-2 mb-2">
+          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          <span class="text-blue-200 text-sm font-medium">Привязка к личности</span>
+          <span class="ml-auto text-xs bg-yellow-500/20 text-yellow-300 border border-yellow-400/30 px-2 py-0.5 rounded-full">Скоро</span>
+        </div>
+        <p class="text-blue-300/60 text-xs leading-relaxed">Верификация через Госуслуги или паспорт для подтверждения личности. Даёт синюю галочку профиля.</p>
+      </div>
+    </div>
+
+    <!-- Save -->
+    <button onclick="saveProfile()" class="mt-6 w-full py-3 bg-blue-600/80 hover:bg-blue-600 text-white font-semibold rounded-2xl transition border border-blue-400/30 backdrop-blur-sm">
+      Сохранить изменения
+    </button>
+  </div>
+</div>
+<!-- Avatar Viewer -->
+<div id="avatar-viewer-overlay" class="fixed inset-0 z-[200] hidden flex items-center justify-center" onclick="closeAvatarViewer()">
+  <div class="flex flex-col items-center select-none">
+    <div style="position:relative;display:inline-block;">
+      <div id="avatar-viewer-circle">?</div>
+      <span id="avatar-viewer-online-dot" style="display:none;position:absolute;bottom:6px;right:6px;width:14px;height:14px;border-radius:50%;border:3px solid rgba(0,0,0,0.5);"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+      <p id="avatar-viewer-name"></p>
+      <span id="avatar-viewer-online-label" style="display:none;font-size:12px;padding:2px 8px;border-radius:999px;font-weight:600;"></span>
+    </div>
+    <p id="avatar-viewer-status"></p>
+  </div>
+</div>
+
+<div id="notification-center" class="fixed top-6 right-6 z-[100] space-y-3 w-80"></div>
 </div>
 
 <!-- Image Lightbox -->
@@ -2543,68 +2464,19 @@
   <img id="img-lightbox-img" src="" alt="">
 </div>
 
+
 <script src="/web/api.js"></script>
-<script src="/web/websocket.js"></script>
 <script src="/web/render.js"></script>
+<script src="/web/websocket.js"></script>
 <script src="/web/app.js"></script>
-<script src="/web/neural-ai-btn.js"></script>
 <script src="/web/ui.js"></script>
+<script src="/web/news.js"></script>
+<script src="/web/ai.js"></script>
+<script src="/web/neural-ai-btn.js"></script>
 <script src="/web/file-upload.js"></script>
 <script src="/web/logo-anim.js"></script>
 <script src="/web/lambda-anim.js"></script>
 <script src="/web/btn-anim.js"></script>
-<script>
-  /* ── Floating Bottom Dock Logic ── */
-  (function() {
-    const HIDE_DELAY = 500;
-    let hideTimer = null;
-
-    function showDock() {
-      clearTimeout(hideTimer);
-      const dock = document.getElementById('bottom-dock');
-      if (dock) dock.classList.add('visible');
-    }
-
-    function schedulHide() {
-      clearTimeout(hideTimer);
-      hideTimer = setTimeout(() => {
-        const dock = document.getElementById('bottom-dock');
-        if (dock) dock.classList.remove('visible');
-      }, HIDE_DELAY);
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-      const zone = document.getElementById('bottom-dock-zone');
-      const dock = document.getElementById('bottom-dock');
-      if (!zone || !dock) return;
-
-      // Зона-триггер
-      zone.addEventListener('mouseenter', showDock);
-      zone.addEventListener('mouseleave', schedulHide);
-
-      // Сам бар — остаётся видимым пока мышь на нём
-      dock.addEventListener('mouseenter', showDock);
-      dock.addEventListener('mouseleave', schedulHide);
-
-      // Обновляем активные состояния кнопок
-      function updateDockActive() {
-        const homeVisible = !document.getElementById('view-home')?.classList.contains('hidden');
-        const dockHome  = document.getElementById('dock-home');
-        const dockChats = document.getElementById('dock-chats');
-        if (dockHome)  dockHome.classList.toggle('dock-active',  homeVisible);
-        if (dockChats) dockChats.classList.toggle('dock-active', !homeVisible);
-      }
-
-      // Патчим switchLeftTab чтобы обновлять активность
-      const _orig = window.switchLeftTab;
-      window.switchLeftTab = function(tab) {
-        if (_orig) _orig(tab);
-        setTimeout(updateDockActive, 0);
-      };
-
-      updateDockActive();
-    });
-  })();
-</script>
+<script src="/web/layout.js"></script>
 </body>
 </html>
