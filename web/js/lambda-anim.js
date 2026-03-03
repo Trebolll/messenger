@@ -105,12 +105,12 @@
   function initParticle(i, isNew) {
     const screenMax = Math.max(W, H);
     pR[i]        = isNew
-        ? (screenMax * 0.9 + Math.random() * screenMax * 0.6) // СПАВН БЛИЖЕ: чтобы быстрее долетали (было 1.5 * screenMax)
+        ? (screenMax * 0.4 + Math.random() * screenMax * 0.5) // СПАВН СУЩЕСТВЕННО БЛИЖЕ: диск будет плотнее
         : (10 + Math.random() * screenMax * 1.5);
     pAngle[i]    = Math.random() * Math.PI * 2;
-    pSize[i]     = 0.25 + Math.random() * 0.8;
+    pSize[i]     = 0.27 + Math.random() * 0.86; // УВЕЛИЧЕНО НА 7% (было 0.25+0.8)
     pPhase[i]    = Math.random() * Math.PI * 2;
-    pShrink[i]   = (0.05 + Math.random() * 0.15) * 0.18;  // БЫСТРЕЕ: цикл жизни в минутах (было 0.01 + 0.04 * 0.11)
+    pShrink[i]   = (0.12 + Math.random() * 0.2) * 0.25;  // ЕЩЕ БЫСТРЕЕ: цикл жизни в 2-4 минуты
     pTilt[i]     = (Math.random() - 0.5) * 0.22;
     pPitch[i]    = 0.15 + Math.random() * 0.15;
     pCosT[i]     = Math.cos(pTilt[i]);
@@ -147,12 +147,13 @@
     
     pR[i]        = Math.sqrt(tx * tx + Math.pow(dy_corr / pitch, 2));
     pAngle[i]    = Math.atan2(dy_corr / pitch, tx);
-    pSize[i]     = 0.3 + Math.random() * 0.4; // В 2 РАЗА МЕНЬШЕ (было 0.8+1.2)
-    pTilt[i]     = 0; // Для точности спавна обнуляем наклон оси
+    pSize[i]     = 0.7 + Math.random() * 0.8; // ЕЩЕ БОЛЬШЕ (было 0.32+0.43), чтобы их было четко видно
+    pTilt[i]     = 0; 
     pCosT[i]     = 1;
     pSinT[i]     = 0;
     pPitch[i]    = pitch;
     pIsLambda[i] = isLambda ? 1 : 0;
+    pShrink[i]   = 0.08 + Math.random() * 0.12; // ГАРАНТИРУЕМ дрейф к центру для "сбежавших"
   };
 
   // ── Главный цикл ───────────────────────────────────────────────────────
@@ -183,9 +184,10 @@
           : 1.0;
       pAngle[i] += gravityFactor * swirlBoost * dtFactor;
 
-      // Ускорение притяжения расширено (до r=350), чтобы в центре не было пустоты
-      const gravPull = pR[i] < 350 ? (1 + 150 / (pR[i] + 5)) : 1.0; 
-      const fallSpeed = pShrink[i] * dtFactor * gravPull;
+      // Притяжение: базовый дрейф + ускорение к центру. 
+      // Добавил минимальный порог 0.05, чтобы никто не "зависал"
+      const gravPull = 1.0 + (500 / (pR[i] + 10)); 
+      const fallSpeed = (pShrink[i] + 0.05) * dtFactor * gravPull;
       pR[i] -= fallSpeed;
 
       if (pR[i] < 12) {
