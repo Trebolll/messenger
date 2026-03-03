@@ -8,9 +8,10 @@
     const style   = getComputedStyle(document.body);
     const accent  = style.getPropertyValue('--accent-color').trim() || '#3b82f6';
     _bgColor      = style.getPropertyValue('--bg-main').trim()      || '#ffffff';
-    _isDark       = _bgColor === '#1f2937' || _bgColor === '#1e1b2e' ||
-        _bgColor === '#0a1628' || _bgColor.startsWith('#0') ||
-        _bgColor.includes('rgb(0,');
+    _isDark       = _bgColor === '#121212' || _bgColor === '#141218' || 
+        _bgColor === '#0b0f14' || _bgColor.startsWith('#0') || 
+        _bgColor.startsWith('#1') || _bgColor.startsWith('#2') ||
+        _bgColor.includes('rgb(0,') || _bgColor.includes('rgb(1') || _bgColor.includes('rgb(2');
     if (accent.startsWith('#')) {
       _accentR = parseInt(accent.slice(1, 3), 16);
       _accentG = parseInt(accent.slice(3, 5), 16);
@@ -184,8 +185,8 @@
             ctx.globalCompositeOperation = _isDark ? 'lighter' : 'multiply';
             const coreR = size * 3.5;
             const coreGrad = ctx.createRadialGradient(px, py, 0, px, py, coreR);
-            const coreAlpha = _isDark ? glow * 0.95 : glow * 0.4;
-            const whiteAlpha = _isDark ? glow * 0.6 : glow * 0.1;
+            const coreAlpha = _isDark ? glow * 0.95 : glow * 0.75;
+            const whiteAlpha = _isDark ? glow * 0.6 : glow * 0.45;
             
             coreGrad.addColorStop(0, _isDark ? `rgba(255,255,255,${coreAlpha})` : accentColor(coreAlpha));
             coreGrad.addColorStop(0.2, _isDark ? `rgba(255,255,255,${whiteAlpha})` : accentColor(whiteAlpha));

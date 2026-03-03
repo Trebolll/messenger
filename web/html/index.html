@@ -283,28 +283,28 @@
 
 <!-- Auth Modal -->
 <div id="auth-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
-  <div id="auth-modal" class="bg-custom-main w-full max-w-md rounded-3xl shadow-2xl relative overflow-hidden transform scale-95 transition-all duration-300">
+  <div id="auth-modal" class="w-full max-w-md rounded-3xl relative overflow-hidden transform scale-95 transition-all duration-300">
     <button onclick="closeAuthModal()" class="absolute top-6 right-6 text-custom-muted hover:text-custom-main transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
     <div id="login-form-container" class="p-8 sm:p-12">
-      <div class="text-center mb-8"><span class="text-3xl font-bold text-blue-600 mb-2 block">λ</span><h2 class="text-2xl font-bold text-custom-main">Войти в λ</h2></div>
+      <div class="text-center mb-8"><span class="text-3xl font-bold text-custom-accent mb-2 block">λ</span><h2 class="text-2xl font-bold text-custom-main">Войти в λ</h2></div>
       <form onsubmit="app.auth(event, 'login')" class="space-y-4">
         <div id="login-error" class="hidden text-red-500 text-sm bg-red-50 p-3 rounded-xl border border-red-100"></div>
-        <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Email">
-        <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Пароль">
-        <button type="submit" class="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition">Войти</button>
+        <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Email">
+        <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Пароль">
+        <button type="submit" class="w-full py-4 bg-custom-accent text-white font-semibold rounded-xl hover:opacity-90 transition">Войти</button>
       </form>
-      <p class="mt-8 text-center text-custom-muted text-sm">Нет аккаунта? <button onclick="switchForm('register')" class="text-blue-600 font-semibold hover:underline">Зарегистрироваться</button></p>
+      <p class="mt-8 text-center text-custom-muted text-sm">Нет аккаунта? <button onclick="switchForm('register')" class="text-custom-accent font-semibold hover:underline">Зарегистрироваться</button></p>
     </div>
     <div id="register-form-container" class="p-8 sm:p-12 hidden">
-      <div class="text-center mb-8"><span class="text-3xl font-bold text-blue-600 mb-2 block">λ</span><h2 class="text-2xl font-bold text-custom-main">Создать аккаунт</h2></div>
+      <div class="text-center mb-8"><span class="text-3xl font-bold text-custom-accent mb-2 block">λ</span><h2 class="text-2xl font-bold text-custom-main">Создать аккаунт</h2></div>
       <form onsubmit="app.auth(event, 'register')" class="space-y-4">
         <div id="register-error" class="hidden text-red-500 text-sm bg-red-50 p-3 rounded-xl border border-red-100"></div>
-        <input type="text" name="username" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Имя пользователя">
-        <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Email">
-        <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl border border-custom bg-custom-sidebar text-custom-main outline-none" placeholder="Пароль (мин. 6 символов)">
-        <button type="submit" class="w-full py-4 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition">Зарегистрироваться</button>
+        <input type="text" name="username" required class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Имя пользователя">
+        <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Email">
+        <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Пароль (мин. 6 символов)">
+        <button type="submit" class="w-full py-4 bg-custom-accent text-white font-semibold rounded-xl hover:opacity-90 transition">Зарегистрироваться</button>
       </form>
-      <p class="mt-8 text-center text-custom-muted text-sm">Уже есть аккаунт? <button onclick="switchForm('login')" class="text-blue-600 font-semibold hover:underline">Войти</button></p>
+      <p class="mt-8 text-center text-custom-muted text-sm">Уже есть аккаунт? <button onclick="switchForm('login')" class="text-custom-accent font-semibold hover:underline">Войти</button></p>
     </div>
   </div>
 </div>
@@ -366,20 +366,29 @@
 <!-- Profile Modal -->
 <div id="profile-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
   <div id="profile-modal" class="profile-modal w-full max-w-sm rounded-3xl relative transform scale-95 transition-all duration-300 p-8">
-    <button onclick="closeProfileModal()" class="absolute top-5 right-5 text-blue-300 hover:text-white transition">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    <!-- Галочка (сохранить) в левом верхнем углу -->
+    <button onclick="saveProfile()" title="Сохранить" class="absolute top-5 left-5 text-custom-accent hover:scale-110 transition-all">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+      </svg>
+    </button>
+    <!-- Крестик (закрыть) в правом верхнем углу -->
+    <button onclick="closeProfileModal()" title="Закрыть" class="absolute top-5 right-5 text-custom-muted hover:text-custom-main transition">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
     </button>
 
     <!-- Avatar -->
     <div class="flex flex-col items-center mb-6">
       <div class="relative group cursor-pointer" onclick="triggerAvatarUpload()">
-        <div id="profile-avatar" class="w-24 h-24 rounded-full bg-blue-500/30 border-2 border-blue-400/50 flex items-center justify-center text-4xl font-bold text-blue-200 transition group-hover:border-blue-300 overflow-hidden">U</div>
+        <div id="profile-avatar" class="w-24 h-24 rounded-full bg-custom-sidebar flex items-center justify-center text-4xl font-bold text-custom-muted transition group-hover:border-custom-accent overflow-hidden">U</div>
         <div class="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
           <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         </div>
       </div>
       <input type="file" id="avatar-upload" class="hidden" accept="image/*">
-      <p class="text-blue-300/70 text-xs mt-2">Нажмите чтобы сменить фото</p>
+      <p class="text-custom-muted text-xs mt-2">Нажмите чтобы сменить фото</p>
     </div>
 
     <!-- Fields -->
@@ -399,10 +408,10 @@
         </label>
         <input type="tel" id="profile-phone" class="profile-input" placeholder="+7 (999) 000-00-00">
       </div>
-      <div class="profile-field">
+      <div id="profile-email-container" class="profile-field">
         <label class="profile-label">Email</label>
         <input type="email" id="profile-email" class="profile-input" placeholder="you@example.com" disabled>
-        <p class="text-blue-300/50 text-xs mt-1 pl-1">Изменение email недоступно</p>
+        <p class="text-custom-muted text-xs mt-1 pl-1">Изменение email недоступно</p>
       </div>
       <div class="profile-field">
         <label class="profile-label">
@@ -410,22 +419,22 @@
           Статус
         </label>
         <input type="text" id="profile-status-text" class="profile-input" placeholder="Настроение, цитата..." maxlength="100">
-        <p class="text-blue-300/50 text-xs mt-1 pl-1">Виден собеседникам в правой панели</p>
+        <p class="text-custom-muted text-xs mt-1 pl-1">Виден собеседникам в правой панели</p>
       </div>
 
       <!-- Верификация -->
       <div class="profile-verify-block">
         <div class="flex items-center gap-2 mb-2">
-          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-          <span class="text-blue-200 text-sm font-medium">Привязка к личности</span>
+          <svg class="w-4 h-4 text-custom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          <span class="text-custom-main text-sm font-medium">Привязка к личности</span>
           <span class="ml-auto text-xs bg-yellow-500/20 text-yellow-300 border border-yellow-400/30 px-2 py-0.5 rounded-full">Скоро</span>
         </div>
-        <p class="text-blue-300/60 text-xs leading-relaxed">Верификация через Госуслуги или паспорт для подтверждения личности. Даёт синюю галочку профиля.</p>
+        <p class="text-custom-muted text-xs leading-relaxed">Верификация через Госуслуги или паспорт для подтверждения личности. Даёт синюю галочку профиля.</p>
       </div>
     </div>
 
     <!-- Save -->
-    <button onclick="saveProfile()" class="mt-6 w-full py-3 bg-blue-600/80 hover:bg-blue-600 text-white font-semibold rounded-2xl transition border border-blue-400/30 backdrop-blur-sm">
+    <button onclick="saveProfile()" class="mt-6 w-full py-3 bg-custom-accent text-white font-semibold rounded-2xl transition hover:opacity-90">
       Сохранить изменения
     </button>
   </div>

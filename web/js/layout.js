@@ -42,15 +42,14 @@
     var infoPanel    = el('info-panel');
 
     if (leftPanel) {
-      // ... существующие стили левой панели ...
-      leftPanel.style.background = 'transparent'; 
-      leftPanel.style.backdropFilter = 'blur(10px)';
-      leftPanel.style.backgroundColor = 'rgba(var(--bg-sidebar-rgb), 0.3)';
-      if (chatsSidebar) chatsSidebar.style.background = 'transparent';
-      if (viewHome)     viewHome.style.background = 'transparent';
-      leftPanel.style.borderRadius = '24px 24px 0 0';
       leftPanel.style.marginTop = '12px';
       leftPanel.style.height = 'calc(100% - 12px)';
+      
+      // Фиксированная ширина левой панели
+      leftPanel.style.flex = '0 0 320px';
+      leftPanel.style.width = '320px';
+      leftPanel.style.minWidth = '320px';
+      
       leftPanel.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease';
       if (!state.chatsVisible && !state.feedVisible) {
         leftPanel.style.transform = 'translateY(30px)';
@@ -59,11 +58,6 @@
     }
 
     if (viewChat) {
-      // Стилизуем окно чата под стекло
-      viewChat.style.background = 'transparent';
-      viewChat.style.backdropFilter = 'blur(15px)';
-      viewChat.style.backgroundColor = 'rgba(var(--bg-sidebar-rgb), 0.2)';
-      viewChat.style.borderRadius = '24px 24px 0 0';
       viewChat.style.marginTop = '12px';
       viewChat.style.marginLeft = '12px';
       viewChat.style.marginRight = '12px';
@@ -80,40 +74,19 @@
         viewChat.style.transform = 'translateX(-40px)'; 
         viewChat.style.opacity   = '0';
       }
-      
-      if (chatHeader) {
-        chatHeader.style.background = 'rgba(var(--bg-main-rgb), 0.4)';
-        chatHeader.style.borderRadius = '24px 24px 0 0';
-      }
-      if (msgContainer) msgContainer.style.background = 'transparent';
-      if (inputArea) {
-        inputArea.style.background = 'rgba(var(--bg-main-rgb), 0.4)';
-        inputArea.style.backdropFilter = 'blur(8px)';
-      }
     }
 
     if (infoPanel) {
-      infoPanel.style.background = 'transparent';
-      infoPanel.style.backdropFilter = 'blur(15px)';
-      infoPanel.style.backgroundColor = 'rgba(var(--bg-sidebar-rgb), 0.2)';
-      infoPanel.style.borderRadius = '24px 24px 0 0';
       infoPanel.style.marginTop = '12px';
       infoPanel.style.marginRight = '12px';
       infoPanel.style.height = 'calc(100% - 12px)';
       
       // Инфо-панель занимает ровно то, что осталось от чата (примерно 32% с учетом отступов)
-      // Она всегда прижата к правому краю благодаря margin-left: auto
       infoPanel.style.flex = '0 0 32%'; 
       infoPanel.style.width = '32%';
       infoPanel.style.marginLeft = 'auto'; 
       
       infoPanel.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s ease';
-      
-      var infoHeader = infoPanel.querySelector('div:first-child');
-      if (infoHeader) {
-        infoHeader.style.background = 'rgba(var(--bg-main-rgb), 0.4)';
-        infoHeader.style.borderRadius = '24px 24px 0 0';
-      }
     }
 
     // 1. Управление окном чата
@@ -299,13 +272,6 @@
   function initDock() {
     var dock = el('bottom-dock');
     if (!dock) return;
-
-    // Стилизуем под стекло
-    dock.style.background = 'transparent';
-    dock.style.backdropFilter = 'blur(10px)';
-    dock.style.backgroundColor = 'rgba(var(--bg-sidebar-rgb), 0.3)';
-    dock.style.border = '1px solid rgba(255,255,255,0.05)';
-    dock.style.borderRadius = '24px 24px 0 0'; // Закругляем верхние углы
 
     document.addEventListener('mousemove', function (e) {
       if (!isMainChatVisible()) return;
