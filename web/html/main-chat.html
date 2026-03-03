@@ -126,7 +126,7 @@
   <!-- end #view-chat -->
 
   <!-- ═══ Right: info panel ═══ -->
-  <div id="info-panel" class="w-80 border-l border-custom hidden flex flex-col h-full bg-custom-main fade-in" style="position:relative;z-index:2;">
+  <div id="info-panel" class="border-l border-custom hidden flex flex-col h-full bg-custom-main fade-in" style="position:relative;z-index:2;flex-shrink:0;min-width:0;">
     <div class="p-4 border-b border-custom flex items-center justify-between">
       <h3 class="font-bold text-custom-main">Информация</h3>
       <button onclick="toggleInfoPanel()" class="text-custom-muted hover:text-custom-main">
@@ -164,7 +164,7 @@
   </button>
 
   <!-- Новый чат -->
-  <button class="dock-btn" onclick="openNewChatMenu()" id="dock-new-chat" title="Новый чат">
+  <button class="dock-btn" onclick="handleNewChatBtn()" id="dock-new-chat" title="Новый чат">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
   </button>
 

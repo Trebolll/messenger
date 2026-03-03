@@ -25,26 +25,27 @@ function switchForm(type) {
 
 // ── New Chat Modal ─────────────────────────────────────────────────────────
 
-function handleNewChatBtn() {
-  const btn = document.getElementById('new-chat-btn');
-
-  // Вспышка
+// Единая функция анимации плюса — используется везде
+function animatePlusBtn(btn) {
+  if (!btn) return;
   btn.classList.remove('clicked', 'pulsing');
-  void btn.offsetWidth; // reflow чтобы перезапустить анимацию
+  void btn.offsetWidth;
   btn.classList.add('clicked');
+  setTimeout(() => btn.classList.add('pulsing'), 80);
+  setTimeout(() => btn.classList.remove('clicked', 'pulsing'), 800);
+}
 
-  // Пульс кольца чуть позже
-  setTimeout(() => {
-    btn.classList.add('pulsing');
-  }, 80);
+function handleNewChatBtn() {
+  const overlay = document.getElementById('new-chat-overlay');
+  const isOpen  = !overlay.classList.contains('hidden') && !overlay.classList.contains('opacity-0');
 
-  // Убираем классы после окончания
-  setTimeout(() => {
-    btn.classList.remove('clicked', 'pulsing');
-  }, 1600);
+  animatePlusBtn(document.getElementById('dock-new-chat'));
 
-  // Открываем модал
-  openNewChatMenu();
+  if (isOpen) {
+    closeNewChatModal();
+  } else {
+    openNewChatMenu();
+  }
 }
 
 function openNewChatMenu() {
@@ -64,6 +65,7 @@ function openNewChatMenu() {
   setTimeout(() => {
     overlay.classList.remove('opacity-0');
     modal.classList.remove('scale-95');
+    modal.style.transform = '';
     if (input) input.focus();
   }, 10);
 }
@@ -72,12 +74,14 @@ function closeNewChatModal() {
   const overlay = document.getElementById('new-chat-overlay');
   const modal   = document.getElementById('new-chat-modal');
   overlay.classList.add('opacity-0');
-  modal.classList.add('scale-95');
+  modal.style.transform = 'scale(0.88) translateY(12px)';
+  modal.style.opacity = '0';
   setTimeout(() => {
     overlay.classList.add('hidden');
+    modal.style.transform = '';
+    modal.style.opacity = '';
     window._ncSelected = [];
     window._ncExcludeIds = new Set();
-    // Сбрасываем режим добавления участника и восстанавливаем заголовки
     if (window._addMemberMode) {
       window._addMemberMode = false;
       const modalTitle = document.querySelector('#new-chat-modal h2');
@@ -85,7 +89,7 @@ function closeNewChatModal() {
       const subtitle = document.getElementById('new-chat-subtitle');
       if (subtitle) subtitle.textContent = 'Найди пользователя для начала общения';
     }
-  }, 300);
+  }, 360);
 }
 
 // Переключить пользователя в выборке (принимает id, берёт из Map)
@@ -967,14 +971,7 @@ function startInlineGroupNameEdit(chatId, currentName) {
 // ── Добавление участника через модал поиска ──────────────────────────────
 
 function handleAddMemberBtn() {
-  const btn = document.getElementById('add-member-plus-btn');
-  if (btn) {
-    btn.classList.remove('add-member-clicked', 'add-member-pulsing');
-    void btn.offsetWidth;
-    btn.classList.add('add-member-clicked');
-    setTimeout(() => btn.classList.add('add-member-pulsing'), 80);
-    setTimeout(() => btn.classList.remove('add-member-clicked', 'add-member-pulsing'), 1600);
-  }
+  animatePlusBtn(document.getElementById('add-member-plus-btn'));
   openAddMemberModal();
 }
 

@@ -239,7 +239,106 @@ body.theme-volcano {
   border-radius: 24px 24px 0 0 !important;
 }
 
-/* Скругление элементов в списке чатов */
+/* ── iOS-стиль: отступы и полное скругление для всех панелей ── */
+#main-chat {
+  padding: 12px 12px 0 12px;
+  gap: 10px;
+  align-items: flex-end;
+  box-sizing: border-box;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.left-panel {
+  border-radius: 24px 24px 0 0 !important;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+#view-chat {
+  border-radius: 24px 24px 0 0 !important;
+  overflow: hidden;
+  min-width: 0;
+}
+
+#info-panel {
+  border-radius: 24px 24px 0 0 !important;
+  overflow: hidden;
+  flex-shrink: 0;
+  flex-basis: 0;
+  width: 0 !important;
+  max-width: 320px;
+  transition: flex-basis 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+#info-panel:not(.hidden) {
+  flex-basis: 30%;
+  width: auto !important;
+}
+
+/* ── Полированный верхний край — светопреломление как у iOS ── */
+.left-panel::before,
+#view-chat::before,
+#info-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  z-index: 10;
+  pointer-events: none;
+  background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.0) 5%,
+      rgba(255, 255, 255, 0.55) 30%,
+      rgba(255, 255, 255, 0.80) 50%,
+      rgba(255, 255, 255, 0.55) 70%,
+      rgba(255, 255, 255, 0.0) 95%,
+      transparent 100%
+  );
+  border-radius: 24px 24px 0 0;
+}
+
+/* Для тёмных тем — менее интенсивный блик */
+body.theme-gray .left-panel::before,
+body.theme-gray #view-chat::before,
+body.theme-gray #info-panel::before,
+body.theme-twilight .left-panel::before,
+body.theme-twilight #view-chat::before,
+body.theme-twilight #info-panel::before,
+body.theme-ocean .left-panel::before,
+body.theme-ocean #view-chat::before,
+body.theme-ocean #info-panel::before,
+body.theme-dark-gold .left-panel::before,
+body.theme-dark-gold #view-chat::before,
+body.theme-jungle .left-panel::before,
+body.theme-jungle #view-chat::before,
+body.theme-blood .left-panel::before,
+body.theme-blood #view-chat::before,
+body.theme-cyberpunk .left-panel::before,
+body.theme-cyberpunk #view-chat::before,
+body.theme-cosmos .left-panel::before,
+body.theme-cosmos #view-chat::before,
+body.theme-amethyst .left-panel::before,
+body.theme-amethyst #view-chat::before,
+body.theme-volcano .left-panel::before,
+body.theme-volcano #view-chat::before {
+  background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.0) 5%,
+      rgba(255, 255, 255, 0.18) 30%,
+      rgba(255, 255, 255, 0.30) 50%,
+      rgba(255, 255, 255, 0.18) 70%,
+      rgba(255, 255, 255, 0.0) 95%,
+      transparent 100%
+  );
+}
+
+/* Нужен position:relative на панелях для ::before */
+.left-panel, #view-chat, #info-panel {
+  position: relative;
+}
 .chat-list-item {
   border-radius: 16px !important;
   margin: 4px 8px !important;

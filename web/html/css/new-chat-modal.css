@@ -1,7 +1,342 @@
-/* ══ New Chat Modal ══ */
+/* ══ New Chat Modal — iOS centered style ══ */
+
+/* Backdrop */
 .new-chat-backdrop {
-    background: rgba(0,0,0,0.5) !important;
-    backdrop-filter: blur(12px) !important;
+    background: rgba(0, 0, 0, 0.38);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+
+/* Overlay — по центру */
+#new-chat-overlay {
+    align-items: center !important;
+    padding: 16px !important;
+}
+
+/* Карточка */
+.new-chat-modal-card {
+    width: 100% !important;
+    max-width: 420px !important;
+    margin: 0 auto;
+    border-radius: 28px !important;
+
+    background: rgba(var(--bg-sidebar-rgb), 0.75) !important;
+    backdrop-filter: blur(40px) saturate(200%) contrast(108%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(200%) contrast(108%) !important;
+    border: 0.5px solid var(--glass-border) !important;
+    box-shadow:
+        0 24px 60px rgba(0,0,0,0.18),
+        0 4px 16px rgba(0,0,0,0.1),
+        inset 0 1px 0 rgba(255,255,255,0.55) !important;
+
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    transform: scale(0.88) translateY(12px) !important;
+    opacity: 0;
+    transition: transform 0.36s cubic-bezier(0.34, 1.45, 0.64, 1),
+    opacity 0.22s ease !important;
+}
+
+#new-chat-overlay:not(.opacity-0) .new-chat-modal-card:not(.scale-95) {
+    transform: scale(1) translateY(0) !important;
+    opacity: 1;
+}
+
+/* Полированный верхний край */
+.new-chat-modal-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    border-radius: 28px 28px 0 0;
+    pointer-events: none;
+    z-index: 10;
+    background: linear-gradient(
+        90deg,
+        transparent 0%, rgba(255,255,255,0.0) 8%,
+        rgba(255,255,255,0.75) 35%, rgba(255,255,255,0.95) 50%,
+        rgba(255,255,255,0.75) 65%, rgba(255,255,255,0.0) 92%,
+        transparent 100%
+    );
+}
+
+/* Заголовок */
+.new-chat-header { padding: 20px 20px 12px !important; }
+.new-chat-header h2 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; }
+.new-chat-header p  { font-size: 0.75rem; margin-top: 2px; }
+
+/* Кнопка закрытия */
+.new-chat-close-btn {
+    width: 30px !important; height: 30px !important;
+    border-radius: 50% !important;
+    background: rgba(var(--bg-main-rgb), 0.12);
+    transition: background 0.18s, transform 0.18s;
+}
+.new-chat-close-btn:hover {
+    background: rgba(var(--bg-main-rgb), 0.22) !important;
+    color: var(--text-main);
+    transform: rotate(90deg) scale(1.08);
+}
+
+/* Разделитель */
+.new-chat-divider { height: 0.5px; background: var(--glass-border); margin: 0 20px; opacity: 0.7; }
+
+/* Поля поиска */
+.new-chat-search-input {
+    background: rgba(var(--bg-main-rgb), 0.08) !important;
+    border: 0.5px solid rgba(var(--bg-main-rgb), 0.12) !important;
+    color: var(--text-main);
+    border-radius: 14px !important;
+    padding: 11px 14px !important;
+    font-size: 0.875rem;
+    transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+    width: 100%;
+}
+.new-chat-search-input::placeholder { color: var(--text-muted); opacity: 0.7; }
+.new-chat-search-input:focus {
+    border-color: var(--accent-color) !important;
+    background: rgba(var(--bg-main-rgb), 0.14) !important;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb), 0.12);
+}
+
+/* Результаты поиска */
+#search-results { padding: 4px 16px 8px !important; max-height: 240px; overflow-y: auto; scrollbar-width: none; }
+#search-results::-webkit-scrollbar { display: none; }
+
+.nc-result-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 10px; border-radius: 16px;
+    cursor: pointer; color: var(--text-main);
+    transition: background 0.15s, transform 0.12s;
+}
+.nc-result-item:hover  { background: rgba(var(--bg-main-rgb), 0.12); transform: scale(0.99); }
+.nc-result-item:active { transform: scale(0.97); }
+.nc-result-item.selected { background: rgba(var(--accent-color-rgb), 0.1); }
+
+.nc-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1.5px solid rgba(var(--bg-main-rgb), 0.25);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.nc-result-item.selected .nc-check {
+    background: var(--accent-color); border-color: var(--accent-color); transform: scale(1.1);
+}
+
+/* Чипы */
+#selected-users-bar { padding: 0 20px 10px !important; }
+.nc-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px 5px 6px; border-radius: 999px;
+    background: rgba(var(--accent-color-rgb), 0.12);
+    border: 0.5px solid rgba(var(--accent-color-rgb), 0.25);
+    color: var(--accent-color); font-size: 0.72rem; font-weight: 600;
+    animation: chip-pop 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes chip-pop {
+    from { transform: scale(0.6); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+
+/* Поле названия группы */
+#group-name-wrap { padding: 0 20px 8px !important; }
+
+/* Футер */
+#new-chat-footer { padding: 8px 20px 20px !important; }
+
+/* Кнопка создать */
+.create-chat-btn {
+    background: var(--accent-color) !important;
+    color: #fff !important; border: none;
+    border-radius: 18px !important; padding: 14px !important;
+    font-size: 0.92rem; font-weight: 700; letter-spacing: -0.01em; width: 100%;
+    transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s;
+    box-shadow: 0 4px 16px rgba(var(--accent-color-rgb), 0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.create-chat-btn:hover {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 8px 24px rgba(var(--accent-color-rgb), 0.45), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.create-chat-btn:active { transform: scale(0.97); }
+.create-chat-btn.group-mode {
+    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+    box-shadow: 0 4px 16px rgba(34,197,94,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+/* Карточка */
+.new-chat-modal-card {
+    width: 100% !important;
+    max-width: 480px !important;
+    margin: 0 auto;
+    border-radius: 28px 28px 0 0 !important;
+
+    background: rgba(var(--bg-sidebar-rgb), 0.72) !important;
+    backdrop-filter: blur(40px) saturate(200%) contrast(108%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(200%) contrast(108%) !important;
+    border: 0.5px solid var(--glass-border) !important;
+    border-bottom: none !important;
+    box-shadow:
+        0 -2px 40px rgba(0,0,0,0.12),
+        inset 0 1px 0 rgba(255,255,255,0.55) !important;
+
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    transform: translateY(100%) !important;
+    transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+#new-chat-overlay:not(.opacity-0) .new-chat-modal-card,
+#new-chat-overlay:not(.hidden) .new-chat-modal-card:not(.scale-95) {
+    transform: translateY(0%) !important;
+}
+
+/* Ручка сверху */
+.new-chat-modal-card::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(0,0,0,0.15);
+    margin: 12px auto 4px;
+    flex-shrink: 0;
+}
+body.theme-gray .new-chat-modal-card::before,
+body.theme-twilight .new-chat-modal-card::before,
+body.theme-ocean .new-chat-modal-card::before,
+body.theme-dark-gold .new-chat-modal-card::before,
+body.theme-jungle .new-chat-modal-card::before,
+body.theme-blood .new-chat-modal-card::before,
+body.theme-cyberpunk .new-chat-modal-card::before,
+body.theme-cosmos .new-chat-modal-card::before,
+body.theme-amethyst .new-chat-modal-card::before,
+body.theme-volcano .new-chat-modal-card::before { background: rgba(255,255,255,0.2); }
+
+/* Полированный верхний край */
+.new-chat-modal-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    border-radius: 28px 28px 0 0;
+    pointer-events: none;
+    z-index: 10;
+    background: linear-gradient(
+        90deg,
+        transparent 0%, rgba(255,255,255,0.0) 8%,
+        rgba(255,255,255,0.75) 35%, rgba(255,255,255,0.95) 50%,
+        rgba(255,255,255,0.75) 65%, rgba(255,255,255,0.0) 92%,
+        transparent 100%
+    );
+}
+
+/* Заголовок */
+.new-chat-header { padding: 4px 20px 12px !important; }
+.new-chat-header h2 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; }
+.new-chat-header p  { font-size: 0.75rem; margin-top: 2px; }
+
+/* Кнопка закрытия */
+.new-chat-close-btn {
+    width: 30px !important; height: 30px !important;
+    border-radius: 50% !important;
+    background: rgba(var(--bg-main-rgb), 0.12);
+    transition: background 0.18s, transform 0.18s;
+}
+.new-chat-close-btn:hover {
+    background: rgba(var(--bg-main-rgb), 0.22) !important;
+    color: var(--text-main);
+    transform: rotate(90deg) scale(1.08);
+}
+
+/* Разделитель */
+.new-chat-divider { height: 0.5px; background: var(--glass-border); margin: 0 20px; opacity: 0.7; }
+
+/* Поля поиска */
+.new-chat-search-input {
+    background: rgba(var(--bg-main-rgb), 0.08) !important;
+    border: 0.5px solid rgba(var(--bg-main-rgb), 0.12) !important;
+    color: var(--text-main);
+    border-radius: 14px !important;
+    padding: 11px 14px !important;
+    font-size: 0.875rem;
+    transition: border-color 0.18s, background 0.18s;
+    width: 100%;
+}
+.new-chat-search-input::placeholder { color: var(--text-muted); opacity: 0.7; }
+.new-chat-search-input:focus {
+    border-color: var(--accent-color) !important;
+    background: rgba(var(--bg-main-rgb), 0.14) !important;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(var(--accent-color-rgb), 0.12);
+}
+
+/* Результаты поиска */
+#search-results { padding: 4px 16px 8px !important; max-height: 240px; overflow-y: auto; scrollbar-width: none; }
+#search-results::-webkit-scrollbar { display: none; }
+
+.nc-result-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 9px 10px; border-radius: 16px;
+    cursor: pointer; color: var(--text-main);
+    transition: background 0.15s, transform 0.12s;
+}
+.nc-result-item:hover  { background: rgba(var(--bg-main-rgb), 0.12); transform: scale(0.99); }
+.nc-result-item:active { transform: scale(0.97); }
+.nc-result-item.selected { background: rgba(var(--accent-color-rgb), 0.1); }
+
+.nc-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1.5px solid rgba(var(--bg-main-rgb), 0.25);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.nc-result-item.selected .nc-check {
+    background: var(--accent-color); border-color: var(--accent-color); transform: scale(1.1);
+}
+
+/* Чипы */
+#selected-users-bar { padding: 0 20px 10px !important; }
+.nc-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px 5px 6px; border-radius: 999px;
+    background: rgba(var(--accent-color-rgb), 0.12);
+    border: 0.5px solid rgba(var(--accent-color-rgb), 0.25);
+    color: var(--accent-color); font-size: 0.72rem; font-weight: 600;
+    animation: chip-pop 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes chip-pop {
+    from { transform: scale(0.6); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+
+/* Поле названия группы */
+#group-name-wrap { padding: 0 20px 8px !important; }
+
+/* Футер */
+#new-chat-footer { padding: 8px 20px 28px !important; }
+
+/* Кнопка создать */
+.create-chat-btn {
+    background: var(--accent-color) !important;
+    color: #fff !important; border: none;
+    border-radius: 18px !important; padding: 14px !important;
+    font-size: 0.92rem; font-weight: 700; letter-spacing: -0.01em; width: 100%;
+    transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s;
+    box-shadow: 0 4px 16px rgba(var(--accent-color-rgb), 0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.create-chat-btn:hover {
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 8px 24px rgba(var(--accent-color-rgb), 0.45), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.create-chat-btn:active { transform: scale(0.97); }
+.create-chat-btn.group-mode {
+    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+    box-shadow: 0 4px 16px rgba(34,197,94,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
 }
 
 .new-chat-modal-card {
