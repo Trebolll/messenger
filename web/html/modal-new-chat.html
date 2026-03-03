@@ -1,0 +1,55 @@
+  <!-- New Chat Modal -->
+  <div id="new-chat-overlay" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 new-chat-backdrop" onclick="closeNewChatModal()"></div>
+
+    <div id="new-chat-modal" class="new-chat-modal-card w-full max-w-md relative transform scale-95 transition-all duration-300 overflow-hidden">
+
+      <!-- Header -->
+      <div class="new-chat-header px-6 pt-6 pb-4 flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-custom-main tracking-tight">Новый чат</h2>
+          <p id="new-chat-subtitle" class="text-xs text-custom-muted mt-0.5">Найди пользователя для начала общения</p>
+        </div>
+        <button onclick="closeNewChatModal()" class="new-chat-close-btn w-8 h-8 flex items-center justify-center rounded-full">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Selected users chips -->
+      <div id="selected-users-bar" class="hidden px-6 pb-3">
+        <div id="selected-chips" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- Divider -->
+      <div class="new-chat-divider mx-6"></div>
+
+      <!-- Search -->
+      <div class="px-6 pt-4">
+        <div class="relative">
+          <svg class="w-4 h-4 absolute left-3 top-3.5 text-custom-muted pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" id="user-search-input" oninput="app.searchUsers(this.value)" class="new-chat-search-input w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none" placeholder="Имя или email...">
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="search-results" class="px-6 pt-3 pb-3 max-h-52 overflow-y-auto space-y-1 scrollbar-hide"></div>
+
+      <!-- Group name input (appears when 2+ selected) -->
+      <div id="group-name-wrap" class="hidden px-6 pb-2">
+        <div class="new-chat-divider mb-3"></div>
+        <input type="text" id="group-name-input" maxlength="60"
+               class="new-chat-search-input w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+               placeholder="Название группы (необязательно)…">
+      </div>
+
+      <!-- Footer action button -->
+      <div id="new-chat-footer" class="hidden px-6 pb-6 pt-2">
+        <button id="create-chat-btn" onclick="handleCreateChat()" class="create-chat-btn w-full py-3 rounded-2xl font-semibold text-sm transition-all">
+          <span id="create-chat-label">Открыть чат</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+

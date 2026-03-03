@@ -1,0 +1,74 @@
+/* ══ Group member row hover ══ */
+    #group-members-list .group:hover .opacity-0 { opacity: 1; }
+
+    /* ══ Group Chat Row (в списке чатов) ══ */
+    .chat-list-item--group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: stretch;
+    }
+
+    /* Горизонтальная полоска аватарок */
+    .gc-avatars-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 4px;
+      overflow: hidden;
+      flex-wrap: nowrap;
+      min-width: 0;
+    }
+    .gc-avatar {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 1.5px solid var(--bg-main);
+      background: var(--bg-item-active);
+      color: var(--accent-color);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 11px;
+      overflow: hidden;
+      transition: transform 0.15s;
+    }
+    .chat-list-item--group:hover .gc-avatar { transform: scale(1.06); }
+
+    /* Когда аватарок много — уменьшаем размер */
+    .gc-avatars-row:has(.gc-avatar:nth-child(6)) .gc-avatar { width: 24px; height: 24px; font-size: 9px; gap: 3px; }
+    .gc-avatars-row:has(.gc-avatar:nth-child(9)) .gc-avatar { width: 20px; height: 20px; font-size: 8px; }
+
+    /* Никнеймы — горизонтально, сжимаются */
+    .gc-names-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      overflow: hidden;
+      flex-wrap: nowrap;
+      min-width: 0;
+    }
+    .gc-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 1;
+      min-width: 18px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .gc-sep {
+      color: var(--text-muted);
+      font-weight: 400;
+      flex-shrink: 0;
+    }
+
+    /* Последнее сообщение */
+    .gc-last-msg {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }

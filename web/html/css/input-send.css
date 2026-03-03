@@ -1,0 +1,289 @@
+/* ══ Send button ══ */
+#send-btn {
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  padding: 12px;
+  border-radius: 14px;
+  color: #fff;
+  background: var(--accent-color, #2563eb);
+  box-shadow: 0 2px 10px rgba(var(--accent-color-rgb, 37,99,235), 0.35);
+  transition: filter 0.2s, transform 0.15s, box-shadow 0.2s;
+  z-index: 20;
+}
+#send-btn:hover {
+  filter: brightness(1.12);
+  transform: scale(1.06);
+  box-shadow: 0 4px 18px rgba(var(--accent-color-rgb, 37,99,235), 0.5);
+}
+#send-btn:active { transform: scale(0.94); }
+#send-btn .plane-icon {
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.42s cubic-bezier(0.4,0,0.2,1), opacity 0.25s;
+}
+#send-btn.sending .plane-icon {
+  transform: translate(140%, -140%);
+  opacity: 0;
+}
+#send-btn .plane-return {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  transform: translate(-140%, 140%);
+  opacity: 0;
+  transition: transform 0.42s cubic-bezier(0.4,0,0.2,1) 0.12s, opacity 0.25s 0.12s;
+}
+#send-btn.sending .plane-return {
+  transform: translate(0, 0);
+  opacity: 1;
+}
+
+/* ══ Dynamic message textarea ══ */
+.msg-input-wrap {
+  position: relative;
+}
+.msg-textarea {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  max-height: 160px;
+  line-height: 1.55;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition:
+      box-shadow 0.22s ease,
+      background 0.2s ease,
+      border-color 0.2s ease,
+      min-height 0.15s ease;
+  border: 1.5px solid transparent;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+  word-break: break-word;
+}
+.msg-textarea::-webkit-scrollbar { width: 4px; }
+.msg-textarea::-webkit-scrollbar-track { background: transparent; }
+.msg-textarea::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+.msg-textarea:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 15%, transparent);
+  background: var(--bg-main) !important;
+}
+.msg-textarea.has-text {
+  background: var(--bg-main) !important;
+}
+/* Плавное появление input-area */
+#input-area {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  opacity: 0;
+  transform: translateY(8px);
+}
+#input-area.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ══ Pin (булавка) animation ══ */
+#attach-btn {
+  color: var(--text-muted);
+  transition: color 0.25s;
+  perspective: 200px;
+}
+#attach-btn:hover { color: #3b82f6; }
+
+#pin-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+  transition:
+      transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1),
+      filter    0.35s ease;
+  will-change: transform;
+}
+
+/* Hover: булавка отодвигается назад и чуть наклоняется */
+#attach-btn:hover #pin-wrap {
+  transform: translateZ(-8px) rotateX(18deg) rotateY(-12deg) scale(0.88);
+  filter: drop-shadow(0 6px 8px rgba(0,0,0,0.22));
+}
+
+/* Active: резко прилетает вперёд — втыкается */
+#attach-btn:active #pin-wrap {
+  transform: translateZ(6px) rotateX(-6deg) rotateY(4deg) scale(1.06);
+  transition:
+      transform 0.1s cubic-bezier(0.2, 0, 0.4, 1),
+      filter    0.1s ease;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.18));
+}
+
+/* Тень исчезает когда близко (active) и появляется когда далеко (hover) */
+#pin-shadow {
+  transition: opacity 0.35s ease, rx 0.35s ease;
+}
+#attach-btn:hover  #pin-shadow { opacity: 0.22; }
+#attach-btn:active #pin-shadow { opacity: 0.06; }
+
+/* ══ Theme button animation (4 themes) ══
+   ☀️ sun = белая  🌙 moon = тёмная  ⭐ star = сумерки  🌱 sprout = рассвет  */
+.theme-btn {
+  position: relative;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  color: var(--text-muted);
+}
+.theme-btn:hover { background: rgba(234,179,8,0.1); }
+body.theme-gray     .theme-btn:hover { background: rgba(96,165,250,0.1); }
+body.theme-twilight .theme-btn:hover { background: rgba(167,139,250,0.15); }
+body.theme-dawn     .theme-btn:hover { background: rgba(34,197,94,0.12); }
+body.theme-sunset   .theme-btn:hover { background: rgba(234,88,12,0.1); }
+body.theme-coral    .theme-btn:hover { background: rgba(239,68,68,0.1); }
+body.theme-ocean    .theme-btn:hover { background: rgba(14,165,233,0.1); }
+body.theme-mint     .theme-btn:hover { background: rgba(13,148,136,0.1); }
+
+.theme-icon-wrap {
+  position: relative;
+  width: 20px; height: 20px;
+  display: block;
+}
+.theme-icon {
+  position: absolute;
+  top: 0; left: 0;
+  transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease;
+}
+
+/* Белая тема (light): показываем солнце */
+.theme-sun           { transform: translateY(0)     rotate(0deg);   opacity: 1; color: #f59e0b; }
+.theme-moon          { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #94a3b8; }
+.theme-twilight-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #a78bfa; }
+.theme-dawn-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #22c55e; }
+.theme-sunset-icon   { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #ea580c; }
+.theme-coral-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #ef4444; }
+.theme-ocean-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #38bdf8; }
+.theme-mint-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #0d9488; }
+
+/* Тёмная тема (gray): показываем луну */
+body.theme-gray .theme-sun           { transform: translateY(24px)  rotate(90deg);  opacity: 0; }
+body.theme-gray .theme-moon          { transform: translateY(0)     rotate(0deg);   opacity: 1; }
+body.theme-gray .theme-twilight-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-gray .theme-dawn-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-gray .theme-sunset-icon   { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-gray .theme-coral-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-gray .theme-ocean-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-gray .theme-mint-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+/* Сумерки (twilight): показываем звезду */
+body.theme-twilight .theme-sun           { transform: translateY(24px)  rotate(90deg);  opacity: 0; }
+body.theme-twilight .theme-moon          { transform: translateY(24px)  rotate(90deg);  opacity: 0; }
+body.theme-twilight .theme-twilight-icon { transform: translateY(0)     rotate(0deg);   opacity: 1; }
+body.theme-twilight .theme-dawn-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-twilight .theme-sunset-icon   { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-twilight .theme-coral-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-twilight .theme-ocean-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-twilight .theme-mint-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+/* Рассвет (dawn): показываем росток */
+body.theme-dawn .theme-sun           { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-dawn .theme-moon          { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-dawn .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-dawn .theme-dawn-icon     { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+body.theme-dawn .theme-sunset-icon   { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-dawn .theme-coral-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-dawn .theme-ocean-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-dawn .theme-mint-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+/* Закат (sunset): показываем огонь */
+body.theme-sunset .theme-sun           { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-sunset .theme-moon          { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-sunset .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-sunset .theme-dawn-icon     { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-sunset .theme-sunset-icon   { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+body.theme-sunset .theme-coral-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-sunset .theme-ocean-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-sunset .theme-mint-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+/* Коралл (coral): показываем сердце */
+body.theme-coral .theme-sun           { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-coral .theme-moon          { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-coral .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-coral .theme-dawn-icon     { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-coral .theme-sunset-icon   { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-coral .theme-coral-icon    { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+body.theme-coral .theme-ocean-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-coral .theme-mint-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+/* Океан (ocean): показываем волну */
+body.theme-ocean .theme-sun           { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-ocean .theme-moon          { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-ocean .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-ocean .theme-dawn-icon     { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-ocean .theme-sunset-icon   { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-ocean .theme-coral-icon    { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-ocean .theme-ocean-icon    { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+body.theme-ocean .theme-mint-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+/* Мята (mint): показываем кристалл/снежинку */
+body.theme-mint .theme-sun           { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-mint .theme-moon          { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-mint .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-mint .theme-dawn-icon     { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-mint .theme-sunset-icon   { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-mint .theme-coral-icon    { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-mint .theme-ocean-icon    { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-mint .theme-mint-icon     { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+
+/* Анимация при клике */
+.theme-btn.animating .theme-sun,
+.theme-btn.animating .theme-moon,
+.theme-btn.animating .theme-twilight-icon,
+.theme-btn.animating .theme-dawn-icon,
+.theme-btn.animating .theme-sunset-icon,
+.theme-btn.animating .theme-coral-icon,
+.theme-btn.animating .theme-ocean-icon,
+.theme-btn.animating .theme-mint-icon { transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease; }
+
+/* Свечение при наведении */
+.theme-btn::after {
+  content: '';
+  position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle, rgba(251,191,36,0.2) 0%, transparent 70%);
+  opacity: 0; transition: opacity 0.3s;
+  pointer-events: none;
+}
+.theme-btn:hover::after { opacity: 1; }
+body.theme-gray .theme-btn::after {
+  background: radial-gradient(circle, rgba(96,165,250,0.18) 0%, transparent 70%);
+}
+body.theme-twilight .theme-btn::after {
+  background: radial-gradient(circle, rgba(167,139,250,0.25) 0%, transparent 70%);
+}
+body.theme-dawn .theme-btn::after {
+  background: radial-gradient(circle, rgba(34,197,94,0.2) 0%, transparent 70%);
+}
+body.theme-sunset .theme-btn::after {
+  background: radial-gradient(circle, rgba(234,88,12,0.22) 0%, transparent 70%);
+}
+body.theme-coral .theme-btn::after {
+  background: radial-gradient(circle, rgba(239,68,68,0.22) 0%, transparent 70%);
+}
+body.theme-ocean .theme-btn::after {
+  background: radial-gradient(circle, rgba(14,165,233,0.22) 0%, transparent 70%);
+}
+body.theme-mint .theme-btn::after {
+  background: radial-gradient(circle, rgba(13,148,136,0.22) 0%, transparent 70%);
+}
+
+/* ══ Flex layout строки ввода ══ */
+#message-form {
+  display: flex !important;
+  align-items: flex-end !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+.msg-input-wrap {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+}
+#attach-btn, #ai-btn, #send-btn {
+  flex-shrink: 0 !important;
+}

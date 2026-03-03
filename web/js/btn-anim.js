@@ -30,13 +30,13 @@
       rotSpeed: (Math.random() - 0.5) * 0.05
     }));
 
-    btn._anim = { 
-      canvas: cvs, 
-      ctx: cvs.getContext('2d'), 
-      type, 
-      ripples: [], 
+    btn._anim = {
+      canvas: cvs,
+      ctx: cvs.getContext('2d'),
+      type,
+      ripples: [],
       particles,
-      t: 0 
+      t: 0
     };
 
     // Resize canvas px
@@ -102,11 +102,11 @@
       // 3. Плавное мерцание
       const alpha = 0.2 + 0.25 * Math.sin(t * 1.5 + p.phase);
       const rotation = t * 1.5 + p.phase;
-      
+
       drawMiniLambda(ctx, p.x, p.y, p.size, alpha, a.type, rotation, a.hovered);
 
-      // 4. Шанс побега частицы (затягивание в черную дыру)
-      if (Math.random() < 0.005) {
+      // 4. Шанс побега частицы (затягивание в черную дыру) — увеличиваем шанс до 0.003
+      if (Math.random() < 0.003) {
         const rect = btn.getBoundingClientRect();
         if (window.spawnEscapedParticle) {
           window.spawnEscapedParticle(rect.left + p.x, rect.top + p.y, Math.random() > 0.5);
@@ -148,15 +148,15 @@
     ctx.globalAlpha = alpha;
     ctx.translate(x, y);
     ctx.rotate(rotation);
-    
+
     // По умолчанию используем акцентный цвет, чтобы частицы были видны на прозрачном фоне
     let color = getComputedStyle(document.body).getPropertyValue('--accent-color').trim() || '#3b82f6';
-    
+
     // Если кнопка "solid" и мы на неё навели — цвет белый (т.к. фон становится акцентным)
     if (hovered && type === 'solid') {
       color = 'rgba(255,255,255,1)';
     }
-    
+
     ctx.strokeStyle = color;
     ctx.lineWidth   = Math.max(1, size * 0.12);
     ctx.lineCap     = 'round';

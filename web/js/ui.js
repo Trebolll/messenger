@@ -230,6 +230,16 @@ function toggleInfoPanel() {
 
 // ── Profile Modal ──────────────────────────────────────────────────────────
 
+let _profileModalOpen = false;
+
+function toggleProfileModal() {
+  if (_profileModalOpen) {
+    closeProfileModal();
+  } else {
+    openProfileModal();
+  }
+}
+
 function openProfileModal() {
   const overlay = document.getElementById('profile-overlay');
   const modal   = document.getElementById('profile-modal');
@@ -246,6 +256,9 @@ function openProfileModal() {
 
   overlay.classList.remove('hidden');
   setTimeout(() => { overlay.classList.remove('opacity-0'); modal.classList.remove('scale-95'); }, 10);
+  _profileModalOpen = true;
+  const btn = document.getElementById('profile-dock-btn');
+  if (btn) btn.classList.add('active');
 }
 
 function closeProfileModal() {
@@ -253,7 +266,10 @@ function closeProfileModal() {
   const modal   = document.getElementById('profile-modal');
   overlay.classList.add('opacity-0');
   modal.classList.add('scale-95');
+  _profileModalOpen = false;
   setTimeout(() => overlay.classList.add('hidden'), 300);
+  const btn = document.getElementById('profile-dock-btn');
+  if (btn) btn.classList.remove('active');
 }
 
 function triggerAvatarUpload() {
@@ -373,7 +389,7 @@ function handleSendMessage(e) {
 function handleToggleTheme() {
   const btnLanding = document.getElementById('theme-btn-landing');
   const btnNav = document.getElementById('theme-btn');
-  
+
   if (btnLanding) {
     btnLanding.classList.add('animating');
     setTimeout(() => btnLanding.classList.remove('animating'), 600);
@@ -382,7 +398,7 @@ function handleToggleTheme() {
     btnNav.classList.add('animating');
     setTimeout(() => btnNav.classList.remove('animating'), 600);
   }
-  
+
   window.app.toggleTheme();
 }
 

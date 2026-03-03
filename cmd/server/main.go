@@ -76,7 +76,7 @@ func main() {
 	wsHandler := handler.NewWebSocketHandler(hub, "your_secret_key")
 
 	r := gin.Default()
-	r.LoadHTMLGlob("web/*.html")
+	r.LoadHTMLGlob("web/html/*.html")
 	r.Static("/web", "./web")
 
 	r.GET("/", func(c *gin.Context) { c.HTML(200, "index.html", nil) })

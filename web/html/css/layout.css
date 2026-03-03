@@ -1,0 +1,331 @@
+/* ══ Left panel (chats + feed) ══ */
+    .left-panel {
+      width: 300px;
+      flex-shrink: 0;
+      transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .left-panel-tabs {
+      background: var(--bg-sidebar);
+      flex-shrink: 0;
+    }
+    .left-tab-btn {
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: color 0.18s, background 0.18s;
+    }
+    .left-tab-btn:hover {
+      color: var(--text-main);
+      background: var(--bg-item-hover);
+    }
+    .left-tab-btn.active {
+      color: var(--accent-color);
+    }
+    .left-tab-btn.active svg {
+      stroke: var(--accent-color);
+    }
+    .chats-sidebar-inner {
+      height: 100%;
+    }
+
+    /* ══ App navbar (left icon rail) ══ */
+    .app-navbar {
+      width: 64px;
+      flex-shrink: 0;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      position: relative;
+    }
+    .app-nav-logo {
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nav-btn {
+      position: relative;
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 12px;
+      color: var(--text-muted);
+      background: transparent;
+      border: none; cursor: pointer;
+      transition: background 0.18s, color 0.18s, transform 0.15s;
+    }
+    .nav-btn:hover {
+      background: var(--bg-item-hover);
+      color: var(--text-main);
+      transform: scale(1.08);
+    }
+    .nav-btn.active {
+      background: var(--bg-item-active);
+      color: var(--accent-color);
+    }
+    .nav-logout-btn:hover { background: #fef2f2; color: #ef4444; transform: scale(1.08); }
+    body.theme-gray .nav-logout-btn:hover { background: #2d1515; }
+    body.theme-twilight .nav-logout-btn:hover { background: #2d1a2a; }
+
+    .nav-avatar-btn { padding: 0; overflow: visible; }
+    .nav-status-dot {
+      position: absolute; bottom: 2px; right: 2px;
+      width: 9px; height: 9px; border-radius: 50%;
+      background: #22c55e; border: 2px solid var(--bg-sidebar);
+    }
+    .nav-badge {
+      position: absolute; top: 4px; right: 4px;
+      min-width: 16px; height: 16px;
+      background: #ef4444; color: white;
+      font-size: 9px; font-weight: 700;
+      border-radius: 8px; padding: 0 3px;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--bg-sidebar);
+    }
+
+    /* ══ Chats sidebar (legacy compat) ══ */
+    .chats-sidebar {
+      width: 300px;
+      overflow: hidden;
+      flex-shrink: 0;
+      transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .chats-sidebar.collapsed {
+      width: 0;
+    }
+
+    /* ══ Home hero ══ */
+    .home-hero-logo {
+      font-size: 6rem; font-weight: 900;
+      color: var(--accent-color); opacity: 0.12;
+      line-height: 1; user-select: none;
+      animation: heroFloat 6s ease-in-out infinite;
+    }
+    @keyframes heroFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .home-hero-title {
+      font-size: 2rem; font-weight: 800;
+      color: var(--text-main); margin-top: -0.5rem;
+      letter-spacing: -0.03em;
+    }
+    .home-hero-sub {
+      font-size: 0.95rem; color: var(--text-muted);
+      margin-top: 0.4rem;
+    }
+    .home-open-chats-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 0.75rem 1.5rem;
+      background: var(--accent-color); color: white;
+      font-weight: 600; font-size: 0.9rem;
+      border-radius: 1rem; border: none; cursor: pointer;
+      box-shadow: 0 4px 16px color-mix(in srgb, var(--accent-color) 35%, transparent);
+      transition: transform 0.18s, box-shadow 0.18s, background 0.18s;
+    }
+    .home-open-chats-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px color-mix(in srgb, var(--accent-color) 45%, transparent);
+    }
+    .home-open-chats-btn:active { transform: translateY(0); }
+
+
+
+    .member-online-dot {
+      position: absolute;
+      bottom: 1px;
+      right: 1px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #22c55e;
+      border: 2px solid var(--bg-main, #fff);
+      box-shadow: 0 0 0 1px rgba(34,197,94,0.25);
+    }
+
+    /* ══════════════════════════════════════════════════════
+       UI — тени вместо линий, лёгкие скругления
+    ══════════════════════════════════════════════════════ */
+
+    /* Аватары и статус-точки — круглые */
+    .rounded-full,
+    .spinner, .pulse-ring,
+    .member-online-dot,
+    #avatar-viewer-circle,
+    .ai-btn-inner,
+    [data-online-uid] {
+      border-radius: 50% !important;
+    }
+
+    /* ── Убираем border-линии между панелями ── */
+    .border-custom,
+    .border-r, .border-l, .border-b, .border-t {
+      border: none !important;
+    }
+
+    /* ── Тени вместо разделителей ── */
+    .app-navbar {
+      border: none !important;
+      box-shadow: 4px 0 16px rgba(0,0,0,0.08) !important;
+    }
+    body.theme-gray .app-navbar,
+    body.theme-twilight .app-navbar,
+    body.theme-ocean .app-navbar { box-shadow: 4px 0 20px rgba(0,0,0,0.25) !important; }
+
+    .chats-sidebar, .left-panel {
+      border: none !important;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.07) !important;
+    }
+    body.theme-gray .chats-sidebar, body.theme-gray .left-panel,
+    body.theme-twilight .chats-sidebar, body.theme-twilight .left-panel,
+    body.theme-ocean .chats-sidebar, body.theme-ocean .left-panel { box-shadow: 4px 0 24px rgba(0,0,0,0.22) !important; }
+
+    #chat-header {
+      border: none !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.07) !important;
+      position: relative; z-index: 3;
+    }
+    body.theme-gray #chat-header,
+    body.theme-twilight #chat-header,
+    body.theme-ocean #chat-header { box-shadow: 0 4px 20px rgba(0,0,0,0.22) !important; }
+
+    #chats-sidebar > div:first-child {
+      border: none !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+      position: relative; z-index: 2;
+    }
+
+    #input-area {
+      border: none !important;
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.07) !important;
+      position: relative; z-index: 4;
+    }
+    body.theme-gray #input-area,
+    body.theme-twilight #input-area,
+    body.theme-ocean #input-area { box-shadow: 0 -4px 20px rgba(0,0,0,0.22) !important; }
+
+    #info-panel {
+      border: none !important;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.07) !important;
+    }
+    body.theme-gray #info-panel,
+    body.theme-twilight #info-panel,
+    body.theme-ocean #info-panel { box-shadow: -4px 0 24px rgba(0,0,0,0.22) !important; }
+
+    #info-panel > div:first-child {
+      border: none !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+    }
+
+    /* Активный чат — акцент слева */
+    .chat-list-item.active {
+      border-left: 3px solid var(--accent-color) !important;
+      border-right: none !important;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       ══ Layout: left panel + right feed panel
+    ══════════════════════════════════════════════════════ */
+    #left-panel { flex-shrink: 0; }
+    #feed-right-panel { flex-shrink: 1; }
+
+    /* ══════════════════════════════════════════════════════
+       ══ Floating Bottom Dock
+    ══════════════════════════════════════════════════════ */
+
+    /* Dock скрыт пока main-chat не виден (лендинг) и в открытом чате */
+    #main-chat.hidden ~ #bottom-dock { display: none !important; }
+    body.chat-open #bottom-dock { display: none !important; }
+
+    /* Сам бар */
+    #bottom-dock {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(calc(100% + 24px));
+      z-index: 200;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 2px;
+      padding: 8px 12px;
+      /* Полностью прозрачный фон — только blur */
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.20);
+      border-radius: 22px;
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.08),
+        0 1px 6px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      transition:
+        transform 0.40s cubic-bezier(0.34, 1.45, 0.64, 1),
+        opacity 0.28s ease;
+    }
+
+    body.theme-gray #bottom-dock,
+    body.theme-twilight #bottom-dock,
+    body.theme-ocean #bottom-dock {
+      background: rgba(15, 20, 40, 0.22);
+      border-color: rgba(255, 255, 255, 0.07);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    #bottom-dock:hover,
+    #bottom-dock.visible {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* Кнопки — только иконки */
+    .dock-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border: none;
+      background: transparent;
+      border-radius: 14px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: background 0.16s, color 0.16s, transform 0.16s;
+      flex-shrink: 0;
+    }
+    .dock-btn:hover {
+      background: rgba(59,130,246,0.11);
+      color: var(--text-main);
+      transform: translateY(-2px) scale(1.08);
+    }
+    body.theme-gray .dock-btn:hover,
+    body.theme-twilight .dock-btn:hover,
+    body.theme-ocean .dock-btn:hover { background: rgba(255,255,255,0.09); }
+    .dock-btn:active { transform: scale(0.94); }
+    .dock-btn.dock-active {
+      color: var(--accent-color);
+      background: rgba(59,130,246,0.10);
+    }
+    .dock-btn--logout:hover { background: rgba(239,68,68,0.11); color: #ef4444; }
+
+    /* Разделитель */
+    .dock-divider {
+      width: 1px; height: 26px;
+      background: var(--border-color);
+      opacity: 0.4; margin: 0 4px; flex-shrink: 0;
+    }
+    body.theme-gray .dock-divider,
+    body.theme-twilight .dock-divider,
+    body.theme-ocean .dock-divider { background: rgba(255,255,255,0.15); opacity:1; }
+
+    /* Тема-кнопка в доке */
+    #bottom-dock .theme-btn { width:44px; height:44px; overflow:visible; }
+    #bottom-dock .theme-btn::after { display:none; }
+    #bottom-dock .theme-icon-wrap { display:block; position:relative; width:20px; height:20px; }
+
+    /* Скрываем старый левый навбар и нижние вкладки */
+    .app-navbar { display: none !important; }
+    .left-panel-tabs { display: none !important; }
+
+    /* Кнопка назад в шапке чата */
+    #back-btn { display: flex; }
