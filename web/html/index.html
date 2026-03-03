@@ -21,6 +21,9 @@
   <link rel="stylesheet" href="/web/html/css/layout.css">
 </head>
 <body class="bg-custom-main min-h-screen text-custom-main">
+<!-- Глобальный фон λ (остается неизменным после входа) -->
+<canvas id="lambda-canvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
+
 <!-- Скрытые элементы для совместимости со старым кодом -->
 <span id="current-user-name" style="display:none;"></span>
 
@@ -31,7 +34,7 @@
 
   <!-- ═══ Landing Page ═══ -->
   <!-- Landing -->
-  <div id="landing-page" class="h-full w-full flex flex-col fade-in">
+  <div id="landing-page" class="h-full w-full flex flex-col fade-in bg-transparent relative z-10">
     <div class="absolute top-0 left-0 right-0 p-12 flex justify-between items-start z-20 pointer-events-none">
       <div class="flex items-center select-none pointer-events-auto">
         <div id="logo-wrap" class="relative flex items-center justify-center" style="width: 400px; height: 400px; margin-left: -160px; margin-top: -160px;">
@@ -51,8 +54,7 @@
         </span>
       </button>
     </div>
-    <main class="flex-grow flex items-center justify-center relative overflow-hidden">
-      <canvas id="lambda-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;"></canvas>
+    <main class="flex-grow flex items-center justify-center relative overflow-hidden bg-transparent">
       <div class="relative z-10 flex flex-col items-center" style="position:absolute;bottom:12%;left:50%;transform:translateX(-50%);width:100%;">
         <div class="flex flex-col sm:flex-row items-center justify-center gap-8 px-6">
           <button id="btn-register" onclick="openAuthModal('register')"
@@ -71,7 +73,7 @@
   </div>
 
   <!-- Main Chat -->
-  <div id="main-chat" class="h-full w-full flex hidden fade-in bg-custom-main">
+  <div id="main-chat" class="h-full w-full flex hidden fade-in bg-transparent relative z-10">
 
     <!-- ═══ Left panel: лента + список чатов ═══ -->
     <div id="left-panel" class="left-panel flex flex-col h-full bg-custom-sidebar" style="z-index:9;">
@@ -107,10 +109,11 @@
     </div>
 
     <!-- ═══ Right: chat view ═══ -->
-    <div id="view-chat" class="flex-grow flex flex-col h-full bg-custom-main relative hidden" style="z-index:2;">
-      <div id="no-chat-selected" class="absolute inset-0 flex items-center justify-center bg-custom-main z-10">
-        <div class="text-center">
-          <div class="text-6xl mb-4 opacity-20">λ</div>
+    <div id="view-chat" class="flex-grow flex flex-col h-full bg-transparent relative hidden" style="z-index:2;">
+
+      <div id="no-chat-selected" class="absolute inset-0 flex items-center justify-center bg-transparent z-10 overflow-hidden">
+        <div class="relative z-10 text-center">
+          <div class="text-6xl mb-4 opacity-20 text-custom-main">λ</div>
           <h3 class="text-xl font-medium text-custom-muted">Выберите чат для начала общения</h3>
         </div>
       </div>
@@ -127,6 +130,12 @@
             <p id="active-chat-status" class="text-xs text-custom-muted"></p>
           </div>
         </div>
+        <!-- Крестик закрытия чата -->
+        <button onclick="handleBackBtn()" title="Закрыть чат" class="p-2 rounded-xl hover:bg-red-500/10 hover:text-red-500 transition text-custom-muted">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
       </div>
 
       <div id="messages-container" class="flex-grow overflow-y-auto p-6 space-y-4 bg-custom-sidebar/30 scrollbar-hide" style="position:relative;z-index:2;"></div>

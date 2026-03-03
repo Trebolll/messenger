@@ -1,5 +1,6 @@
     :root {
       --bg-main: #ffffff; --bg-sidebar: #f8fafc; --bg-item-hover: #f1f5f9;
+      --bg-main-rgb: 255, 255, 255; --bg-sidebar-rgb: 248, 250, 252;
       --bg-item-active: #eff6ff; --text-main: #1e293b; --text-muted: #64748b;
       --border-color: #e2e8f0; --accent-color: #3b82f6;
       --message-sent-bg: #3b82f6; --message-sent-text: #ffffff;
@@ -7,6 +8,7 @@
     }
     body.theme-gray {
       --bg-main: #1f2937; --bg-sidebar: #111827; --bg-item-hover: #374151;
+      --bg-main-rgb: 31, 41, 55; --bg-sidebar-rgb: 17, 24, 39;
       --bg-item-active: #1e3a8a; --text-main: #f8fafc; --text-muted: #94a3b8;
       --border-color: #374151; --accent-color: #60a5fa;
       --message-sent-bg: #2563eb; --message-sent-text: #ffffff;
@@ -15,6 +17,7 @@
     /* ══ Тема «Сумерки» ══ */
     body.theme-twilight {
       --bg-main: #1e1b2e; --bg-sidebar: #13111f; --bg-item-hover: #2d2640;
+      --bg-main-rgb: 30, 27, 46; --bg-sidebar-rgb: 19, 17, 31;
       --bg-item-active: #3b2f6e; --text-main: #e8e0f5; --text-muted: #a78bca;
       --border-color: #3d3560; --accent-color: #a78bfa;
       --message-sent-bg: #7c3aed; --message-sent-text: #ffffff;
@@ -47,6 +50,7 @@
     /* ══ Тема «Океан» ══ */
     body.theme-ocean {
       --bg-main: #0a1628; --bg-sidebar: #060e1c; --bg-item-hover: #0f2040;
+      --bg-main-rgb: 10, 22, 40; --bg-sidebar-rgb: 6, 14, 28;
       --bg-item-active: #0e3060; --text-main: #c8e6ff; --text-muted: #5b9fd4;
       --border-color: #1a3a6b; --accent-color: #38bdf8;
       --message-sent-bg: #0ea5e9; --message-sent-text: #ffffff;

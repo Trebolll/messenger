@@ -1,5 +1,5 @@
   <!-- Main Chat -->
-  <div id="main-chat" class="h-full w-full flex hidden fade-in bg-custom-main">
+  <div id="main-chat" class="h-full w-full flex hidden fade-in bg-transparent relative z-10">
 
     <!-- ═══ Left panel: лента + список чатов ═══ -->
     <div id="left-panel" class="left-panel flex flex-col h-full bg-custom-sidebar" style="z-index:9;">
@@ -35,8 +35,9 @@
     </div>
 
     <!-- ═══ Right: chat view ═══ -->
-    <div id="view-chat" class="flex-grow flex flex-col h-full bg-custom-main relative hidden" style="z-index:2;">
-      <div id="no-chat-selected" class="absolute inset-0 flex items-center justify-center bg-custom-main z-10">
+    <div id="view-chat" class="flex-grow flex flex-col h-full bg-transparent relative hidden" style="z-index:2;">
+
+      <div id="no-chat-selected" class="absolute inset-0 flex items-center justify-center bg-transparent z-10">
         <div class="text-center">
           <div class="text-6xl mb-4 opacity-20">λ</div>
           <h3 class="text-xl font-medium text-custom-muted">Выберите чат для начала общения</h3>
