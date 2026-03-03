@@ -140,6 +140,15 @@ body.theme-sunset   .theme-btn:hover { background: rgba(234,88,12,0.1); }
 body.theme-coral    .theme-btn:hover { background: rgba(239,68,68,0.1); }
 body.theme-ocean    .theme-btn:hover { background: rgba(14,165,233,0.1); }
 body.theme-mint     .theme-btn:hover { background: rgba(13,148,136,0.1); }
+body.theme-dark-gold .theme-btn:hover { background: rgba(201,162,39,0.12); }
+body.theme-jungle    .theme-btn:hover { background: rgba(60,179,113,0.12); }
+body.theme-blood     .theme-btn:hover { background: rgba(192,57,43,0.12); }
+body.theme-cyberpunk .theme-btn:hover { background: rgba(255,0,255,0.12); }
+body.theme-glacier   .theme-btn:hover { background: rgba(26,143,192,0.12); }
+body.theme-cosmos    .theme-btn:hover { background: rgba(123,104,238,0.12); }
+body.theme-amethyst  .theme-btn:hover { background: rgba(191,95,255,0.12); }
+body.theme-desert    .theme-btn:hover { background: rgba(200,130,10,0.12); }
+body.theme-volcano   .theme-btn:hover { background: rgba(255,102,0,0.12); }
 
 .theme-icon-wrap {
   position: relative;
@@ -161,6 +170,15 @@ body.theme-mint     .theme-btn:hover { background: rgba(13,148,136,0.1); }
 .theme-coral-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #ef4444; }
 .theme-ocean-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #38bdf8; }
 .theme-mint-icon     { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #0d9488; }
+.theme-dark-gold-icon{ transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #c9a227; }
+.theme-jungle-icon   { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #3cb371; }
+.theme-blood-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #c0392b; }
+.theme-cyberpunk-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #ff00ff; }
+.theme-glacier-icon   { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #1a8fc0; }
+.theme-cosmos-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #7b68ee; }
+.theme-amethyst-icon  { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #bf5fff; }
+.theme-desert-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #c8820a; }
+.theme-volcano-icon   { transform: translateY(-24px) rotate(-90deg); opacity: 0; color: #ff6600; }
 
 /* Тёмная тема (gray): показываем луну */
 body.theme-gray .theme-sun           { transform: translateY(24px)  rotate(90deg);  opacity: 0; }
@@ -232,6 +250,159 @@ body.theme-mint .theme-coral-icon    { transform: translateY(24px) rotate(90deg)
 body.theme-mint .theme-ocean-icon    { transform: translateY(24px) rotate(90deg);  opacity: 0; }
 body.theme-mint .theme-mint-icon     { transform: translateY(0)    rotate(0deg);   opacity: 1; }
 
+/* Мрак (dark-gold): показываем корону */
+body.theme-dark-gold .theme-sun           { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-dark-gold .theme-moon          { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-dark-gold .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-dark-gold .theme-dawn-icon     { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-dark-gold .theme-sunset-icon   { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-dark-gold .theme-coral-icon    { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-dark-gold .theme-ocean-icon    { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-dark-gold .theme-mint-icon     { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-dark-gold .theme-dark-gold-icon{ transform: translateY(0)    rotate(0deg);   opacity: 1; }
+body.theme-dark-gold .theme-jungle-icon   { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-dark-gold .theme-blood-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+/* Джунгли (jungle): показываем лист */
+body.theme-jungle .theme-sun           { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-jungle .theme-moon          { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-jungle .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-jungle .theme-dawn-icon     { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-jungle .theme-sunset-icon   { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-jungle .theme-coral-icon    { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-jungle .theme-ocean-icon    { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-jungle .theme-mint-icon     { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-jungle .theme-dark-gold-icon{ transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-jungle .theme-jungle-icon   { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+body.theme-jungle .theme-blood-icon    { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+/* Кровь (blood): показываем каплю */
+body.theme-blood .theme-sun           { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-blood .theme-moon          { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-blood .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-blood .theme-dawn-icon     { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-blood .theme-sunset-icon   { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-blood .theme-coral-icon    { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-blood .theme-ocean-icon    { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-blood .theme-mint-icon     { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-blood .theme-dark-gold-icon{ transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-blood .theme-jungle-icon   { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-blood .theme-blood-icon    { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+
+/* Cyberpunk */
+body.theme-cyberpunk .theme-sun { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cyberpunk .theme-moon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cyberpunk .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cyberpunk .theme-dawn-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cyberpunk .theme-sunset-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cyberpunk .theme-coral-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cyberpunk .theme-ocean-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cyberpunk .theme-mint-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cyberpunk .theme-dark-gold-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cyberpunk .theme-jungle-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cyberpunk .theme-blood-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cyberpunk .theme-cyberpunk-icon { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+body.theme-cyberpunk .theme-glacier-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-cyberpunk .theme-cosmos-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-cyberpunk .theme-amethyst-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-cyberpunk .theme-desert-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-cyberpunk .theme-volcano-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+/* Glacier */
+body.theme-glacier .theme-sun { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-glacier .theme-moon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-glacier .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-glacier .theme-dawn-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-glacier .theme-sunset-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-glacier .theme-coral-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-glacier .theme-ocean-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-glacier .theme-mint-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-glacier .theme-dark-gold-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-glacier .theme-jungle-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-glacier .theme-blood-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-glacier .theme-cyberpunk-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-glacier .theme-glacier-icon { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+body.theme-glacier .theme-cosmos-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-glacier .theme-amethyst-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-glacier .theme-desert-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-glacier .theme-volcano-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+/* Cosmos */
+body.theme-cosmos .theme-sun { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cosmos .theme-moon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cosmos .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cosmos .theme-dawn-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cosmos .theme-sunset-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cosmos .theme-coral-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cosmos .theme-ocean-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cosmos .theme-mint-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cosmos .theme-dark-gold-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cosmos .theme-jungle-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cosmos .theme-blood-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cosmos .theme-cyberpunk-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cosmos .theme-glacier-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-cosmos .theme-cosmos-icon { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+body.theme-cosmos .theme-amethyst-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-cosmos .theme-desert-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-cosmos .theme-volcano-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+/* Amethyst */
+body.theme-amethyst .theme-sun { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-amethyst .theme-moon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-amethyst .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-amethyst .theme-dawn-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-amethyst .theme-sunset-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-amethyst .theme-coral-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-amethyst .theme-ocean-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-amethyst .theme-mint-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-amethyst .theme-dark-gold-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-amethyst .theme-jungle-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-amethyst .theme-blood-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-amethyst .theme-cyberpunk-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-amethyst .theme-glacier-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-amethyst .theme-cosmos-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-amethyst .theme-amethyst-icon { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+body.theme-amethyst .theme-desert-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+body.theme-amethyst .theme-volcano-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+/* Desert */
+body.theme-desert .theme-sun { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-desert .theme-moon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-desert .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-desert .theme-dawn-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-desert .theme-sunset-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-desert .theme-coral-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-desert .theme-ocean-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-desert .theme-mint-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-desert .theme-dark-gold-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-desert .theme-jungle-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-desert .theme-blood-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-desert .theme-cyberpunk-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-desert .theme-glacier-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-desert .theme-cosmos-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-desert .theme-amethyst-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-desert .theme-desert-icon { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+body.theme-desert .theme-volcano-icon { transform: translateY(-24px) rotate(-90deg); opacity: 0; }
+
+/* Volcano */
+body.theme-volcano .theme-sun { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-moon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-twilight-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-dawn-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-sunset-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-coral-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-ocean-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-mint-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-dark-gold-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-jungle-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-blood-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-cyberpunk-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-glacier-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-cosmos-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-amethyst-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-desert-icon { transform: translateY(24px) rotate(90deg);  opacity: 0; }
+body.theme-volcano .theme-volcano-icon { transform: translateY(0)    rotate(0deg);   opacity: 1; }
+
 /* Анимация при клике */
 .theme-btn.animating .theme-sun,
 .theme-btn.animating .theme-moon,
@@ -240,7 +411,16 @@ body.theme-mint .theme-mint-icon     { transform: translateY(0)    rotate(0deg);
 .theme-btn.animating .theme-sunset-icon,
 .theme-btn.animating .theme-coral-icon,
 .theme-btn.animating .theme-ocean-icon,
-.theme-btn.animating .theme-mint-icon { transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease; }
+.theme-btn.animating .theme-mint-icon,
+.theme-btn.animating .theme-dark-gold-icon,
+.theme-btn.animating .theme-jungle-icon,
+.theme-btn.animating .theme-blood-icon,
+.theme-btn.animating .theme-cyberpunk-icon,
+.theme-btn.animating .theme-glacier-icon,
+.theme-btn.animating .theme-cosmos-icon,
+.theme-btn.animating .theme-amethyst-icon,
+.theme-btn.animating .theme-desert-icon,
+.theme-btn.animating .theme-volcano-icon { transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease; }
 
 /* Свечение при наведении */
 .theme-btn::after {

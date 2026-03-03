@@ -90,6 +90,116 @@ body.theme-mint {
   --message-received-bg: #b8f0ed; --message-received-text: #0d3330;
 }
 
+/* ══ Тема «Мрак» (тёмная серо-золотая) ══ */
+body.theme-dark-gold {
+  --bg-main: #1a1810; --bg-sidebar: #111008; --bg-item-hover: #26220f;
+  --bg-main-rgb: 26, 24, 16; --bg-sidebar-rgb: 17, 16, 8;
+  --bg-item-active: #33290a; --text-main: #e8d89a; --text-muted: #9a8c5a;
+  --border-color: #2e2810; --accent-color: #c9a227; --accent-color-rgb: 201, 162, 39;
+  --glass-border: rgba(201, 162, 39, 0.12);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+  --glass-bg-opacity: 0.13;
+  --message-sent-bg: #b8891e; --message-sent-text: #fff8e1;
+  --message-received-bg: #26220f; --message-received-text: #e8d89a;
+}
+/* ══ Тема «Джунгли» (тёмно-зелёная) ══ */
+body.theme-jungle {
+  --bg-main: #0d1a0f; --bg-sidebar: #081209; --bg-item-hover: #152417;
+  --bg-main-rgb: 13, 26, 15; --bg-sidebar-rgb: 8, 18, 9;
+  --bg-item-active: #1c3020; --text-main: #b8ddb8; --text-muted: #5a8a5a;
+  --border-color: #1a2e1c; --accent-color: #3cb371; --accent-color-rgb: 60, 179, 113;
+  --glass-border: rgba(60, 179, 113, 0.10);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.50);
+  --glass-bg-opacity: 0.13;
+  --message-sent-bg: #2d7a4f; --message-sent-text: #e8f8ee;
+  --message-received-bg: #152417; --message-received-text: #b8ddb8;
+}
+/* ══ Тема «Кровь» (тёмно-красная) ══ */
+body.theme-blood {
+  --bg-main: #1a0a0a; --bg-sidebar: #110505; --bg-item-hover: #260f0f;
+  --bg-main-rgb: 26, 10, 10; --bg-sidebar-rgb: 17, 5, 5;
+  --bg-item-active: #331212; --text-main: #e8b8b8; --text-muted: #9a5a5a;
+  --border-color: #2e1010; --accent-color: #c0392b; --accent-color-rgb: 192, 57, 43;
+  --glass-border: rgba(192, 57, 43, 0.12);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+  --glass-bg-opacity: 0.13;
+  --message-sent-bg: #9b2335; --message-sent-text: #fff0f0;
+  --message-received-bg: #260f0f; --message-received-text: #e8b8b8;
+}
+
+/* ══ Тема «Киберпанк» ══ */
+body.theme-cyberpunk {
+  --bg-main: #0d0015; --bg-sidebar: #080010; --bg-item-hover: #1a0030;
+  --bg-main-rgb: 13, 0, 21; --bg-sidebar-rgb: 8, 0, 16;
+  --bg-item-active: #250040; --text-main: #f0e0ff; --text-muted: #b060ff;
+  --border-color: #3d0070; --accent-color: #ff00ff; --accent-color-rgb: 255, 0, 255;
+  --glass-border: rgba(255, 0, 255, 0.18);
+  --glass-shadow: 0 8px 32px rgba(255, 0, 255, 0.15);
+  --glass-bg-opacity: 0.12;
+  --message-sent-bg: #cc00cc; --message-sent-text: #fff0ff;
+  --message-received-bg: #1a0030; --message-received-text: #f0e0ff;
+}
+/* ══ Тема «Ледниковый период» ══ */
+body.theme-glacier {
+  --bg-main: #e8f4fc; --bg-sidebar: #d4ecf7; --bg-item-hover: #b8dff0;
+  --bg-main-rgb: 232, 244, 252; --bg-sidebar-rgb: 212, 236, 247;
+  --bg-item-active: #9acfe8; --text-main: #0a2a3d; --text-muted: #4a7a9b;
+  --border-color: #a0cce0; --accent-color: #1a8fc0; --accent-color-rgb: 26, 143, 192;
+  --glass-border: rgba(26, 143, 192, 0.2);
+  --glass-shadow: 0 8px 32px rgba(10, 42, 61, 0.08);
+  --glass-bg-opacity: 0.4;
+  --message-sent-bg: #1a8fc0; --message-sent-text: #e8f8ff;
+  --message-received-bg: #b8dff0; --message-received-text: #0a2a3d;
+}
+/* ══ Тема «Космос» ══ */
+body.theme-cosmos {
+  --bg-main: #050510; --bg-sidebar: #020208; --bg-item-hover: #0d0d25;
+  --bg-main-rgb: 5, 5, 16; --bg-sidebar-rgb: 2, 2, 8;
+  --bg-item-active: #151535; --text-main: #c8d8ff; --text-muted: #6070a0;
+  --border-color: #181830; --accent-color: #7b68ee; --accent-color-rgb: 123, 104, 238;
+  --glass-border: rgba(123, 104, 238, 0.15);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 30, 0.6);
+  --glass-bg-opacity: 0.10;
+  --message-sent-bg: #5a48cc; --message-sent-text: #e8e0ff;
+  --message-received-bg: #0d0d25; --message-received-text: #c8d8ff;
+}
+/* ══ Тема «Аметист» ══ */
+body.theme-amethyst {
+  --bg-main: #1a0a2e; --bg-sidebar: #120720; --bg-item-hover: #26103f;
+  --bg-main-rgb: 26, 10, 46; --bg-sidebar-rgb: 18, 7, 32;
+  --bg-item-active: #341550; --text-main: #e8d0ff; --text-muted: #9060c0;
+  --border-color: #3d1560; --accent-color: #bf5fff; --accent-color-rgb: 191, 95, 255;
+  --glass-border: rgba(191, 95, 255, 0.14);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --glass-bg-opacity: 0.12;
+  --message-sent-bg: #9a30e0; --message-sent-text: #f5e8ff;
+  --message-received-bg: #26103f; --message-received-text: #e8d0ff;
+}
+/* ══ Тема «Пустыня» ══ */
+body.theme-desert {
+  --bg-main: #fdf6e3; --bg-sidebar: #f7ead0; --bg-item-hover: #edd8a8;
+  --bg-main-rgb: 253, 246, 227; --bg-sidebar-rgb: 247, 234, 208;
+  --bg-item-active: #e0c480; --text-main: #3d2800; --text-muted: #8a6020;
+  --border-color: #d4a850; --accent-color: #c8820a; --accent-color-rgb: 200, 130, 10;
+  --glass-border: rgba(200, 130, 10, 0.2);
+  --glass-shadow: 0 8px 32px rgba(61, 40, 0, 0.1);
+  --glass-bg-opacity: 0.45;
+  --message-sent-bg: #c8820a; --message-sent-text: #fff8e8;
+  --message-received-bg: #edd8a8; --message-received-text: #3d2800;
+}
+/* ══ Тема «Вулкан» ══ */
+body.theme-volcano {
+  --bg-main: #180800; --bg-sidebar: #0f0400; --bg-item-hover: #2a0f00;
+  --bg-main-rgb: 24, 8, 0; --bg-sidebar-rgb: 15, 4, 0;
+  --bg-item-active: #3d1500; --text-main: #ffe0c0; --text-muted: #cc6020;
+  --border-color: #4a1800; --accent-color: #ff6600; --accent-color-rgb: 255, 102, 0;
+  --glass-border: rgba(255, 102, 0, 0.15);
+  --glass-shadow: 0 8px 32px rgba(255, 60, 0, 0.2);
+  --glass-bg-opacity: 0.12;
+  --message-sent-bg: #e05000; --message-sent-text: #fff0e0;
+  --message-received-bg: #2a0f00; --message-received-text: #ffe0c0;
+}
+
 /* ══════════════════════════════════════════════════════
        UI — тени вместо линий, лёгкие скругления
     ══════════════════════════════════════════════════════ */
@@ -230,7 +340,14 @@ body.chat-open #bottom-dock { display: none !important; }
 }
 body.theme-gray .dock-btn:hover,
 body.theme-twilight .dock-btn:hover,
-body.theme-ocean .dock-btn:hover { background: rgba(255,255,255,0.09); }
+body.theme-ocean .dock-btn:hover,
+body.theme-dark-gold .dock-btn:hover,
+body.theme-jungle .dock-btn:hover,
+body.theme-blood .dock-btn:hover,
+body.theme-cyberpunk .dock-btn:hover,
+body.theme-cosmos .dock-btn:hover,
+body.theme-amethyst .dock-btn:hover,
+body.theme-volcano .dock-btn:hover { background: rgba(255,255,255,0.09); }
 .dock-btn:active { transform: scale(0.94); }
 .dock-btn.dock-active {
   color: var(--accent-color);
@@ -246,7 +363,14 @@ body.theme-ocean .dock-btn:hover { background: rgba(255,255,255,0.09); }
 }
 body.theme-gray .dock-divider,
 body.theme-twilight .dock-divider,
-body.theme-ocean .dock-divider { background: rgba(255,255,255,0.15); opacity:1; }
+body.theme-ocean .dock-divider,
+body.theme-dark-gold .dock-divider,
+body.theme-jungle .dock-divider,
+body.theme-blood .dock-divider,
+body.theme-cyberpunk .dock-divider,
+body.theme-cosmos .dock-divider,
+body.theme-amethyst .dock-divider,
+body.theme-volcano .dock-divider { background: rgba(255,255,255,0.15); opacity:1; }
 
 /* Тема-кнопка в доке */
 #bottom-dock .theme-btn { width:44px; height:44px; overflow:visible; }

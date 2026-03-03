@@ -1,256 +1,351 @@
 /* ── Появление сообщений ───────────────────────────────────────── */
-    @keyframes msgSlideRight {
-      from { opacity: 0; transform: translateX(-18px) translateY(6px) scale(0.96); }
-      to   { opacity: 1; transform: translateX(0) translateY(0) scale(1); }
-    }
-    @keyframes msgSlideLeft {
-      from { opacity: 0; transform: translateX(18px) translateY(6px) scale(0.96); }
-      to   { opacity: 1; transform: translateX(0) translateY(0) scale(1); }
-    }
-    .msg-anim-received {
-      animation: msgSlideRight 0.32s cubic-bezier(0.34, 1.4, 0.64, 1) both;
-    }
-    .msg-anim-sent {
-      animation: msgSlideLeft 0.32s cubic-bezier(0.34, 1.4, 0.64, 1) both;
-    }
+@keyframes msgSlideRight {
+  from { opacity: 0; transform: translateX(-18px) translateY(6px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(0) translateY(0) scale(1); }
+}
+@keyframes msgSlideLeft {
+  from { opacity: 0; transform: translateX(18px) translateY(6px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(0) translateY(0) scale(1); }
+}
+.msg-anim-received {
+  animation: msgSlideRight 0.32s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+.msg-anim-sent {
+  animation: msgSlideLeft 0.32s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
 
-    /* ── Пузырьки ──────────────────────────────────────────────────── */
-    .message-sent {
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-      color: #ffffff;
-      border-radius: 1.25rem 1.25rem 0.25rem 1.25rem;
-      box-shadow: 0 4px 16px rgba(37,99,235,0.25), 0 1px 3px rgba(37,99,235,0.15);
-      transition: box-shadow 0.2s, transform 0.2s;
-    }
-    .message-sent:hover {
-      box-shadow: 0 6px 20px rgba(37,99,235,0.35), 0 2px 6px rgba(37,99,235,0.2);
-      transform: translateY(-1px);
-    }
-    body.theme-gray .message-sent {
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-      box-shadow: 0 4px 16px rgba(37,99,235,0.3);
-    }
-    body.theme-gray .message-sent:hover {
-      box-shadow: 0 6px 20px rgba(37,99,235,0.5), 0 2px 8px rgba(37,99,235,0.3);
-      transform: translateY(-1px);
-    }
-    .message-received {
-      background-color: var(--message-received-bg);
-      color: var(--message-received-text);
-      border-radius: 1.25rem 1.25rem 1.25rem 0.25rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      transition: box-shadow 0.2s, transform 0.2s;
-    }
-    .message-received:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      transform: translateY(-1px);
-    }
-    body.theme-gray .message-received {
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-    body.theme-gray .message-received:hover {
-      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
-      transform: translateY(-1px);
-    }
-    /* ── Twilight message styles ── */
-    body.theme-twilight .message-sent {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      box-shadow: 0 4px 16px rgba(124,58,237,0.35), 0 1px 3px rgba(124,58,237,0.2);
-      transition: box-shadow 0.2s, transform 0.2s;
-    }
-    body.theme-twilight .message-sent:hover {
-      box-shadow: 0 6px 22px rgba(124,58,237,0.55), 0 2px 8px rgba(124,58,237,0.3);
-      transform: translateY(-1px);
-    }
-    body.theme-twilight .message-received {
-      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-      transition: box-shadow 0.2s, transform 0.2s;
-    }
-    body.theme-twilight .message-received:hover {
-      box-shadow: 0 4px 16px rgba(124,58,237,0.2), 0 2px 6px rgba(0,0,0,0.25);
-      transform: translateY(-1px);
-    }
-    /* ── Dawn (Рассвет) message styles ── */
-    body.theme-dawn .message-sent {
-      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-      box-shadow: 0 4px 16px rgba(34,197,94,0.3), 0 1px 3px rgba(34,197,94,0.15);
-      transition: box-shadow 0.2s, transform 0.2s;
-    }
-    body.theme-dawn .message-sent:hover {
-      box-shadow: 0 6px 22px rgba(34,197,94,0.45), 0 2px 8px rgba(34,197,94,0.25);
-      transform: translateY(-1px);
-    }
-    body.theme-dawn .message-received {
-      box-shadow: 0 2px 8px rgba(34,197,94,0.1);
-      transition: box-shadow 0.2s, transform 0.2s;
-    }
-    body.theme-dawn .message-received:hover {
-      box-shadow: 0 4px 14px rgba(34,197,94,0.2), 0 2px 6px rgba(0,0,0,0.05);
-      transform: translateY(-1px);
-    }
-    /* ── Sunset (Закат) message styles ── */
-    body.theme-sunset .message-sent {
-      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-      box-shadow: 0 4px 16px rgba(234,88,12,0.35), 0 1px 3px rgba(234,88,12,0.2);
-      transition: box-shadow 0.2s, transform 0.2s;
-    }
-    body.theme-sunset .message-sent:hover {
-      box-shadow: 0 6px 22px rgba(234,88,12,0.5), 0 2px 8px rgba(234,88,12,0.3);
-      transform: translateY(-1px);
-    }
-    body.theme-sunset .message-received {
-      box-shadow: 0 2px 8px rgba(234,88,12,0.1);
-      transition: box-shadow 0.2s, transform 0.2s;
-    }
-    body.theme-sunset .message-received:hover {
-      box-shadow: 0 4px 14px rgba(234,88,12,0.22), 0 2px 6px rgba(0,0,0,0.06);
-      transform: translateY(-1px);
-    }
-    /* ── Coral messages ── */
-    body.theme-coral .message-sent {
-      background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-      box-shadow: 0 4px 16px rgba(239,68,68,0.35), 0 1px 3px rgba(239,68,68,0.2);
-      transition: box-shadow 0.2s, transform 0.2s;
-    }
-    body.theme-coral .message-sent:hover {
-      box-shadow: 0 6px 22px rgba(239,68,68,0.5), 0 2px 8px rgba(239,68,68,0.3);
-      transform: translateY(-1px);
-    }
-    body.theme-coral .message-received {
-      box-shadow: 0 2px 8px rgba(239,68,68,0.08); transition: box-shadow 0.2s, transform 0.2s;
-    }
-    body.theme-coral .message-received:hover {
-      box-shadow: 0 4px 14px rgba(239,68,68,0.18), 0 2px 6px rgba(0,0,0,0.05);
-      transform: translateY(-1px);
-    }
-    /* ── Ocean messages ── */
-    body.theme-ocean .message-sent {
-      background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
-      box-shadow: 0 4px 16px rgba(14,165,233,0.4), 0 1px 3px rgba(14,165,233,0.2);
-      transition: box-shadow 0.2s, transform 0.2s;
-    }
-    body.theme-ocean .message-sent:hover {
-      box-shadow: 0 6px 22px rgba(14,165,233,0.6), 0 2px 8px rgba(14,165,233,0.3);
-      transform: translateY(-1px);
-    }
-    body.theme-ocean .message-received {
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3); transition: box-shadow 0.2s, transform 0.2s;
-    }
-    body.theme-ocean .message-received:hover {
-      box-shadow: 0 4px 16px rgba(14,165,233,0.25), 0 2px 8px rgba(0,0,0,0.2);
-      transform: translateY(-1px);
-    }
-    /* ── Mint messages ── */
-    body.theme-mint .message-sent {
-      background: linear-gradient(135deg, #2dd4bf 0%, #0d9488 100%);
-      box-shadow: 0 4px 16px rgba(13,148,136,0.35), 0 1px 3px rgba(13,148,136,0.2);
-      transition: box-shadow 0.2s, transform 0.2s;
-    }
-    body.theme-mint .message-sent:hover {
-      box-shadow: 0 6px 22px rgba(13,148,136,0.5), 0 2px 8px rgba(13,148,136,0.3);
-      transform: translateY(-1px);
-    }
-    body.theme-mint .message-received {
-      box-shadow: 0 2px 8px rgba(13,148,136,0.1); transition: box-shadow 0.2s, transform 0.2s;
-    }
-    body.theme-mint .message-received:hover {
-      box-shadow: 0 4px 14px rgba(13,148,136,0.22), 0 2px 6px rgba(0,0,0,0.05);
-      transform: translateY(-1px);
-    }
+/* ── Пузырьки — матовое стекло ────────────────────────────────── */
 
-    /* ── Инлайн-редактирование ─────────────────────────────────────── */
-    .edit-inline-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      min-width: 200px;
-    }
-    .edit-inline-textarea {
-      background: rgba(255,255,255,0.15);
-      border: 1.5px solid rgba(255,255,255,0.4);
-      border-radius: 0.75rem;
-      padding: 0.5rem 0.75rem;
-      font-size: 0.875rem;
-      color: inherit;
-      outline: none;
-      resize: none;
-      width: 100%;
-      transition: border-color 0.2s, background 0.2s;
-      backdrop-filter: blur(4px);
-      line-height: 1.5;
-    }
-    .edit-inline-textarea:focus {
-      border-color: rgba(255,255,255,0.7);
-      background: rgba(255,255,255,0.22);
-    }
-    .message-received .edit-inline-textarea {
-      background: rgba(59,130,246,0.08);
-      border-color: rgba(59,130,246,0.3);
-      color: var(--text-main);
-    }
-    .message-received .edit-inline-textarea:focus {
-      border-color: rgba(59,130,246,0.6);
-      background: rgba(59,130,246,0.12);
-    }
-    .edit-inline-actions {
-      display: flex;
-      gap: 6px;
-      justify-content: flex-end;
-    }
-    .edit-btn-confirm {
-      display: flex; align-items: center; gap: 4px;
-      padding: 0.3rem 0.75rem;
-      font-size: 0.75rem; font-weight: 600;
-      border-radius: 0.6rem;
-      border: none; cursor: pointer;
-      background: rgba(255,255,255,0.25);
-      color: #fff;
-      transition: background 0.2s, transform 0.15s;
-    }
-    .edit-btn-confirm:hover { background: rgba(255,255,255,0.38); transform: scale(1.04); }
-    .edit-btn-confirm:active { transform: scale(0.96); }
-    .edit-btn-cancel {
-      display: flex; align-items: center; gap: 4px;
-      padding: 0.3rem 0.65rem;
-      font-size: 0.75rem;
-      border-radius: 0.6rem;
-      border: none; cursor: pointer;
-      background: rgba(255,255,255,0.1);
-      color: rgba(255,255,255,0.7);
-      transition: background 0.2s, transform 0.15s;
-    }
-    .edit-btn-cancel:hover { background: rgba(255,255,255,0.2); transform: scale(1.04); }
-    .edit-btn-cancel:active { transform: scale(0.96); }
-    .message-received .edit-btn-confirm {
-      background: #3b82f6; color: #fff;
-    }
-    .message-received .edit-btn-confirm:hover { background: #2563eb; }
-    .message-received .edit-btn-cancel {
-      background: rgba(0,0,0,0.06); color: var(--text-muted);
-    }
-    .message-received .edit-btn-cancel:hover { background: rgba(0,0,0,0.1); }
+.message-sent {
+  color: var(--message-sent-text);
+  border-radius: 1.25rem 1.25rem 0.25rem 1.25rem;
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.18);
+  transition: box-shadow 0.2s, transform 0.2s;
+  background: rgba(59,130,246,0.75);
+  box-shadow: 0 4px 16px rgba(37,99,235,0.2), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.message-sent:hover {
+  box-shadow: 0 6px 20px rgba(37,99,235,0.3), inset 0 1px 0 rgba(255,255,255,0.25);
+  transform: translateY(-1px);
+}
+.message-received {
+  color: var(--message-received-text);
+  border-radius: 1.25rem 1.25rem 1.25rem 0.25rem;
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255,255,255,0.12);
+  transition: box-shadow 0.2s, transform 0.2s;
+  background: rgba(241,245,249,0.7);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+.message-received:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.5);
+  transform: translateY(-1px);
+}
 
-    /* ── Метка "изменено" ──────────────────────────────────────────── */
-    .msg-edited-label {
-      font-size: 0.65rem;
-      opacity: 0.5;
-      font-style: italic;
-      letter-spacing: 0.01em;
-    }
+body.theme-gray .message-sent {
+  background: rgba(37,99,235,0.6);
+  box-shadow: 0 4px 16px rgba(37,99,235,0.25), inset 0 1px 0 rgba(255,255,255,0.12);
+  border-color: rgba(96,165,250,0.2);
+}
+body.theme-gray .message-sent:hover { box-shadow: 0 6px 20px rgba(37,99,235,0.4), inset 0 1px 0 rgba(255,255,255,0.12); }
+body.theme-gray .message-received {
+  background: rgba(31,31,31,0.65);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.07);
+}
+body.theme-gray .message-received:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06); }
 
-    /* ── Контекстное меню ──────────────────────────────────────────── */
-    #msg-context-menu {
-      animation: menuPop 0.18s cubic-bezier(0.34,1.56,0.64,1) both;
-    }
-    @keyframes menuPop {
-      from { opacity: 0; transform: scale(0.88) translateY(-4px); }
-      to   { opacity: 1; transform: scale(1) translateY(0); }
-    }
-    .bg-custom-main { background-color: var(--bg-main); }
-    .bg-custom-sidebar { background-color: var(--bg-sidebar); }
-    .text-custom-main { color: var(--text-main); }
-    .text-custom-muted { color: var(--text-muted); }
-    .border-custom { border-color: var(--border-color); }
+body.theme-twilight .message-sent {
+  background: rgba(109,40,217,0.65);
+  box-shadow: 0 4px 16px rgba(124,58,237,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+  border-color: rgba(167,139,250,0.2);
+}
+body.theme-twilight .message-sent:hover { box-shadow: 0 6px 22px rgba(124,58,237,0.45), inset 0 1px 0 rgba(255,255,255,0.1); }
+body.theme-twilight .message-received {
+  background: rgba(29,27,36,0.65);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+  border-color: rgba(167,139,250,0.1);
+}
+body.theme-twilight .message-received:hover { box-shadow: 0 4px 16px rgba(124,58,237,0.18), 0 2px 6px rgba(0,0,0,0.25); }
+
+body.theme-dawn .message-sent {
+  background: rgba(22,163,74,0.7);
+  box-shadow: 0 4px 16px rgba(34,197,94,0.22), inset 0 1px 0 rgba(255,255,255,0.22);
+  border-color: rgba(34,197,94,0.2);
+}
+body.theme-dawn .message-sent:hover { box-shadow: 0 6px 22px rgba(34,197,94,0.35), inset 0 1px 0 rgba(255,255,255,0.22); }
+body.theme-dawn .message-received {
+  background: rgba(209,237,224,0.7);
+  box-shadow: 0 2px 8px rgba(34,197,94,0.08), inset 0 1px 0 rgba(255,255,255,0.5);
+  border-color: rgba(34,197,94,0.15);
+}
+body.theme-dawn .message-received:hover { box-shadow: 0 4px 14px rgba(34,197,94,0.16), 0 2px 6px rgba(0,0,0,0.04); }
+
+body.theme-sunset .message-sent {
+  background: rgba(234,88,12,0.72);
+  box-shadow: 0 4px 16px rgba(234,88,12,0.28), inset 0 1px 0 rgba(255,255,255,0.2);
+  border-color: rgba(251,191,122,0.25);
+}
+body.theme-sunset .message-sent:hover { box-shadow: 0 6px 22px rgba(234,88,12,0.42), inset 0 1px 0 rgba(255,255,255,0.2); }
+body.theme-sunset .message-received {
+  background: rgba(253,224,192,0.7);
+  box-shadow: 0 2px 8px rgba(234,88,12,0.08), inset 0 1px 0 rgba(255,255,255,0.5);
+  border-color: rgba(234,88,12,0.12);
+}
+body.theme-sunset .message-received:hover { box-shadow: 0 4px 14px rgba(234,88,12,0.18), 0 2px 6px rgba(0,0,0,0.05); }
+
+body.theme-coral .message-sent {
+  background: rgba(239,68,68,0.7);
+  box-shadow: 0 4px 16px rgba(239,68,68,0.28), inset 0 1px 0 rgba(255,255,255,0.2);
+  border-color: rgba(252,165,165,0.25);
+}
+body.theme-coral .message-sent:hover { box-shadow: 0 6px 22px rgba(239,68,68,0.42), inset 0 1px 0 rgba(255,255,255,0.2); }
+body.theme-coral .message-received {
+  background: rgba(255,214,214,0.7);
+  box-shadow: 0 2px 8px rgba(239,68,68,0.07), inset 0 1px 0 rgba(255,255,255,0.5);
+  border-color: rgba(239,68,68,0.12);
+}
+body.theme-coral .message-received:hover { box-shadow: 0 4px 14px rgba(239,68,68,0.15), 0 2px 6px rgba(0,0,0,0.04); }
+
+body.theme-ocean .message-sent {
+  background: rgba(14,165,233,0.6);
+  box-shadow: 0 4px 16px rgba(14,165,233,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+  border-color: rgba(56,189,248,0.2);
+}
+body.theme-ocean .message-sent:hover { box-shadow: 0 6px 22px rgba(14,165,233,0.5), inset 0 1px 0 rgba(255,255,255,0.12); }
+body.theme-ocean .message-received {
+  background: rgba(21,26,34,0.65);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+  border-color: rgba(56,189,248,0.1);
+}
+body.theme-ocean .message-received:hover { box-shadow: 0 4px 16px rgba(14,165,233,0.2), 0 2px 8px rgba(0,0,0,0.2); }
+
+body.theme-mint .message-sent {
+  background: rgba(13,148,136,0.7);
+  box-shadow: 0 4px 16px rgba(13,148,136,0.28), inset 0 1px 0 rgba(255,255,255,0.2);
+  border-color: rgba(125,211,208,0.25);
+}
+body.theme-mint .message-sent:hover { box-shadow: 0 6px 22px rgba(13,148,136,0.42), inset 0 1px 0 rgba(255,255,255,0.2); }
+body.theme-mint .message-received {
+  background: rgba(184,240,237,0.7);
+  box-shadow: 0 2px 8px rgba(13,148,136,0.08), inset 0 1px 0 rgba(255,255,255,0.5);
+  border-color: rgba(13,148,136,0.15);
+}
+body.theme-mint .message-received:hover { box-shadow: 0 4px 14px rgba(13,148,136,0.18), 0 2px 6px rgba(0,0,0,0.04); }
+
+body.theme-dark-gold .message-sent {
+  background: rgba(184,137,30,0.6);
+  box-shadow: 0 4px 16px rgba(201,162,39,0.35), inset 0 1px 0 rgba(255,215,0,0.15);
+  border-color: rgba(201,162,39,0.25);
+}
+body.theme-dark-gold .message-sent:hover { box-shadow: 0 6px 22px rgba(201,162,39,0.5), inset 0 1px 0 rgba(255,215,0,0.15); }
+body.theme-dark-gold .message-received {
+  background: rgba(38,34,15,0.65);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,215,0,0.06);
+  border-color: rgba(201,162,39,0.12);
+}
+body.theme-dark-gold .message-received:hover { box-shadow: 0 4px 16px rgba(201,162,39,0.18), 0 2px 8px rgba(0,0,0,0.25); }
+
+body.theme-jungle .message-sent {
+  background: rgba(45,122,79,0.65);
+  box-shadow: 0 4px 16px rgba(60,179,113,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+  border-color: rgba(60,179,113,0.2);
+}
+body.theme-jungle .message-sent:hover { box-shadow: 0 6px 22px rgba(60,179,113,0.45), inset 0 1px 0 rgba(255,255,255,0.1); }
+body.theme-jungle .message-received {
+  background: rgba(21,36,23,0.65);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05);
+  border-color: rgba(60,179,113,0.12);
+}
+body.theme-jungle .message-received:hover { box-shadow: 0 4px 16px rgba(60,179,113,0.18), 0 2px 8px rgba(0,0,0,0.2); }
+
+body.theme-blood .message-sent {
+  background: rgba(155,35,53,0.65);
+  box-shadow: 0 4px 16px rgba(192,57,43,0.38), inset 0 1px 0 rgba(255,100,100,0.12);
+  border-color: rgba(192,57,43,0.25);
+}
+body.theme-blood .message-sent:hover { box-shadow: 0 6px 22px rgba(192,57,43,0.55), inset 0 1px 0 rgba(255,100,100,0.12); }
+body.theme-blood .message-received {
+  background: rgba(38,15,15,0.65);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,80,80,0.06);
+  border-color: rgba(192,57,43,0.15);
+}
+body.theme-blood .message-received:hover { box-shadow: 0 4px 16px rgba(192,57,43,0.18), 0 2px 8px rgba(0,0,0,0.25); }
+
+body.theme-cyberpunk .message-sent {
+  background: rgba(180,0,180,0.5);
+  box-shadow: 0 4px 16px rgba(255,0,255,0.35), 0 0 14px rgba(255,0,255,0.2), inset 0 1px 0 rgba(255,150,255,0.15);
+  border-color: rgba(255,0,255,0.35);
+}
+body.theme-cyberpunk .message-sent:hover { box-shadow: 0 6px 24px rgba(255,0,255,0.55), 0 0 22px rgba(255,0,255,0.3), inset 0 1px 0 rgba(255,150,255,0.15); }
+body.theme-cyberpunk .message-received {
+  background: rgba(26,0,48,0.65);
+  box-shadow: 0 2px 8px rgba(255,0,255,0.12), 0 0 8px rgba(255,0,255,0.08), inset 0 1px 0 rgba(255,0,255,0.08);
+  border-color: rgba(255,0,255,0.18);
+}
+body.theme-cyberpunk .message-received:hover { box-shadow: 0 4px 16px rgba(255,0,255,0.2), 0 0 14px rgba(255,0,255,0.12); }
+
+body.theme-glacier .message-sent {
+  background: rgba(26,143,192,0.65);
+  box-shadow: 0 4px 16px rgba(26,143,192,0.25), inset 0 1px 0 rgba(255,255,255,0.3);
+  border-color: rgba(255,255,255,0.3);
+}
+body.theme-glacier .message-sent:hover { box-shadow: 0 6px 22px rgba(26,143,192,0.38), inset 0 1px 0 rgba(255,255,255,0.3); }
+body.theme-glacier .message-received {
+  background: rgba(184,223,240,0.6);
+  box-shadow: 0 2px 8px rgba(26,143,192,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+  border-color: rgba(255,255,255,0.35);
+}
+body.theme-glacier .message-received:hover { box-shadow: 0 4px 14px rgba(26,143,192,0.18), 0 2px 6px rgba(0,0,0,0.04); }
+
+body.theme-cosmos .message-sent {
+  background: rgba(74,58,191,0.6);
+  box-shadow: 0 4px 16px rgba(123,104,238,0.38), 0 0 12px rgba(123,104,238,0.15), inset 0 1px 0 rgba(180,160,255,0.15);
+  border-color: rgba(123,104,238,0.3);
+}
+body.theme-cosmos .message-sent:hover { box-shadow: 0 6px 24px rgba(123,104,238,0.55), 0 0 20px rgba(123,104,238,0.22), inset 0 1px 0 rgba(180,160,255,0.15); }
+body.theme-cosmos .message-received {
+  background: rgba(13,13,37,0.65);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(123,104,238,0.08);
+  border-color: rgba(123,104,238,0.15);
+}
+body.theme-cosmos .message-received:hover { box-shadow: 0 4px 16px rgba(123,104,238,0.18), 0 2px 8px rgba(0,0,0,0.3); }
+
+body.theme-amethyst .message-sent {
+  background: rgba(154,48,224,0.6);
+  box-shadow: 0 4px 16px rgba(191,95,255,0.38), 0 0 12px rgba(191,95,255,0.15), inset 0 1px 0 rgba(220,180,255,0.15);
+  border-color: rgba(191,95,255,0.28);
+}
+body.theme-amethyst .message-sent:hover { box-shadow: 0 6px 24px rgba(191,95,255,0.55), 0 0 20px rgba(191,95,255,0.22), inset 0 1px 0 rgba(220,180,255,0.15); }
+body.theme-amethyst .message-received {
+  background: rgba(38,16,63,0.65);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35), inset 0 1px 0 rgba(191,95,255,0.08);
+  border-color: rgba(191,95,255,0.15);
+}
+body.theme-amethyst .message-received:hover { box-shadow: 0 4px 16px rgba(191,95,255,0.18), 0 2px 8px rgba(0,0,0,0.25); }
+
+body.theme-desert .message-sent {
+  background: rgba(200,130,10,0.68);
+  box-shadow: 0 4px 16px rgba(200,130,10,0.25), inset 0 1px 0 rgba(255,230,150,0.25);
+  border-color: rgba(212,168,80,0.3);
+}
+body.theme-desert .message-sent:hover { box-shadow: 0 6px 22px rgba(200,130,10,0.38), inset 0 1px 0 rgba(255,230,150,0.25); }
+body.theme-desert .message-received {
+  background: rgba(237,216,168,0.65);
+  box-shadow: 0 2px 8px rgba(200,130,10,0.08), inset 0 1px 0 rgba(255,255,255,0.5);
+  border-color: rgba(212,168,80,0.2);
+}
+body.theme-desert .message-received:hover { box-shadow: 0 4px 14px rgba(200,130,10,0.18), 0 2px 6px rgba(0,0,0,0.05); }
+
+body.theme-volcano .message-sent {
+  background: rgba(192,48,0,0.65);
+  box-shadow: 0 4px 16px rgba(255,102,0,0.4), 0 0 14px rgba(255,60,0,0.2), inset 0 1px 0 rgba(255,150,80,0.15);
+  border-color: rgba(255,102,0,0.3);
+}
+body.theme-volcano .message-sent:hover { box-shadow: 0 6px 24px rgba(255,102,0,0.6), 0 0 22px rgba(255,60,0,0.3), inset 0 1px 0 rgba(255,150,80,0.15); }
+body.theme-volcano .message-received {
+  background: rgba(42,15,0,0.65);
+  box-shadow: 0 2px 8px rgba(255,102,0,0.12), 0 0 8px rgba(255,60,0,0.08), inset 0 1px 0 rgba(255,102,0,0.08);
+  border-color: rgba(255,102,0,0.18);
+}
+body.theme-volcano .message-received:hover { box-shadow: 0 4px 16px rgba(255,102,0,0.22), 0 0 14px rgba(255,60,0,0.12); }
+
+/* ── Инлайн-редактирование ─────────────────────────────────────── */
+.edit-inline-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+}
+.edit-inline-textarea {
+  background: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.4);
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: inherit;
+  outline: none;
+  resize: none;
+  width: 100%;
+  transition: border-color 0.2s, background 0.2s;
+  backdrop-filter: blur(4px);
+  line-height: 1.5;
+}
+.edit-inline-textarea:focus {
+  border-color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.22);
+}
+.message-received .edit-inline-textarea {
+  background: rgba(59,130,246,0.08);
+  border-color: rgba(59,130,246,0.3);
+  color: var(--text-main);
+}
+.message-received .edit-inline-textarea:focus {
+  border-color: rgba(59,130,246,0.6);
+  background: rgba(59,130,246,0.12);
+}
+.edit-inline-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.edit-btn-confirm {
+  display: flex; align-items: center; gap: 4px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem; font-weight: 600;
+  border-radius: 0.6rem;
+  border: none; cursor: pointer;
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+  transition: background 0.2s, transform 0.15s;
+}
+.edit-btn-confirm:hover { background: rgba(255,255,255,0.38); transform: scale(1.04); }
+.edit-btn-confirm:active { transform: scale(0.96); }
+.edit-btn-cancel {
+  display: flex; align-items: center; gap: 4px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.75rem;
+  border-radius: 0.6rem;
+  border: none; cursor: pointer;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.7);
+  transition: background 0.2s, transform 0.15s;
+}
+.edit-btn-cancel:hover { background: rgba(255,255,255,0.2); transform: scale(1.04); }
+.edit-btn-cancel:active { transform: scale(0.96); }
+.message-received .edit-btn-confirm {
+  background: #3b82f6; color: #fff;
+}
+.message-received .edit-btn-confirm:hover { background: #2563eb; }
+.message-received .edit-btn-cancel {
+  background: rgba(0,0,0,0.06); color: var(--text-muted);
+}
+.message-received .edit-btn-cancel:hover { background: rgba(0,0,0,0.1); }
+
+/* ── Метка "изменено" ──────────────────────────────────────────── */
+.msg-edited-label {
+  font-size: 0.65rem;
+  opacity: 0.5;
+  font-style: italic;
+  letter-spacing: 0.01em;
+}
+
+/* ── Контекстное меню ──────────────────────────────────────────── */
+#msg-context-menu {
+  animation: menuPop 0.18s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes menuPop {
+  from { opacity: 0; transform: scale(0.88) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.bg-custom-main { background-color: var(--bg-main); }
+.bg-custom-sidebar { background-color: var(--bg-sidebar); }
+.text-custom-main { color: var(--text-main); }
+.text-custom-muted { color: var(--text-muted); }
+.border-custom { border-color: var(--border-color); }
 
 /* ══ Плавные переходы между чатами ══ */
 
@@ -297,10 +392,10 @@
   border-radius: 18px;
   height: 38px;
   background: linear-gradient(
-    90deg,
-    var(--bg-item-hover) 25%,
-    var(--bg-sidebar)    50%,
-    var(--bg-item-hover) 75%
+      90deg,
+      var(--bg-item-hover) 25%,
+      var(--bg-sidebar)    50%,
+      var(--bg-item-hover) 75%
   );
   background-size: 800px 100%;
   animation: skeleton-shimmer 1.4s infinite linear;
@@ -312,10 +407,10 @@
   border-radius: 50%;
   flex-shrink: 0;
   background: linear-gradient(
-    90deg,
-    var(--bg-item-hover) 25%,
-    var(--bg-sidebar)    50%,
-    var(--bg-item-hover) 75%
+      90deg,
+      var(--bg-item-hover) 25%,
+      var(--bg-sidebar)    50%,
+      var(--bg-item-hover) 75%
   );
   background-size: 800px 100%;
   animation: skeleton-shimmer 1.4s infinite linear;

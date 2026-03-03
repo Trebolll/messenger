@@ -10,7 +10,7 @@ class AlphaApp {
     this.messages     = [];
 
     const userId = this.currentUser?.id || 'default';
-    this.theme   = localStorage.getItem(`alpha_theme_${userId}`) || 'light';
+    this.theme   = localStorage.getItem(`alpha_theme_${userId}`) || 'gray';
 
     // Присваиваем window.app ДО init() — через setter в index.html
     window.app = this;
@@ -81,12 +81,12 @@ class AlphaApp {
   // ── Тема ───────────────────────────────────────────────────────────────
 
   applyTheme() {
-    const themes = ['gray', 'twilight', 'dawn', 'sunset', 'coral', 'ocean', 'mint'];
+    const themes = ['gray', 'twilight', 'dawn', 'sunset', 'coral', 'ocean', 'mint', 'dark-gold', 'jungle', 'blood', 'cyberpunk', 'glacier', 'cosmos', 'amethyst', 'desert', 'volcano'];
     themes.forEach(t => document.body.classList.toggle(`theme-${t}`, this.theme === t));
   }
 
   toggleTheme() {
-    const order = ['light', 'gray', 'twilight', 'dawn', 'sunset', 'coral', 'ocean', 'mint'];
+    const order = ['light', 'gray', 'twilight', 'dawn', 'sunset', 'coral', 'ocean', 'mint', 'dark-gold', 'jungle', 'blood', 'cyberpunk', 'glacier', 'cosmos', 'amethyst', 'desert', 'volcano'];
     const idx = order.indexOf(this.theme);
     this.theme = order[(idx + 1) % order.length];
     localStorage.setItem(`alpha_theme_${this.currentUser?.id || 'default'}`, this.theme);

@@ -172,8 +172,8 @@ function renderMessages() {
                  style="justify-content:flex-end;${delay}"
                  data-msg-id="${msg.id}"
                  data-sender-id="${msg.sender_id}">
-                <div style="display:flex;flex-direction:column;align-items:flex-end;min-width:0;max-width:75%;">
-                    <div class="message-bubble p-3.5 message-sent">
+                <div style="display:flex;flex-direction:column;align-items:flex-end;max-width:75%;">
+                    <div class="message-bubble p-3.5 message-sent" style="width:fit-content;max-width:100%;">
                         <div class="upload-progress-msg">
                             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
                                 <svg width="18" height="18" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
@@ -246,7 +246,7 @@ function renderMessages() {
         captionWrap = '<span id="msg-content-' + msg.id + '" style="display:none;"></span>';
       }
     } else if (msg.content || !attachmentHtml) {
-      captionWrap = '<p class="text-sm leading-relaxed" id="msg-content-' + msg.id + '" style="display:inline;">' + escapeHtml(msg.content) + '</p>';
+      captionWrap = '<p class="text-sm leading-relaxed" id="msg-content-' + msg.id + '" style="white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;">' + escapeHtml(msg.content) + '</p>';
     } else {
       captionWrap = '<span id="msg-content-' + msg.id + '" style="display:none;"></span>';
     }
@@ -257,9 +257,9 @@ function renderMessages() {
                  data-msg-id="${msg.id}"
                  oncontextmenu="showMessageMenu(event, '${msg.id}', ${isMe})">
                 ${!isMe ? senderAvatarHtml : ''}
-                <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};min-width:0;max-width:75%;">
+                <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};max-width:75%;">
                     ${nicknameHtml}
-                    <div class="message-bubble ${bubblePadding} ${isMe ? 'message-sent' : 'message-received'}" style="${isMediaAttachment ? 'overflow:hidden;' : ''}">
+                    <div class="message-bubble ${bubblePadding} ${isMe ? 'message-sent' : 'message-received'}" style="width:fit-content;max-width:100%;${isMediaAttachment ? 'overflow:hidden;' : ''}">
                         ${attachmentHtml}
                         ${captionWrap}
                         <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:2px;flex-wrap:nowrap;${isMediaAttachment ? 'padding:0 6px 4px;' : ''}">

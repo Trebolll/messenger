@@ -701,129 +701,120 @@ async function executeDeleteMessage(messageId) {
 // ── Ash Disintegrate Animation ─────────────────────────────────────────────
 
 function ashDisintegrate(el, onDone) {
-  const bubble  = el.querySelector('.message-bubble') || el;
-  const r       = bubble.getBoundingClientRect();
-  const isMe    = el.classList.contains('justify-end');
-  const isDark  = document.body.classList.contains('theme-gray');
+  const bubble = el.querySelector('.message-bubble') || el;
+  const r      = bubble.getBoundingClientRect();
+  if (r.width === 0) { onDone?.(); return; }
 
-  // ── Цвета в зависимости от темы и стороны ──
-  const baseColor = isMe
-      ? (isDark ? [29, 78, 216] : [59, 130, 246])
-      : (isDark ? [55, 65,  81] : [226, 232, 240]);
+  const isMe = el.classList.contains('justify-end');
+
+  // ── Считываем реальный цвет пузырька ──
+  const computed  = getComputedStyle(bubble);
+  const bgRaw     = computed.backgroundColor;
+  const match     = bgRaw.match(/[\d.]+/g) || [];
+  const [rr=80, gg=120, bb=200] = match.map(Number);
 
   // ── Canvas поверх всего ──
-  const cv  = document.createElement('canvas');
-  cv.style.cssText = `position:fixed;inset:0;pointer-events:none;z-index:9999;`;
+  const cv = document.createElement('canvas');
+  cv.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999;';
   cv.width  = window.innerWidth;
   cv.height = window.innerHeight;
   document.body.appendChild(cv);
   const ctx = cv.getContext('2d');
 
-  // ── Параметры тайлов ──
-  const COLS  = 18;
-  const ROWS  = Math.max(4, Math.round(COLS * r.height / r.width));
-  const tw    = r.width  / COLS;
-  const th    = r.height / ROWS;
-  const cx    = r.left + r.width  / 2;
-  const cy    = r.top  + r.height / 2;
+  // ── Параметры ──
+  const PARTICLE_COUNT = 380;
+  const cx = r.left + r.width  / 2;
+  const cy = r.top  + r.height / 2;
 
-  // ── Рисуем пузырёк как набор тайлов ──
-  // Каждый тайл = закрашенный прямоугольник цвета пузырька
-  // (без html2canvas — эмулируем внешний вид)
-  const tiles = [];
-  for (let row = 0; row < ROWS; row++) {
-    for (let col = 0; col < COLS; col++) {
-      const tx = r.left + col * tw;
-      const ty = r.top  + row * th;
+  // ── Генерируем частицы ──
+  const particles = [];
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    // Стартовая позиция — случайная внутри пузырька
+    const startX = r.left + Math.random() * r.width;
+    const startY = r.top  + Math.random() * r.height;
 
-      // Расстояние от центра — определяет задержку волны
-      const dx     = (col + 0.5) / COLS - 0.5;
-      const dy     = (row + 0.5) / ROWS - 0.5;
-      const dist   = Math.sqrt(dx*dx + dy*dy) * 2; // 0..1
+    // Угол вылета — от центра пузырька наружу + случайное отклонение
+    const baseAngle  = Math.atan2(startY - cy, startX - cx);
+    const scatter    = (Math.random() - 0.5) * Math.PI * 1.4;
+    const angle      = baseAngle + scatter;
 
-      // Угол вылета — от центра наружу + закрутка
-      const angle  = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.9;
-      const speed  = 2.5 + Math.random() * 4.5;
+    // Скорость — быстрее у краёв
+    const distRatio  = Math.hypot(startX - cx, startY - cy) / Math.hypot(r.width, r.height) * 2;
+    const speed      = (1.5 + Math.random() * 5.5) * (0.6 + distRatio * 0.8);
 
-      // Лёгкая вариация цвета — имитирует текстуру
-      const bright = 0.85 + Math.random() * 0.3;
-      const [r0,g0,b0] = baseColor;
-      const color  = `rgb(${Math.round(r0*bright)},${Math.round(g0*bright)},${Math.round(b0*bright)})`;
+    // Размер частицы — mix мелких и крупных
+    const size = Math.random() < 0.7
+        ? 1.5 + Math.random() * 2.5   // мелкие
+        : 3.5 + Math.random() * 4.5;  // крупные
 
-      tiles.push({
-        // Позиция
-        x: tx, y: ty,
-        // Размер тайла
-        w: tw + 0.5, h: th + 0.5,
-        // Скорость
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 1.8,
-        // Вращение
-        rot: 0,
-        rotV: (Math.random() - 0.5) * 0.25,
-        // Задержка старта: волна от центра
-        delay: dist * 18 + Math.random() * 8,
-        // Жизнь
-        life: 1,
-        decay: 0.016 + Math.random() * 0.014,
-        color,
-        started: false,
-      });
-    }
+    // Цвет — вариации базового цвета пузырька + белые блики
+    const bright = 0.7 + Math.random() * 0.6;
+    const isHighlight = Math.random() < 0.15;
+    const pr = isHighlight ? 255 : Math.min(255, Math.round(rr * bright));
+    const pg = isHighlight ? 255 : Math.min(255, Math.round(gg * bright));
+    const pb = isHighlight ? 255 : Math.min(255, Math.round(bb * bright));
+
+    // Форма: круг или прямоугольник
+    const shape = Math.random() < 0.55 ? 'circle' : 'rect';
+
+    particles.push({
+      x: startX,  y: startY,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - (1 + Math.random() * 2),
+      size,
+      shape,
+      rot: Math.random() * Math.PI * 2,
+      rotV: (Math.random() - 0.5) * 0.3,
+      life: 1,
+      decay: 0.022 + Math.random() * 0.025,
+      delay: Math.random() * 12,  // небольшой стаггер
+      color: `${pr},${pg},${pb}`,
+    });
   }
 
-  // ── Скрываем оригинальный элемент плавно ──
-  bubble.style.transition = 'opacity 0.08s ease';
-  bubble.style.opacity    = '0';
+  // ── Скрываем оригинальный элемент ──
+  bubble.style.transition = 'opacity 0.06s ease';
+  bubble.style.opacity = '0';
 
-  let frame  = 0;
-  let done   = false;
+  let frame = 0;
+  let done  = false;
 
   function tick() {
     ctx.clearRect(0, 0, cv.width, cv.height);
     frame++;
     let alive = 0;
 
-    for (const t of tiles) {
-      if (frame < t.delay) {
-        // Ещё не стартовал — рисуем на месте (исходник виден)
-        alive++;
-        continue;
-      }
-
-      if (!t.started) {
-        t.started = true;
-      }
-
-      if (t.life <= 0) continue;
+    for (const p of particles) {
+      if (frame < p.delay) { alive++; continue; }
+      if (p.life <= 0) continue;
       alive++;
 
       // Физика
-      t.x   += t.vx;
-      t.y   += t.vy;
-      t.vy  += 0.18;   // гравитация
-      t.vx  *= 0.975;  // сопротивление
-      t.life -= t.decay;
-      t.rot  += t.rotV;
+      p.x   += p.vx;
+      p.y   += p.vy;
+      p.vy  += 0.14;      // гравитация
+      p.vx  *= 0.968;     // трение воздуха
+      p.vy  *= 0.985;
+      p.life -= p.decay;
+      p.rot  += p.rotV;
 
-      const alpha = Math.max(0, t.life);
-      const scale = 0.4 + alpha * 0.6;
-      const hw    = t.w * scale / 2;
-      const hh    = t.h * scale / 2;
+      const alpha = Math.max(0, p.life);
+      const sz    = p.size * (0.3 + alpha * 0.7);
 
       ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.translate(t.x + t.w / 2, t.y + t.h / 2);
-      ctx.rotate(t.rot);
+      ctx.globalAlpha = alpha * alpha; // квадратичное затухание — резче
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = `rgba(${p.color},1)`;
 
-      // Основной тайл
-      ctx.fillStyle = t.color;
-      ctx.fillRect(-hw, -hh, hw*2, hh*2);
-
-      // Блик — имитирует объём
-      if (alpha > 0.3) {
-        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.18})`;
-        ctx.fillRect(-hw, -hh, hw * 2, hh * 0.45);
+      if (p.shape === 'circle') {
+        ctx.beginPath();
+        ctx.arc(0, 0, sz / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        const hw = sz * (0.5 + Math.random() * 0.3);
+        const hh = sz * (0.3 + Math.random() * 0.2);
+        ctx.fillRect(-hw, -hh, hw * 2, hh * 2);
       }
 
       ctx.restore();
