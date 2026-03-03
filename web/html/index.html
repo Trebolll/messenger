@@ -28,7 +28,6 @@
 <span id="current-user-name" style="display:none;"></span>
 
 <!-- Canvas рисуется поверх интерфейса (z=6), но pointer-events:none -->
-<canvas id="neural-canvas"></canvas>
 
 <div id="app" class="h-screen w-full relative">
 
@@ -182,7 +181,7 @@
           </div>
 
           <!-- AI кнопка -->
-          <button type="button" id="ai-btn" onclick="toggleAiPanel()" title="AI-ассистент" style="flex-shrink:0;">
+          <button type="button" id="ai-btn" onclick="toggleAiPanel()" title="AI-ассистент">
             <div class="pulse-ring"></div>
             <div class="pulse-ring"></div>
             <div class="pulse-ring"></div>
@@ -196,14 +195,13 @@
           </button>
 
           <!-- Самолётик -->
-          <button type="submit" id="send-btn"
-                  style="flex-shrink:0; position:relative; overflow:hidden; padding:12px; background:#2563eb; color:#fff; border-radius:14px; box-shadow:0 2px 8px rgba(37,99,235,0.35);">
-            <span class="plane-icon" style="display:flex; align-items:center; justify-content:center;">
+          <button type="submit" id="send-btn">
+            <span class="plane-icon">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/>
               </svg>
             </span>
-            <span class="plane-return" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; transform:translate(-130%,130%); opacity:0;">
+            <span class="plane-return">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/>
               </svg>
@@ -433,8 +431,6 @@
       </div>
     </div>
 
-    <!-- Save -->
-
   </div>
 </div>
 
@@ -474,5 +470,6 @@
 <script src="/web/js/lambda-anim.js"></script>
 <script src="/web/js/btn-anim.js"></script>
 <script src="/web/js/layout.js"></script>
+<canvas id="neural-canvas"></canvas>
 </body>
 </html>

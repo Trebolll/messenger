@@ -1,261 +1,261 @@
-    :root {
-      --bg-main: #ffffff; --bg-sidebar: #f8fafc; --bg-item-hover: #f1f5f9;
-      --bg-main-rgb: 255, 255, 255; --bg-sidebar-rgb: 248, 250, 252;
-      --bg-item-active: #eff6ff; --text-main: #1e293b; --text-muted: #64748b;
-      --border-color: #e2e8f0; --accent-color: #3b82f6;
-      --glass-border: rgba(255, 255, 255, 0.6);
-      --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
-      --glass-bg-opacity: 0.35;
-      --glass-blur: 28px;
-      --message-sent-bg: #3b82f6; --message-sent-text: #ffffff;
-      --message-received-bg: #f1f5f9; --message-received-text: #1e293b;
-    }
-    body.theme-gray {
-      --bg-main: #121212; --bg-sidebar: #0a0a0a; --bg-item-hover: #1f1f1f;
-      --bg-main-rgb: 18, 18, 18; --bg-sidebar-rgb: 10, 10, 10;
-      --bg-item-active: #2a2a2a; --text-main: #f0f0f0; --text-muted: #888888;
-      --border-color: #222222; --accent-color: #60a5fa;
-      --glass-border: rgba(255, 255, 255, 0.05);
-      --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-      --glass-bg-opacity: 0.12;
-      --message-sent-bg: #2563eb; --message-sent-text: #ffffff;
-      --message-received-bg: #1f1f1f; --message-received-text: #f0f0f0;
-    }
-    /* ══ Тема «Сумерки» ══ */
-    body.theme-twilight {
-      --bg-main: #141218; --bg-sidebar: #0d0c10; --bg-item-hover: #1d1b24;
-      --bg-main-rgb: 20, 18, 24; --bg-sidebar-rgb: 13, 12, 16;
-      --bg-item-active: #282532; --text-main: #e6e1e5; --text-muted: #938f99;
-      --border-color: #232129; --accent-color: #d0bcff;
-      --glass-border: rgba(208, 188, 255, 0.08);
-      --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-      --glass-bg-opacity: 0.12;
-      --message-sent-bg: #6750a4; --message-sent-text: #ffffff;
-      --message-received-bg: #1d1b24; --message-received-text: #e6e1e5;
-    }
-    /* ══ Тема «Рассвет» ══ */
-    body.theme-dawn {
-      --bg-main: #f0faf4; --bg-sidebar: #e6f5ec; --bg-item-hover: #d1ede0;
-      --bg-main-rgb: 240, 250, 244; --bg-sidebar-rgb: 230, 245, 236;
-      --bg-item-active: #bbdece; --text-main: #1a3d2b; --text-muted: #4a7c5f;
-      --border-color: #b2d9c0; --accent-color: #22c55e;
-      --glass-border: rgba(34, 197, 94, 0.15);
-      --glass-shadow: 0 8px 32px rgba(26, 61, 43, 0.08);
-      --message-sent-bg: #16a34a; --message-sent-text: #ffffff;
-      --message-received-bg: #d1ede0; --message-received-text: #1a3d2b;
-    }
-    /* ══ Тема «Закат» ══ */
-    body.theme-sunset {
-      --bg-main: #fff8f0; --bg-sidebar: #fff1e3; --bg-item-hover: #fde0c0;
-      --bg-main-rgb: 255, 248, 240; --bg-sidebar-rgb: 255, 241, 227;
-      --bg-item-active: #fcd0a0; --text-main: #431407; --text-muted: #9a4520;
-      --border-color: #fbbf7a; --accent-color: #ea580c;
-      --glass-border: rgba(234, 88, 12, 0.15);
-      --glass-shadow: 0 8px 32px rgba(67, 20, 7, 0.08);
-      --message-sent-bg: #ea580c; --message-sent-text: #ffffff;
-      --message-received-bg: #fde0c0; --message-received-text: #431407;
-    }
-    /* ══ Тема «Коралл» ══ */
-    body.theme-coral {
-      --bg-main: #fff5f5; --bg-sidebar: #fff0f0; --bg-item-hover: #ffd6d6;
-      --bg-main-rgb: 255, 245, 245; --bg-sidebar-rgb: 255, 240, 240;
-      --bg-item-active: #ffc0c0; --text-main: #4a0a0a; --text-muted: #b04040;
-      --border-color: #fca5a5; --accent-color: #ef4444;
-      --glass-border: rgba(239, 68, 68, 0.15);
-      --glass-shadow: 0 8px 32px rgba(74, 10, 10, 0.08);
-      --message-sent-bg: #ef4444; --message-sent-text: #ffffff;
-      --message-received-bg: #ffd6d6; --message-received-text: #4a0a0a;
-    }
-    /* ══ Тема «Океан» ══ */
-    body.theme-ocean {
-      --bg-main: #0b0f14; --bg-sidebar: #05070a; --bg-item-hover: #151a22;
-      --bg-main-rgb: 11, 15, 20; --bg-sidebar-rgb: 5, 7, 10;
-      --bg-item-active: #1c242e; --text-main: #d1e1f0; --text-muted: #7a8c99;
-      --border-color: #1e262f; --accent-color: #38bdf8;
-      --glass-border: rgba(56, 189, 248, 0.08);
-      --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-      --glass-bg-opacity: 0.12;
-      --message-sent-bg: #0ea5e9; --message-sent-text: #ffffff;
-      --message-received-bg: #151a22; --message-received-text: #d1e1f0;
-    }
-    /* ══ Тема «Мята» ══ */
-    body.theme-mint {
-      --bg-main: #f0fffe; --bg-sidebar: #e0faf8; --bg-item-hover: #b8f0ed;
-      --bg-main-rgb: 240, 255, 254; --bg-sidebar-rgb: 224, 250, 248;
-      --bg-item-active: #8ee8e4; --text-main: #0d3330; --text-muted: #2d7a74;
-      --border-color: #7dd3d0; --accent-color: #0d9488;
-      --glass-border: rgba(13, 148, 136, 0.15);
-      --glass-shadow: 0 8px 32px rgba(13, 51, 48, 0.08);
-      --message-sent-bg: #0d9488; --message-sent-text: #ffffff;
-      --message-received-bg: #b8f0ed; --message-received-text: #0d3330;
-    }
+:root {
+  --bg-main: #ffffff; --bg-sidebar: #f8fafc; --bg-item-hover: #f1f5f9;
+  --bg-main-rgb: 255, 255, 255; --bg-sidebar-rgb: 248, 250, 252;
+  --bg-item-active: #eff6ff; --text-main: #1e293b; --text-muted: #64748b;
+  --border-color: #e2e8f0; --accent-color: #3b82f6; --accent-color-rgb: 59, 130, 246;
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.07);
+  --glass-bg-opacity: 0.35;
+  --glass-blur: 28px;
+  --message-sent-bg: #3b82f6; --message-sent-text: #ffffff;
+  --message-received-bg: #f1f5f9; --message-received-text: #1e293b;
+}
+body.theme-gray {
+  --bg-main: #121212; --bg-sidebar: #0a0a0a; --bg-item-hover: #1f1f1f;
+  --bg-main-rgb: 18, 18, 18; --bg-sidebar-rgb: 10, 10, 10;
+  --bg-item-active: #2a2a2a; --text-main: #f0f0f0; --text-muted: #888888;
+  --border-color: #222222; --accent-color: #60a5fa; --accent-color-rgb: 96, 165, 250;
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --glass-bg-opacity: 0.12;
+  --message-sent-bg: #2563eb; --message-sent-text: #ffffff;
+  --message-received-bg: #1f1f1f; --message-received-text: #f0f0f0;
+}
+/* ══ Тема «Сумерки» ══ */
+body.theme-twilight {
+  --bg-main: #141218; --bg-sidebar: #0d0c10; --bg-item-hover: #1d1b24;
+  --bg-main-rgb: 20, 18, 24; --bg-sidebar-rgb: 13, 12, 16;
+  --bg-item-active: #282532; --text-main: #e6e1e5; --text-muted: #938f99;
+  --border-color: #232129; --accent-color: #d0bcff; --accent-color-rgb: 208, 188, 255;
+  --glass-border: rgba(208, 188, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --glass-bg-opacity: 0.12;
+  --message-sent-bg: #6750a4; --message-sent-text: #ffffff;
+  --message-received-bg: #1d1b24; --message-received-text: #e6e1e5;
+}
+/* ══ Тема «Рассвет» ══ */
+body.theme-dawn {
+  --bg-main: #f0faf4; --bg-sidebar: #e6f5ec; --bg-item-hover: #d1ede0;
+  --bg-main-rgb: 240, 250, 244; --bg-sidebar-rgb: 230, 245, 236;
+  --bg-item-active: #bbdece; --text-main: #1a3d2b; --text-muted: #4a7c5f;
+  --border-color: #b2d9c0; --accent-color: #22c55e; --accent-color-rgb: 34, 197, 94;
+  --glass-border: rgba(34, 197, 94, 0.15);
+  --glass-shadow: 0 8px 32px rgba(26, 61, 43, 0.08);
+  --message-sent-bg: #16a34a; --message-sent-text: #ffffff;
+  --message-received-bg: #d1ede0; --message-received-text: #1a3d2b;
+}
+/* ══ Тема «Закат» ══ */
+body.theme-sunset {
+  --bg-main: #fff8f0; --bg-sidebar: #fff1e3; --bg-item-hover: #fde0c0;
+  --bg-main-rgb: 255, 248, 240; --bg-sidebar-rgb: 255, 241, 227;
+  --bg-item-active: #fcd0a0; --text-main: #431407; --text-muted: #9a4520;
+  --border-color: #fbbf7a; --accent-color: #ea580c; --accent-color-rgb: 234, 88, 12;
+  --glass-border: rgba(234, 88, 12, 0.15);
+  --glass-shadow: 0 8px 32px rgba(67, 20, 7, 0.08);
+  --message-sent-bg: #ea580c; --message-sent-text: #ffffff;
+  --message-received-bg: #fde0c0; --message-received-text: #431407;
+}
+/* ══ Тема «Коралл» ══ */
+body.theme-coral {
+  --bg-main: #fff5f5; --bg-sidebar: #fff0f0; --bg-item-hover: #ffd6d6;
+  --bg-main-rgb: 255, 245, 245; --bg-sidebar-rgb: 255, 240, 240;
+  --bg-item-active: #ffc0c0; --text-main: #4a0a0a; --text-muted: #b04040;
+  --border-color: #fca5a5; --accent-color: #ef4444; --accent-color-rgb: 239, 68, 68;
+  --glass-border: rgba(239, 68, 68, 0.15);
+  --glass-shadow: 0 8px 32px rgba(74, 10, 10, 0.08);
+  --message-sent-bg: #ef4444; --message-sent-text: #ffffff;
+  --message-received-bg: #ffd6d6; --message-received-text: #4a0a0a;
+}
+/* ══ Тема «Океан» ══ */
+body.theme-ocean {
+  --bg-main: #0b0f14; --bg-sidebar: #05070a; --bg-item-hover: #151a22;
+  --bg-main-rgb: 11, 15, 20; --bg-sidebar-rgb: 5, 7, 10;
+  --bg-item-active: #1c242e; --text-main: #d1e1f0; --text-muted: #7a8c99;
+  --border-color: #1e262f; --accent-color: #38bdf8; --accent-color-rgb: 56, 189, 248;
+  --glass-border: rgba(56, 189, 248, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --glass-bg-opacity: 0.12;
+  --message-sent-bg: #0ea5e9; --message-sent-text: #ffffff;
+  --message-received-bg: #151a22; --message-received-text: #d1e1f0;
+}
+/* ══ Тема «Мята» ══ */
+body.theme-mint {
+  --bg-main: #f0fffe; --bg-sidebar: #e0faf8; --bg-item-hover: #b8f0ed;
+  --bg-main-rgb: 240, 255, 254; --bg-sidebar-rgb: 224, 250, 248;
+  --bg-item-active: #8ee8e4; --text-main: #0d3330; --text-muted: #2d7a74;
+  --border-color: #7dd3d0; --accent-color: #0d9488; --accent-color-rgb: 13, 148, 136;
+  --glass-border: rgba(13, 148, 136, 0.15);
+  --glass-shadow: 0 8px 32px rgba(13, 51, 48, 0.08);
+  --message-sent-bg: #0d9488; --message-sent-text: #ffffff;
+  --message-received-bg: #b8f0ed; --message-received-text: #0d3330;
+}
 
 /* ══════════════════════════════════════════════════════
        UI — тени вместо линий, лёгкие скругления
     ══════════════════════════════════════════════════════ */
 
-    /* Аватары и статус-точки — круглые */
-    .rounded-full,
-    .spinner, .pulse-ring,
-    .member-online-dot,
-    #avatar-viewer-circle,
-    .ai-btn-inner,
-    [data-online-uid] {
-      border-radius: 50% !important;
-    }
+/* Аватары и статус-точки — круглые */
+.rounded-full,
+.spinner, .pulse-ring,
+.member-online-dot,
+#avatar-viewer-circle,
+.ai-btn-inner,
+[data-online-uid] {
+  border-radius: 50% !important;
+}
 
-    /* ── Стеклянные панели ── */
-    .left-panel, #view-chat, #info-panel, #bottom-dock, .modal-content, 
-    #auth-modal, .new-chat-modal-card, #profile-modal {
-      border: 0.5px solid var(--glass-border) !important;
-      box-shadow: 
-        var(--glass-shadow),
-        inset 0 1px 1px rgba(255, 255, 255, 0.4),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.15) !important;
-      
-      backdrop-filter: blur(var(--glass-blur, 28px)) saturate(210%) contrast(110%) !important;
-      -webkit-backdrop-filter: blur(var(--glass-blur, 28px)) saturate(210%) contrast(110%) !important;
-      background: rgba(var(--bg-sidebar-rgb), var(--glass-bg-opacity, 0.35)) !important;
-    }
+/* ── Стеклянные панели ── */
+.left-panel, #view-chat, #info-panel, #bottom-dock, .modal-content,
+#auth-modal, .new-chat-modal-card, #profile-modal {
+  border: 0.5px solid var(--glass-border) !important;
+  box-shadow:
+      var(--glass-shadow),
+      inset 0 1px 1px rgba(255, 255, 255, 0.4),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.15) !important;
 
-    /* Убираем лишние фоны у вложенных контейнеров */
-    #left-panel-content, #view-home, #chats-sidebar, .chats-sidebar-inner, 
-    #messages-container, .bg-custom-main, .bg-custom-sidebar {
-      background: transparent !important;
-      background-color: transparent !important;
-    }
+  backdrop-filter: blur(var(--glass-blur, 28px)) saturate(210%) contrast(110%) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur, 28px)) saturate(210%) contrast(110%) !important;
+  background: rgba(var(--bg-sidebar-rgb), var(--glass-bg-opacity, 0.35)) !important;
+}
 
-    #view-chat, #info-panel, .left-panel {
-      border-radius: 24px 24px 0 0 !important;
-    }
+/* Убираем лишние фоны у вложенных контейнеров */
+#left-panel-content, #view-home, #chats-sidebar, .chats-sidebar-inner,
+#messages-container, .bg-custom-main, .bg-custom-sidebar {
+  background: transparent !important;
+  background-color: transparent !important;
+}
 
-    /* Скругление элементов в списке чатов */
-    .chat-list-item {
-      border-radius: 16px !important;
-      margin: 4px 8px !important;
-      border: none !important;
-      transition: background 0.2s ease, transform 0.1s ease !important;
-    }
-    .chat-list-item:hover {
-      background: rgba(var(--bg-main-rgb), 0.2) !important;
-      transform: scale(0.98);
-    }
-    .chat-list-item.active {
-      background: rgba(var(--accent-color-rgb, 59, 130, 246), 0.15) !important;
-      border-left: 4px solid var(--accent-color) !important;
-    }
+#view-chat, #info-panel, .left-panel {
+  border-radius: 24px 24px 0 0 !important;
+}
 
-    #chat-header, #input-area, #chats-sidebar > div:first-child, #info-panel > div:first-child {
-      border: none !important;
-      border-bottom: 0.5px solid var(--glass-border) !important;
-      background: transparent !important;
-    }
-    #input-area {
-      border-bottom: none !important;
-      border-top: 0.5px solid var(--glass-border) !important;
-    }
+/* Скругление элементов в списке чатов */
+.chat-list-item {
+  border-radius: 16px !important;
+  margin: 4px 8px !important;
+  border: none !important;
+  transition: background 0.2s ease, transform 0.1s ease !important;
+}
+.chat-list-item:hover {
+  background: rgba(var(--bg-main-rgb), 0.2) !important;
+  transform: scale(0.98);
+}
+.chat-list-item.active {
+  background: rgba(var(--accent-color-rgb, 59, 130, 246), 0.15) !important;
+  border-left: 4px solid var(--accent-color) !important;
+}
 
-    /* Поля ввода */
-    input[type="text"], input[type="email"], input[type="password"], textarea {
-      background: rgba(var(--bg-main-rgb), 0.1) !important;
-      backdrop-filter: blur(4px) !important;
-      border: 0.5px solid var(--glass-border) !important;
-      transition: all 0.2s ease !important;
-    }
-    input:focus, textarea:focus {
-      background: rgba(var(--bg-main-rgb), 0.2) !important;
-      border-color: var(--accent-color) !important;
-    }
+#chat-header, #input-area, #chats-sidebar > div:first-child, #info-panel > div:first-child {
+  border: none !important;
+  border-bottom: 0.5px solid var(--glass-border) !important;
+  background: transparent !important;
+}
+#input-area {
+  border-bottom: none !important;
+  border-top: 0.5px solid var(--glass-border) !important;
+}
 
-    /* ══════════════════════════════════════════════════════
-       ══ Layout: left panel + right feed panel
-    ══════════════════════════════════════════════════════ */
-    #left-panel { flex-shrink: 0; }
-    #feed-right-panel { flex-shrink: 1; }
+/* Поля ввода */
+input[type="text"], input[type="email"], input[type="password"], textarea {
+  background: rgba(var(--bg-main-rgb), 0.1) !important;
+  backdrop-filter: blur(4px) !important;
+  border: 0.5px solid var(--glass-border) !important;
+  transition: all 0.2s ease !important;
+}
+input:focus, textarea:focus {
+  background: rgba(var(--bg-main-rgb), 0.2) !important;
+  border-color: var(--accent-color) !important;
+}
 
-    /* ══════════════════════════════════════════════════════
-       ══ Floating Bottom Dock
-    ══════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════
+   ══ Layout: left panel + right feed panel
+══════════════════════════════════════════════════════ */
+#left-panel { flex-shrink: 0; }
+#feed-right-panel { flex-shrink: 1; }
 
-    /* Dock скрыт пока main-chat не виден (лендинг) и в открытом чате */
-    #main-chat.hidden ~ #bottom-dock { display: none !important; }
-    body.chat-open #bottom-dock { display: none !important; }
+/* ══════════════════════════════════════════════════════
+   ══ Floating Bottom Dock
+══════════════════════════════════════════════════════ */
 
-    /* Сам бар */
-    #bottom-dock {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%) translateY(calc(100% + 24px));
-      z-index: 200;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: 2px;
-      padding: 8px 12px;
-      border-radius: 22px;
-      opacity: 0;
-      pointer-events: none;
-      transition:
-        transform 0.40s cubic-bezier(0.34, 1.45, 0.64, 1),
-        opacity 0.28s ease;
-    }
+/* Dock скрыт пока main-chat не виден (лендинг) и в открытом чате */
+#main-chat.hidden ~ #bottom-dock { display: none !important; }
+body.chat-open #bottom-dock { display: none !important; }
 
-    #bottom-dock:hover,
-    #bottom-dock.visible {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-      pointer-events: all;
-    }
+/* Сам бар */
+#bottom-dock {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(calc(100% + 24px));
+  z-index: 200;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 22px;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+      transform 0.40s cubic-bezier(0.34, 1.45, 0.64, 1),
+      opacity 0.28s ease;
+}
 
-    /* Кнопки — только иконки */
-    .dock-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 44px;
-      height: 44px;
-      border: none;
-      background: transparent;
-      border-radius: 14px;
-      cursor: pointer;
-      color: var(--text-muted);
-      transition: background 0.16s, color 0.16s, transform 0.16s;
-      flex-shrink: 0;
-    }
-    .dock-btn:hover {
-      background: rgba(59,130,246,0.11);
-      color: var(--text-main);
-      transform: translateY(-2px) scale(1.08);
-    }
-    body.theme-gray .dock-btn:hover,
-    body.theme-twilight .dock-btn:hover,
-    body.theme-ocean .dock-btn:hover { background: rgba(255,255,255,0.09); }
-    .dock-btn:active { transform: scale(0.94); }
-    .dock-btn.dock-active {
-      color: var(--accent-color);
-      background: rgba(59,130,246,0.10);
-    }
-    .dock-btn--logout:hover { background: rgba(239,68,68,0.11); color: #ef4444; }
+#bottom-dock:hover,
+#bottom-dock.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: all;
+}
 
-    /* Разделитель */
-    .dock-divider {
-      width: 1px; height: 26px;
-      background: var(--border-color);
-      opacity: 0.4; margin: 0 4px; flex-shrink: 0;
-    }
-    body.theme-gray .dock-divider,
-    body.theme-twilight .dock-divider,
-    body.theme-ocean .dock-divider { background: rgba(255,255,255,0.15); opacity:1; }
+/* Кнопки — только иконки */
+.dock-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  border-radius: 14px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background 0.16s, color 0.16s, transform 0.16s;
+  flex-shrink: 0;
+}
+.dock-btn:hover {
+  background: rgba(59,130,246,0.11);
+  color: var(--text-main);
+  transform: translateY(-2px) scale(1.08);
+}
+body.theme-gray .dock-btn:hover,
+body.theme-twilight .dock-btn:hover,
+body.theme-ocean .dock-btn:hover { background: rgba(255,255,255,0.09); }
+.dock-btn:active { transform: scale(0.94); }
+.dock-btn.dock-active {
+  color: var(--accent-color);
+  background: rgba(59,130,246,0.10);
+}
+.dock-btn--logout:hover { background: rgba(239,68,68,0.11); color: #ef4444; }
 
-    /* Тема-кнопка в доке */
-    #bottom-dock .theme-btn { width:44px; height:44px; overflow:visible; }
-    #bottom-dock .theme-btn::after { display:none; }
-    #bottom-dock .theme-icon-wrap { display:block; position:relative; width:20px; height:20px; }
+/* Разделитель */
+.dock-divider {
+  width: 1px; height: 26px;
+  background: var(--border-color);
+  opacity: 0.4; margin: 0 4px; flex-shrink: 0;
+}
+body.theme-gray .dock-divider,
+body.theme-twilight .dock-divider,
+body.theme-ocean .dock-divider { background: rgba(255,255,255,0.15); opacity:1; }
 
-    /* Скрываем старый левый навбар и нижние вкладки */
-    .app-navbar { display: none !important; }
-    .left-panel-tabs { display: none !important; }
+/* Тема-кнопка в доке */
+#bottom-dock .theme-btn { width:44px; height:44px; overflow:visible; }
+#bottom-dock .theme-btn::after { display:none; }
+#bottom-dock .theme-icon-wrap { display:block; position:relative; width:20px; height:20px; }
 
-    /* Кнопка назад в шапке чата */
-    #back-btn { display: flex; }
+/* Скрываем старый левый навбар и нижние вкладки */
+.app-navbar { display: none !important; }
+.left-panel-tabs { display: none !important; }
+
+/* Кнопка назад в шапке чата */
+#back-btn { display: flex; }

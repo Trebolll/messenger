@@ -1,25 +1,36 @@
 /* ══ Send button ══ */
 #send-btn {
-  position: relative; overflow: hidden;
-  transition: background 0.2s, transform 0.15s;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  padding: 12px;
+  border-radius: 14px;
+  color: #fff;
+  background: var(--accent-color, #2563eb);
+  box-shadow: 0 2px 10px rgba(var(--accent-color-rgb, 37,99,235), 0.35);
+  transition: filter 0.2s, transform 0.15s, box-shadow 0.2s;
   z-index: 20;
 }
-#send-btn:hover { transform: scale(1.06); }
+#send-btn:hover {
+  filter: brightness(1.12);
+  transform: scale(1.06);
+  box-shadow: 0 4px 18px rgba(var(--accent-color-rgb, 37,99,235), 0.5);
+}
 #send-btn:active { transform: scale(0.94); }
 #send-btn .plane-icon {
   display: flex; align-items: center; justify-content: center;
-  transition: transform 0.45s cubic-bezier(0.4,0,0.2,1), opacity 0.3s;
+  transition: transform 0.42s cubic-bezier(0.4,0,0.2,1), opacity 0.25s;
 }
 #send-btn.sending .plane-icon {
-  transform: translate(130%, -130%);
+  transform: translate(140%, -140%);
   opacity: 0;
 }
 #send-btn .plane-return {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  transform: translate(-130%, 130%);
+  transform: translate(-140%, 140%);
   opacity: 0;
-  transition: transform 0.45s cubic-bezier(0.4,0,0.2,1) 0.15s, opacity 0.3s 0.15s;
+  transition: transform 0.42s cubic-bezier(0.4,0,0.2,1) 0.12s, opacity 0.25s 0.12s;
 }
 #send-btn.sending .plane-return {
   transform: translate(0, 0);
@@ -260,37 +271,6 @@ body.theme-ocean .theme-btn::after {
 }
 body.theme-mint .theme-btn::after {
   background: radial-gradient(circle, rgba(13,148,136,0.22) 0%, transparent 70%);
-}
-
-/* ══ Send btn — усиленные стили для plane анимации ══ */
-#send-btn {
-  position: relative !important;
-  overflow: hidden !important;
-  flex-shrink: 0;
-}
-#send-btn .plane-icon {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.45s cubic-bezier(0.4,0,0.2,1), opacity 0.3s !important;
-}
-#send-btn.sending .plane-icon {
-  transform: translate(130%, -130%) !important;
-  opacity: 0 !important;
-}
-#send-btn .plane-return {
-  position: absolute !important;
-  inset: 0 !important;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  transform: translate(-130%, 130%) !important;
-  opacity: 0 !important;
-  transition: transform 0.45s cubic-bezier(0.4,0,0.2,1) 0.15s, opacity 0.3s 0.15s !important;
-}
-#send-btn.sending .plane-return {
-  transform: translate(0, 0) !important;
-  opacity: 1 !important;
 }
 
 /* ══ Flex layout строки ввода ══ */
