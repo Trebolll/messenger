@@ -134,38 +134,46 @@
       <!-- Input area -->
       <div id="input-area" class="input-area p-4 border-t border-custom bg-custom-main hidden">
 
-        <!-- AI Panel -->
+        <!-- AI Panel — СВЕРХУ формы, вне <form> -->
         <div id="ai-panel" class="hidden mb-3 p-3">
           <p class="ai-panel-title">✦ AI-ассистент</p>
           <div id="ai-loading" class="hidden">Анализирую...</div>
           <div id="ai-result" class="hidden"></div>
           <div class="flex gap-2 flex-wrap">
-            <button onclick="aiAction('improve')" class="ai-action-btn ai-action-primary">✨ Улучшить</button>
-            <button onclick="aiAction('shorten')" class="ai-action-btn ai-action-secondary">📝 Сократить</button>
-            <button onclick="aiAction('tone')" class="ai-action-btn ai-action-secondary">🎯 Тон</button>
-            <button onclick="aiAction('continue')" class="ai-action-btn ai-action-secondary">💡 Продолжить</button>
-            <button onclick="applyAiResult()" id="ai-apply-btn" class="ai-action-btn ai-action-apply hidden">✅ Применить</button>
+            <button type="button" onclick="aiAction('improve')" class="ai-action-btn ai-action-primary">✨ Улучшить</button>
+            <button type="button" onclick="aiAction('shorten')" class="ai-action-btn ai-action-secondary">📝 Сократить</button>
+            <button type="button" onclick="aiAction('tone')" class="ai-action-btn ai-action-secondary">🎯 Тон</button>
+            <button type="button" onclick="aiAction('continue')" class="ai-action-btn ai-action-secondary">💡 Продолжить</button>
+            <button type="button" onclick="applyAiResult()" id="ai-apply-btn" class="ai-action-btn ai-action-apply hidden">✅ Применить</button>
           </div>
         </div>
 
         <!-- File Preview Panel -->
         <div id="file-preview-panel"></div>
 
-        <form id="message-form" class="flex items-end gap-3" onsubmit="handleSendMessage(event)">
+        <!-- Строка ввода — flex-контейнер с min-width:0 на обёртке textarea -->
+        <form id="message-form" onsubmit="handleSendMessage(event)"
+              style="display:flex; align-items:flex-end; gap:10px; width:100%;">
           <input type="file" id="file-input" multiple style="display:none;" accept="image/jpeg,image/png,image/gif,audio/webm,audio/ogg,audio/mpeg,video/webm,video/mp4">
-          <button type="button" id="attach-btn" onclick="triggerFileInput()" class="p-3" style="position:relative;z-index:20;" title="Прикрепить файл">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
-            </svg>
+
+          <!-- Скрепка -->
+          <button type="button" id="attach-btn" onclick="triggerFileInput()"
+                  style="flex-shrink:0; padding:12px; position:relative; z-index:20;" title="Прикрепить файл">
+            <div id="pin-wrap">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+              </svg>
+            </div>
           </button>
 
-          <div class="flex-grow msg-input-wrap" style="position:relative;z-index:20;">
-                        <textarea id="message-input" rows="1" placeholder="Напишите сообщение..."
-                                  class="w-full px-4 py-3 bg-custom-sidebar border-none rounded-2xl outline-none text-sm resize-none text-custom-main placeholder-custom-muted msg-textarea"></textarea>
+          <!-- Textarea — flex-grow + min-width:0 чтобы не выпирал -->
+          <div class="msg-input-wrap" style="flex:1 1 0; min-width:0; position:relative; z-index:20;">
+            <textarea id="message-input" rows="1" placeholder="Напишите сообщение..."
+                      class="w-full px-4 py-3 bg-custom-sidebar border-none rounded-2xl outline-none text-sm resize-none text-custom-main placeholder-custom-muted msg-textarea"></textarea>
           </div>
 
-          <!-- AI кнопка — z-index 20 через CSS -->
-          <button type="button" id="ai-btn" onclick="toggleAiPanel()" title="AI-ассистент">
+          <!-- AI кнопка -->
+          <button type="button" id="ai-btn" onclick="toggleAiPanel()" title="AI-ассистент" style="flex-shrink:0;">
             <div class="pulse-ring"></div>
             <div class="pulse-ring"></div>
             <div class="pulse-ring"></div>
@@ -178,18 +186,19 @@
             </div>
           </button>
 
-          <!-- Самолётик — z-index 20 через CSS -->
-          <button type="submit" id="send-btn" class="p-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 shadow-md">
-                            <span class="plane-icon">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/>
-                                </svg>
-                            </span>
-            <span class="plane-return">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/>
-                                </svg>
-                            </span>
+          <!-- Самолётик -->
+          <button type="submit" id="send-btn"
+                  style="flex-shrink:0; position:relative; overflow:hidden; padding:12px; background:#2563eb; color:#fff; border-radius:14px; box-shadow:0 2px 8px rgba(37,99,235,0.35);">
+            <span class="plane-icon" style="display:flex; align-items:center; justify-content:center;">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/>
+              </svg>
+            </span>
+            <span class="plane-return" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; transform:translate(-130%,130%); opacity:0;">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/>
+              </svg>
+            </span>
           </button>
         </form>
       </div>

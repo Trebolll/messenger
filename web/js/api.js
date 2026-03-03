@@ -148,7 +148,8 @@ async function apiCreatePrivateChat(userId) {
 
 async function apiSendMessage() {
     const input = document.getElementById('message-input');
-    const text = input.value.trim();
+    // Убираем лишние переносы: несколько \n подряд → один, trim по краям
+    const text = input.value.replace(/\n{2,}/g, '\n').trim();
     if (!text || !window.app.activeChatId) return;
     input.value = '';
     document.dispatchEvent(new Event('_msgSent'));

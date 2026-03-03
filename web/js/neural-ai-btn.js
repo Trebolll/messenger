@@ -9,6 +9,7 @@
   let animFrame = null;
   let nodes = [];
   let time = 0;
+  let lastTime = 0;
 
   function resize() {
     canvas.width = window.innerWidth;
@@ -40,9 +41,11 @@
     nodes.push({ x: cx, y: cy, r: 4, isCenter: true });
   }
 
-  function drawFrame() {
+  function drawFrame(now) {
+    const delta = lastTime ? Math.min((now - lastTime) / 1000, 0.05) : 0.016;
+    lastTime = now;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    time += 0.012;
+    time += 0.012 * (delta / 0.016);
     const center = nodes[nodes.length - 1];
     const cx = center.x, cy = center.y;
 
