@@ -4,11 +4,39 @@
   const canvas = document.getElementById('lambda-canvas');
   if (!canvas) return;
 
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: false }); // alpha:false — браузер не тратит время на композитинг прозрачности
   let W, H, cx, cy, dpr;
   let t = 0;
   let raf;
   let lastTime = 0;
+
+  // ── Кэш цвета — обновляем только при смене темы, не каждый кадр ──────
+  let _accentR = 59, _accentG = 130, _accentB = 246;
+  let _bgColor  = '#ffffff';
+  let _isDark   = false;
+  let _colorCacheFrame = -999; // номер кадра последнего обновления
+
+  function refreshColorCache() {
+    const style   = getComputedStyle(document.body);
+    const accent  = style.getPropertyValue('--accent-color').trim() || '#3b82f6';
+    _bgColor      = style.getPropertyValue('--bg-main').trim()      || '#ffffff';
+    _isDark       = _bgColor === '#1f2937' || _bgColor === '#1e1b2e' ||
+        _bgColor === '#0a1628' || _bgColor.startsWith('#0') ||
+        _bgColor.includes('rgb(0,');
+    if (accent.startsWith('#')) {
+      _accentR = parseInt(accent.slice(1, 3), 16);
+      _accentG = parseInt(accent.slice(3, 5), 16);
+      _accentB = parseInt(accent.slice(5, 7), 16);
+    }
+  }
+  refreshColorCache(); // один раз при старте
+
+  // Обновляем кэш при смене темы (MutationObserver на class body)
+  new MutationObserver(refreshColorCache).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+  function accentColor(alpha) {
+    return `rgba(${_accentR},${_accentG},${_accentB},${alpha})`;
+  }
 
   // ── Размеры ────────────────────────────────────────────────────────────
   function resize() {
@@ -32,18 +60,6 @@
 
   window.addEventListener('resize', resize);
   resize();
-
-  // ── Цвет из CSS-переменной (поддержка тем) ────────────────────────────
-  function accentColor(alpha) {
-    const computed = getComputedStyle(document.body).getPropertyValue('--accent-color').trim() || '#3b82f6';
-    if (computed.startsWith('#')) {
-      const r = parseInt(computed.slice(1, 3), 16);
-      const g = parseInt(computed.slice(3, 5), 16);
-      const b = parseInt(computed.slice(5, 7), 16);
-      return `rgba(${r},${g},${b},${alpha})`;
-    }
-    return computed.replace('rgb', 'rgba').replace(')', `,${alpha})`);
-  }
 
   // ── Рисуем λ ──────────────────────────────────────────────────────────
   function drawLambda(x, y, size, angle, alpha) {
@@ -72,180 +88,213 @@
     ctx.restore();
   }
 
-  // ── Частицы (Физически корректный аккреционный диск) ───────────────────
+  // ── Частицы ───────────────────────────────────────────────────────────
   const PARTICLE_COUNT = 1500;
+  // Используем TypedArrays — быстрее обычных объектов для числовых данных
+  const pR          = new Float32Array(PARTICLE_COUNT);
+  const pAngle      = new Float32Array(PARTICLE_COUNT);
+  const pSize       = new Float32Array(PARTICLE_COUNT);
+  const pPhase      = new Float32Array(PARTICLE_COUNT);
+  const pShrink     = new Float32Array(PARTICLE_COUNT);
+  const pTilt       = new Float32Array(PARTICLE_COUNT);
+  const pPitch      = new Float32Array(PARTICLE_COUNT);
+  const pCosT       = new Float32Array(PARTICLE_COUNT);
+  const pSinT       = new Float32Array(PARTICLE_COUNT);
+  const pIsLambda   = new Uint8Array(PARTICLE_COUNT);
 
-  function createParticle(i, isNew = false) {
+  function initParticle(i, isNew) {
     const screenMax = Math.max(W, H);
-    // При старте частицы распределяем ближе к видимой зоне
-    const r = isNew
-        ? (screenMax * 1.5 + Math.random() * screenMax)
-        : (10 + Math.random() * screenMax * 1.8);
-
-    return {
-      r: r,
-      angle: Math.random() * Math.PI * 2,
-      size: 0.25 + Math.random() * 0.8, // Оптимальный размер
-      phase: Math.random() * Math.PI * 2,
-      isLambda: i % 8 === 0,
-      shrinkSpeed: (0.01 + Math.random() * 0.04) * 0.3,
-      tilt: (Math.random() - 0.5) * 0.22,
-      pitch: 0.15 + Math.random() * 0.15,
-      cosT: 0,
-      sinT: 0
-    };
+    pR[i]        = isNew
+        ? (screenMax * 0.9 + Math.random() * screenMax * 0.6) // СПАВН БЛИЖЕ: чтобы быстрее долетали (было 1.5 * screenMax)
+        : (10 + Math.random() * screenMax * 1.5);
+    pAngle[i]    = Math.random() * Math.PI * 2;
+    pSize[i]     = 0.25 + Math.random() * 0.8;
+    pPhase[i]    = Math.random() * Math.PI * 2;
+    pShrink[i]   = (0.05 + Math.random() * 0.15) * 0.18;  // БЫСТРЕЕ: цикл жизни в минутах (было 0.01 + 0.04 * 0.11)
+    pTilt[i]     = (Math.random() - 0.5) * 0.22;
+    pPitch[i]    = 0.15 + Math.random() * 0.15;
+    pCosT[i]     = Math.cos(pTilt[i]);
+    pSinT[i]     = Math.sin(pTilt[i]);
+    pIsLambda[i] = (i % 8 === 0) ? 1 : 0;
   }
 
-  // Предрассчитываем тригонометрию для наклона
-  const particles = Array.from({ length: PARTICLE_COUNT }, (v, i) => {
-    const p = createParticle(i);
-    p.cosT = Math.cos(p.tilt);
-    p.sinT = Math.sin(p.tilt);
-    return p;
-  });
+  for (let i = 0; i < PARTICLE_COUNT; i++) initParticle(i, false);
 
-  // Экспортируем функцию для добавления внешних частиц (из кнопок)
+  // Предвычисленный кэш градиентов для mouse-glow (3 уровня яркости)
+  // Пересоздаём только при resize
+  let _glowGrad = null;
+  let _glowGradPx = -1, _glowGradPy = -1;
+
+  // ── Глобальные константы анимации ─────────────────────────────────────
+  const DISK_TILT = 0.33; // Наклон диска относительно горизонта (~18°)
+  const MOUSE_DIST_SQ = 80 * 80;
+
   window.spawnEscapedParticle = function(pageX, pageY, isLambda) {
-    const rect = canvas.getBoundingClientRect();
-    const x = (pageX - rect.left) * dpr;
-    const y = (pageY - rect.top) * dpr;
-
-    // Рассчитываем полярные координаты относительно центра диска
-    const dx = x - (W * dpr / 2);
-    const dy = (y - (H * dpr / 2)) / 0.28; // учитываем сплюснутость
-
-    const r = Math.sqrt(dx * dx + dy * dy) / dpr;
-    const angle = Math.atan2(dy, dx);
-
-    const tilt = (Math.random() - 0.5) * 0.5;
-    particles.push({
-      r: r,
-      angle: angle,
-      size: 0.8 + Math.random() * 1.2,
-      phase: Math.random() * Math.PI * 2,
-      isLambda: isLambda,
-      shrinkSpeed: 0.15 + Math.random() * 0.25, // Плавнее полет
-      tilt: tilt,
-      pitch: 0.2 + Math.random() * 0.1,
-      cosT: Math.cos(tilt),
-      sinT: Math.sin(tilt),
-      isEscaped: true
-    });
-
-    // Ограничиваем общее число чтобы не тормозило
-    if (particles.length > 600) particles.shift();
+    const rect  = canvas.getBoundingClientRect();
+    const x     = (pageX - rect.left) * dpr;
+    const y     = (pageY - rect.top)  * dpr;
+    
+    // Берем случайную частицу из основного массива и "телепортируем" её
+    const i = Math.floor(Math.random() * PARTICLE_COUNT);
+    
+    // Пересчитываем экранные координаты (CSS px) обратно в r и angle
+    const tx = (x - (W * dpr / 2)) / dpr;
+    const ty = (y - (H * dpr / 2)) / dpr;
+    
+    // Учитываем наклон диска (инвертируем сдвиг от DISK_TILT)
+    const dy_corr = ty + tx * DISK_TILT;
+    const pitch   = 0.15 + Math.random() * 0.15; 
+    
+    pR[i]        = Math.sqrt(tx * tx + Math.pow(dy_corr / pitch, 2));
+    pAngle[i]    = Math.atan2(dy_corr / pitch, tx);
+    pSize[i]     = 0.3 + Math.random() * 0.4; // В 2 РАЗА МЕНЬШЕ (было 0.8+1.2)
+    pTilt[i]     = 0; // Для точности спавна обнуляем наклон оси
+    pCosT[i]     = 1;
+    pSinT[i]     = 0;
+    pPitch[i]    = pitch;
+    pIsLambda[i] = isLambda ? 1 : 0;
   };
+
+  // ── Главный цикл ───────────────────────────────────────────────────────
 
   function draw(now) {
     const delta = lastTime ? Math.min((now - lastTime) / 1000, 0.05) : 0.001;
+    const dtFactor = delta / 0.016;
     lastTime = now;
-    const bodyStyle = getComputedStyle(document.body);
-    const bgColor = bodyStyle.getPropertyValue('--bg-main').trim() || '#ffffff';
-    const isDark = bgColor.includes('rgb(0,') || bgColor.includes('#0') || bgColor.length > 7 || bgColor === '#1f2937' || bgColor === '#1e1b2e' || bgColor === '#0a1628';
 
+    // Фон
     ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = bgColor;
-    ctx.globalAlpha = isDark ? 0.3 : 0.5; // Увеличиваем альфу, чтобы шлейф был короче
-    ctx.fillRect(0, 0, W * dpr, H * dpr);
+    ctx.fillStyle   = _bgColor;
+    ctx.globalAlpha = _isDark ? 0.3 : 0.5;
+    ctx.fillRect(0, 0, W, H);
 
-    ctx.globalCompositeOperation = isDark ? 'lighter' : 'source-over';
+    ctx.globalCompositeOperation = _isDark ? 'lighter' : 'source-over';
     ctx.globalAlpha = 1.0;
 
-    t += 0.0006 * (delta / 0.016); // delta-time нормализован к 60fps
+    t += 0.0006 * dtFactor;
 
-    const currentCx = W / 2;
-    const currentCy = H / 2;
+    // ── Основной массив частиц ─────────────────────────────────────────
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      // Физика
+      const gravityFactor = 1.6 / Math.pow(Math.max(20, pR[i]), 0.9);
+      // Завихрение у сингулярности: при r<60 угловая скорость резко растёт
+      const swirlBoost = pR[i] < 70          // РУЧКА: радиус начала завихрения (px)
+          ? 1 + Math.pow((70 - pR[i]) / 70, 2) * 10.5  // РУЧКА: сила (8=умеренно, 15=агрессивно)
+          : 1.0;
+      pAngle[i] += gravityFactor * swirlBoost * dtFactor;
 
-    // Используем обратный цикл для безопасного удаления частиц (splice)
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i];
+      // Ускорение притяжения расширено (до r=350), чтобы в центре не было пустоты
+      const gravPull = pR[i] < 350 ? (1 + 150 / (pR[i] + 5)) : 1.0; 
+      const fallSpeed = pShrink[i] * dtFactor * gravPull;
+      pR[i] -= fallSpeed;
 
-      // 1. Динамика вращения (еще плавнее переход скоростей)
-      const gravityFactor = 1.6 / Math.pow(Math.max(20, p.r), 0.9);
-      p.angle += gravityFactor;
-
-      // 2. Гравитационное ускорение падения (делаем мягче)
-      const fallSpeed = p.shrinkSpeed * (1 + 120 / (Math.max(0.1, p.r) + 2));
-      p.r -= fallSpeed;
-
-      // 3. Сингулярность: пропадают мгновенно и гарантированно
-      if (p.r < 12 || isNaN(p.r)) {
-        if (p.isEscaped) {
-          particles.splice(i, 1);
-        } else {
-          Object.assign(p, createParticle(i, true));
-          p.cosT = Math.cos(p.tilt);
-          p.sinT = Math.sin(p.tilt);
-        }
-        continue; // Критично: не рисовать частицу в этом кадре после перемещения/удаления
+      if (pR[i] < 12) {
+        initParticle(i, true);
+        continue;
       }
 
-      const cosA = Math.cos(p.angle);
-      const sinA = Math.sin(p.angle);
-      const rx = p.r * (1 + 0.01 * Math.sin(t * 1.5 + p.phase));
-      const ry = rx * p.pitch;
-      const lx = cosA * rx;
-      const ly = sinA * ry;
+      const cosA = Math.cos(pAngle[i]);
+      const sinA = Math.sin(pAngle[i]);
+      const rx   = pR[i] * (1 + 0.01 * Math.sin(t * 1.5 + pPhase[i]));
+      const ry   = rx * pPitch[i];
+      const lx   = cosA * rx;
+      const ly   = sinA * ry;
 
-      let px = currentCx + (lx * p.cosT - ly * p.sinT);
-      let py = currentCy + (lx * p.sinT + ly * p.cosT);
+      const px = cx + (lx * pCosT[i] - ly * pSinT[i]);
+      // Наклон диска — добавляем сдвиг по Y пропорционально X
+      const py = cy + (lx * pSinT[i] + ly * pCosT[i]) - (px - cx) * DISK_TILT;
 
-      const doppler = 1.0 - (sinA * 0.4);
-      const viewAlpha = Math.min(1, (1800 - p.r) / 700);
-      const distRatio = 1 - (Math.min(p.r, 1200) / 1200);
-      let alpha = (0.15 + 0.7 * distRatio) * doppler * viewAlpha;
-      let size = p.size * (1.0 + distRatio * 0.4);
+      const r = pR[i];
 
-      // Более агрессивное уменьшение и исчезновение при приближении к сингулярности
-      if (p.r < 100) {
-        const factor = Math.max(0, (p.r - 12) / 88);
-        size *= factor;
+      // Доплер: частицы летящие "от нас" чуть темнее — но не режем их в ноль
+      const doppler   = 0.7 + 0.3 * (1.0 - sinA * 0.4); // диапазон 0.58..1.0 вместо 0.6..1.4
+      // Видимость по расстоянию: плавно появляются начиная с r=1800
+      const viewAlpha = r > 1800 ? 0 : Math.min(1, (1800 - r) / 600);
+      // Яркость по близости к центру: чем ближе — тем ярче
+      const distRatio = 1 - (Math.min(r, 1200) / 1200);
+      let alpha = (0.12 + 0.75 * distRatio) * doppler * viewAlpha;
+      let size  = pSize[i] * (1.0 + distRatio * 0.5);
+
+      // Затухание только в последние пиксели перед сингулярностью
+      if (r < 20) {
+        const factor = Math.max(0, (r - 12) / 8);
+        size  *= factor;
         alpha *= factor;
       }
 
-      if (sinA < 0) alpha *= 0.75;
+      // sinA < 0 — обратная сторона диска, чуть темнее но не убиваем
+      if (sinA < 0) alpha *= 0.8;
 
-      const dx = px - mx;
-      const dy = py - my;
-      const mouseDist = Math.sqrt(dx * dx + dy * dy);
-      if (mouseDist < 80 && alpha > 0.02) {
-        const glow = Math.pow(1 - mouseDist / 80, 2) * Math.min(1, alpha * 4);
-        ctx.save();
-        const coreGrad = ctx.createRadialGradient(px, py, 0, px, py, size * 2);
-        coreGrad.addColorStop(0, `rgba(255,255,255,${glow})`);
-        coreGrad.addColorStop(0.5, accentColor(glow));
-        coreGrad.addColorStop(1, 'transparent');
-        ctx.beginPath();
-        ctx.arc(px, py, size * 2.5, 0, Math.PI * 2);
-        ctx.fillStyle = coreGrad;
-        ctx.fill();
+      // Не рисуем только совсем невидимое — физика продолжает работать всегда
+      if (alpha < 0.002) continue;
 
-        const auraGrad = ctx.createRadialGradient(px, py, size * 2, px, py, size * 15);
-        auraGrad.addColorStop(0, accentColor(glow * 0.4));
-        auraGrad.addColorStop(1, accentColor(0));
-        ctx.beginPath();
-        ctx.arc(px, py, size * 15, 0, Math.PI * 2);
-        ctx.fillStyle = auraGrad;
-        if (isDark) ctx.globalCompositeOperation = 'lighter';
-        ctx.fill();
+      // Mouse glow
+      const ddx = px - mx;
+      const ddy = py - my;
+      const distSq = ddx * ddx + ddy * ddy;
+      if (distSq < MOUSE_DIST_SQ && alpha > 0.01) {
+        const mouseDist = Math.sqrt(distSq);
+        const proximity = 1 - mouseDist / 80;           // 0..1, 1 = точно под курсором
+        const glow = Math.pow(proximity, 1.6);           // более плавная кривая (было ^2)
 
-        if (glow > 0.3) {
+        if (glow > 0.03) {
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';      // additive — даёт реальную яркость
+
+          // Ядро — ослепительно белое в центре
+          const coreR = size * 3.5;
+          const coreGrad = ctx.createRadialGradient(px, py, 0, px, py, coreR);
+          coreGrad.addColorStop(0,   `rgba(255,255,255,${glow * 0.95})`);
+          coreGrad.addColorStop(0.2, `rgba(255,255,255,${glow * 0.6})`);
+          coreGrad.addColorStop(0.5, accentColor(glow * 0.8));
+          coreGrad.addColorStop(1,   accentColor(0));
           ctx.beginPath();
-          ctx.strokeStyle = isDark ? `rgba(255,255,255,${glow * 0.3})` : accentColor(glow * 0.4);
-          ctx.lineWidth = 0.5;
-          ctx.moveTo(px, py - size * 12 * glow);
-          ctx.lineTo(px, py + size * 12 * glow);
-          ctx.moveTo(px - size * 12 * glow, py);
-          ctx.lineTo(px + size * 12 * glow, py);
-          ctx.stroke();
+          ctx.arc(px, py, coreR, 0, Math.PI * 2);
+          ctx.fillStyle = coreGrad;
+          ctx.fill();
+
+          // Широкая аура вокруг — цвет акцента
+          const auraR = size * 28 * glow + 18;
+          const auraGrad = ctx.createRadialGradient(px, py, coreR, px, py, auraR);
+          auraGrad.addColorStop(0,   accentColor(glow * 0.35));
+          auraGrad.addColorStop(0.4, accentColor(glow * 0.12));
+          auraGrad.addColorStop(1,   accentColor(0));
+          ctx.beginPath();
+          ctx.arc(px, py, auraR, 0, Math.PI * 2);
+          ctx.fillStyle = auraGrad;
+          ctx.fill();
+
+          // Блик-крест (звёздочка) — только когда совсем близко
+          if (glow > 0.45) {
+            const arm = (size * 18 + 10) * glow;
+            ctx.lineWidth = size * 1.2;
+            ctx.lineCap = 'round';
+            // Горизонталь
+            const hGrad = ctx.createLinearGradient(px - arm, py, px + arm, py);
+            hGrad.addColorStop(0,   accentColor(0));
+            hGrad.addColorStop(0.5, `rgba(255,255,255,${glow * 0.8})`);
+            hGrad.addColorStop(1,   accentColor(0));
+            ctx.beginPath();
+            ctx.moveTo(px - arm, py); ctx.lineTo(px + arm, py);
+            ctx.strokeStyle = hGrad;
+            ctx.stroke();
+            // Вертикаль
+            const vGrad = ctx.createLinearGradient(px, py - arm, px, py + arm);
+            vGrad.addColorStop(0,   accentColor(0));
+            vGrad.addColorStop(0.5, `rgba(255,255,255,${glow * 0.8})`);
+            vGrad.addColorStop(1,   accentColor(0));
+            ctx.beginPath();
+            ctx.moveTo(px, py - arm); ctx.lineTo(px, py + arm);
+            ctx.strokeStyle = vGrad;
+            ctx.stroke();
+          }
+
+          ctx.restore();
         }
-        ctx.restore();
       }
 
-      if (p.isLambda) {
-        const s = size * 6;
-        const a = alpha * (0.7 + 0.3 * Math.sin(t * 2 + p.phase));
-        drawLambda(px, py, s, p.angle, a);
+      if (pIsLambda[i]) {
+        drawLambda(px, py, size * 6, pAngle[i], alpha * (0.7 + 0.3 * Math.sin(t * 2 + pPhase[i])));
       } else {
         ctx.beginPath();
         ctx.arc(px, py, size, 0, Math.PI * 2);
@@ -253,16 +302,7 @@
         ctx.fill();
       }
 
-      if (sinA < -0.2) {
-        const lensY = (Math.abs(sinA) * p.r * 0.6);
-        const lensAlpha = alpha * 0.35 * (1 - lensY / 200);
-        if (lensAlpha > 0) {
-          ctx.beginPath();
-          ctx.arc(currentCx + cosA * rx * 0.8, currentCy - 28 - lensY * 0.4, size * 0.6, 0, Math.PI * 2);
-          ctx.fillStyle = accentColor(lensAlpha);
-          ctx.fill();
-        }
-      }
+      // линзирование убрано — создавало дублирование диска
     }
 
     raf = requestAnimationFrame(draw);
@@ -270,9 +310,8 @@
 
   draw();
 
-  // ── Стоп при уходе со страницы ────────────────────────────────────────
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { cancelAnimationFrame(raf); }
-    else { t = 0; draw(); }
+    else { lastTime = 0; draw(); }
   });
 })();
