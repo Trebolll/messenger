@@ -366,6 +366,16 @@ function renderChatHeader() {
   const isCreator  = isGroup && chat.creator_id && String(chat.creator_id) === String(app.currentUser?.id);
   const displayName = chatDisplayName(chat);
 
+  // ── Плавная смена имени и аватара ──────────────────────────────────
+  const nameEl   = document.getElementById('active-chat-name');
+  const avatarEl = document.getElementById('active-chat-avatar');
+  if (nameEl)   { nameEl.style.opacity   = '0'; }
+  if (avatarEl) { avatarEl.style.opacity = '0'; avatarEl.style.transform = 'scale(0.85)'; }
+  setTimeout(() => {
+    if (nameEl)   { nameEl.style.opacity   = '1'; }
+    if (avatarEl) { avatarEl.style.opacity = '1'; avatarEl.style.transform = 'scale(1)'; }
+  }, 160);
+
   // ── Имя в хедере чата ──────────────────────────────────────────────
   document.getElementById('active-chat-name').textContent = displayName;
 
@@ -607,7 +617,18 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-function scrollToBottom() {
+function scrollToBottom(instant) {
   const container = document.getElementById('messages-container');
-  setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
+  if (!container) return;
+  if (instant) {
+    // Скрываем контейнер, скроллим в самый низ, потом показываем — без вспышки верха
+    container.style.visibility = 'hidden';
+    container.scrollTop = container.scrollHeight;
+    requestAnimationFrame(function() {
+      container.scrollTop = container.scrollHeight;
+      container.style.visibility = '';
+    });
+  } else {
+    setTimeout(function() { container.scrollTop = container.scrollHeight; }, 50);
+  }
 }

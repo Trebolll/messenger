@@ -251,3 +251,112 @@
     .text-custom-main { color: var(--text-main); }
     .text-custom-muted { color: var(--text-muted); }
     .border-custom { border-color: var(--border-color); }
+
+/* ══ Плавные переходы между чатами ══ */
+
+/* Контейнер сообщений — fade */
+#messages-container {
+  transition: opacity 0.18s ease;
+}
+#messages-container.chat-switching {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Шапка чата — slide + fade */
+#chat-header {
+  transition: opacity 0.15s ease, transform 0.18s ease;
+}
+#chat-header.chat-switching {
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+
+/* Skeleton-строки при загрузке */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-msg {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 4px 24px;
+  opacity: 0;
+  animation: msg-fade-in 0.2s ease forwards;
+}
+.skeleton-msg.me { flex-direction: row-reverse; }
+
+@keyframes msg-fade-in {
+  to { opacity: 1; }
+}
+
+.skeleton-bubble {
+  border-radius: 18px;
+  height: 38px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-item-hover) 25%,
+    var(--bg-sidebar)    50%,
+    var(--bg-item-hover) 75%
+  );
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s infinite linear;
+}
+
+.skeleton-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(
+    90deg,
+    var(--bg-item-hover) 25%,
+    var(--bg-sidebar)    50%,
+    var(--bg-item-hover) 75%
+  );
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s infinite linear;
+}
+
+/* Анимация появления сообщений после загрузки */
+#messages-container.chat-loaded [data-msg-id] {
+  animation: msg-slide-in 0.22s ease both;
+}
+
+@keyframes msg-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Заголовок чата — плавное появление нового чата */
+#active-chat-name {
+  transition: opacity 0.15s ease;
+}
+#active-chat-avatar {
+  transition: opacity 0.15s ease, transform 0.2s ease;
+}
+
+/* ── Плавная активация чата в списке ── */
+.chat-list-item {
+  transition: background 0.15s ease, border-left-color 0.15s ease, opacity 0.12s ease;
+}
+.chat-list-item.active {
+  transition: background 0.15s ease, border-left-color 0.2s ease;
+}
+
+/* ── Плавный transition для аватара и имени в хедере ── */
+#active-chat-name {
+  transition: opacity 0.16s ease;
+}
+#active-chat-avatar {
+  transition: opacity 0.16s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}

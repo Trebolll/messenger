@@ -25,24 +25,76 @@ async function apiLoadChats() {
 }
 
 async function apiLoadMessages(chatId) {
+    const prevChatId = window.app.activeChatId;
     window.app.activeChatId = chatId;
-    // Снимаем подсветку непрочитанных при входе в чат
     if (typeof _clearUnreadHighlight === 'function') _clearUnreadHighlight(chatId);
-    document.getElementById('no-chat-selected').classList.add('hidden');
+
+    const container = document.getElementById('messages-container');
+    const header    = document.getElementById('chat-header');
+    const noChat    = document.getElementById('no-chat-selected');
     const inputArea = document.getElementById('input-area');
-    inputArea.classList.remove('hidden');
-    requestAnimationFrame(() => inputArea.classList.add('visible'));
+
+    // ── 1. Fade-out текущего контента ──────────────────────────
+    const isSwitch = !!prevChatId && prevChatId !== chatId;
+    if (isSwitch && container) {
+        container.classList.add('chat-switching');
+        if (header) header.classList.add('chat-switching');
+        await new Promise(r => setTimeout(r, 180));
+    }
+
+    // ── 2. Показываем UI чата (если первый раз) ────────────────
+    if (noChat)    noChat.classList.add('hidden');
+    if (inputArea) { inputArea.classList.remove('hidden'); requestAnimationFrame(() => inputArea.classList.add('visible')); }
     if (typeof switchView === 'function') switchView('chat');
-    renderChatHeader();
+
+    // ── 3. Skeleton пока грузим ────────────────────────────────
+    if (container) {
+        container.classList.remove('chat-switching', 'chat-loaded');
+        container.innerHTML = _buildSkeleton();
+    }
+    if (header) {
+        header.classList.remove('chat-switching');
+        renderChatHeader();
+    }
+
+    // ── 4. Запрос ──────────────────────────────────────────────
     try {
         const res = await apiFetch(`/api/chats/${chatId}/messages`);
+        // Проверяем что пользователь не переключился пока грузили
+        if (window.app.activeChatId !== chatId) return;
         window.app.messages = res || [];
+
+        // ── 5. Fade-in сообщений ───────────────────────────────
         renderMessages();
-        scrollToBottom();
+        scrollToBottom(true); // instant — прячем → скроллим → показываем
+        if (container) {
+            container.classList.add('chat-loaded');
+            setTimeout(() => container.classList.remove('chat-loaded'), 600);
+        }
         await apiMarkChatAsRead(chatId);
     } catch (err) {
+        if (container) container.innerHTML = '';
         window.app.notify('Ошибка загрузки сообщений', 'error');
     }
+}
+
+// Skeleton — 6 рандомных пузырей разной ширины
+function _buildSkeleton() {
+    const rows = [
+        { me: false, w: 180 }, { me: true,  w: 220 },
+        { me: false, w: 140 }, { me: true,  w: 160 },
+        { me: false, w: 200 }, { me: true,  w: 110 },
+    ];
+    return rows.map(function(r, i) {
+        const avatarHtml = r.me ? '' : '<div class="skeleton-avatar"></div>';
+        const msgClass   = 'skeleton-msg' + (r.me ? ' me' : '');
+        const rowDelay   = 'animation-delay:' + (i * 40) + 'ms';
+        const bubStyle   = 'width:' + r.w + 'px; animation-delay:' + (i * 60) + 'ms';
+        return '<div class="' + msgClass + '" style="' + rowDelay + '">'
+            + avatarHtml
+            + '<div class="skeleton-bubble" style="' + bubStyle + '"></div>'
+            + '</div>';
+    }).join('');
 }
 
 async function apiSearchUsers(query) {
