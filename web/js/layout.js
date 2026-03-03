@@ -17,6 +17,16 @@
     return mc && !mc.classList.contains('hidden');
   }
 
+  // Показать/скрыть элемент с нужным display (flex или block)
+  function show(elem, displayType) {
+    if (!elem) return;
+    elem.style.display = displayType || 'block';
+  }
+  function hide(elem) {
+    if (!elem) return;
+    elem.style.display = 'none';
+  }
+
   // ── Layout ──────────────────────────────────────────────────
   function applyLayout() {
     var leftPanel    = el('left-panel');
@@ -28,34 +38,38 @@
 
     if (state.chatOpen) {
       document.body.classList.add('chat-open');
-      if (leftPanel)    leftPanel.classList.toggle('hidden', !state.chatsVisible);
-      if (chatsSidebar) chatsSidebar.classList.remove('hidden');
-      if (viewHome)     viewHome.classList.add('hidden');
-      if (viewChat)     viewChat.classList.remove('hidden');
-      if (noChat)       noChat.classList.add('hidden');
-      if (inputArea)    inputArea.classList.remove('hidden');
+      // Левая панель: видна только если чаты открыты
+      if (leftPanel) { state.chatsVisible ? show(leftPanel, 'flex') : hide(leftPanel); }
+      if (chatsSidebar) show(chatsSidebar, 'flex');
+      if (viewHome)     hide(viewHome);
+      if (viewChat)     show(viewChat, 'flex');
+      if (noChat)       hide(noChat);
+      if (inputArea)    show(inputArea, 'flex');
       hideFeedRight();
     } else {
       document.body.classList.remove('chat-open');
-      if (viewChat)  viewChat.classList.add('hidden');
-      if (inputArea) inputArea.classList.add('hidden');
-      if (noChat)    noChat.classList.remove('hidden');
+      if (viewChat)  hide(viewChat);
+      if (inputArea) hide(inputArea);
+      if (noChat)    show(noChat);
 
       if (state.chatsVisible && state.feedVisible) {
-        if (leftPanel)    leftPanel.classList.remove('hidden');
-        if (chatsSidebar) chatsSidebar.classList.remove('hidden');
-        if (viewHome)     viewHome.classList.add('hidden');
+        // Чаты слева + лента справа
+        if (leftPanel)    show(leftPanel, 'flex');
+        if (chatsSidebar) show(chatsSidebar, 'flex');
+        if (viewHome)     hide(viewHome);
         showFeedRight();
       } else if (state.chatsVisible) {
-        if (leftPanel)    leftPanel.classList.remove('hidden');
-        if (chatsSidebar) chatsSidebar.classList.remove('hidden');
-        if (viewHome)     viewHome.classList.add('hidden');
+        // Только чаты
+        if (leftPanel)    show(leftPanel, 'flex');
+        if (chatsSidebar) show(chatsSidebar, 'flex');
+        if (viewHome)     hide(viewHome);
         hideFeedRight();
       } else {
+        // Только лента (дефолт)
         state.feedVisible = true;
-        if (leftPanel)    leftPanel.classList.remove('hidden');
-        if (chatsSidebar) chatsSidebar.classList.add('hidden');
-        if (viewHome)     viewHome.classList.remove('hidden');
+        if (leftPanel)    show(leftPanel, 'flex');
+        if (chatsSidebar) hide(chatsSidebar);
+        if (viewHome)     show(viewHome, 'flex');
         hideFeedRight();
       }
     }
@@ -71,7 +85,7 @@
     if (!mainChat || !viewChat) return;
     var panel = document.createElement('div');
     panel.id = 'feed-right-panel';
-    panel.className = 'flex-grow h-full bg-custom-main overflow-y-auto hidden';
+    panel.style.cssText = 'display:none;flex:1;height:100%;overflow-y:auto;background:var(--bg-main);';
     mainChat.insertBefore(panel, viewChat);
   }
 
@@ -80,7 +94,8 @@
     var panel    = el('feed-right-panel');
     var viewHome = el('view-home');
     if (!panel) return;
-    panel.classList.remove('hidden');
+    panel.style.display = 'flex';
+    panel.style.flexDirection = 'column';
     if (viewHome && panel.children.length === 0) {
       Array.from(viewHome.children).forEach(function (child) {
         panel.appendChild(child.cloneNode(true));
@@ -90,7 +105,7 @@
 
   function hideFeedRight() {
     var panel = el('feed-right-panel');
-    if (panel) panel.classList.add('hidden');
+    if (panel) panel.style.display = 'none';
   }
 
   // ── Публичное API ───────────────────────────────────────────
@@ -106,13 +121,10 @@
   };
 
   // switchView — совместимость с api.js
-  // 'chat' — открыть чат (вызывается из apiLoadMessages)
-  // 'home' — закрыть чат, показать ленту
   window.switchView = function (view) {
     if (view === 'chat') {
       state.feedWasVisible = state.feedVisible;
       state.chatOpen = true;
-      // Если чаты не открыты — скрываем левую панель в режиме чата
       applyLayout();
     } else if (view === 'home') {
       closeChat(true);
@@ -173,9 +185,7 @@
     document.addEventListener('mousemove', function (e) {
       if (!isMainChatVisible()) return;
       if (state.chatOpen) return;
-      if (window.innerHeight - e.clientY <= TRIGGER_PX) {
-        showDock();
-      }
+      if (window.innerHeight - e.clientY <= TRIGGER_PX) showDock();
     });
 
     dock.addEventListener('mouseenter', function () {
@@ -209,6 +219,7 @@
     initDock();
     updateDockActive();
 
+    // Применить layout сразу если уже в чат-режиме
     if (isMainChatVisible()) {
       state.chatsVisible = false;
       state.feedVisible  = true;

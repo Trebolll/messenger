@@ -1,0 +1,336 @@
+/* ══ New Chat Modal ══ */
+    .new-chat-backdrop {
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .new-chat-modal-card {
+      background: var(--nc-bg, rgba(255,255,255,0.72));
+      border: 1px solid var(--nc-border, rgba(255,255,255,0.5));
+      border-radius: 24px;
+      box-shadow: var(--nc-shadow, 0 8px 40px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.6) inset);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    /* Светлая тема */
+    :root {
+      --nc-bg: rgba(255,255,255,0.78);
+      --nc-border: rgba(226,232,240,0.8);
+      --nc-shadow: 0 8px 40px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.9);
+      --nc-search-bg: rgba(241,245,249,0.7);
+      --nc-search-border: rgba(226,232,240,0.6);
+      --nc-result-hover: rgba(241,245,249,0.8);
+      --nc-chip-bg: rgba(59,130,246,0.12);
+      --nc-chip-border: rgba(59,130,246,0.25);
+      --nc-chip-text: #2563eb;
+      --nc-divider: rgba(226,232,240,0.6);
+      --nc-btn-bg: #2563eb;
+      --nc-btn-text: #fff;
+      --nc-btn-hover: #1d4ed8;
+      --nc-btn-group-bg: #16a34a;
+      --nc-btn-group-hover: #15803d;
+      --nc-close-hover: rgba(0,0,0,0.06);
+    }
+
+    body.theme-gray {
+      --nc-bg: rgba(31,41,55,0.82);
+      --nc-border: rgba(75,85,99,0.5);
+      --nc-shadow: 0 8px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04);
+      --nc-search-bg: rgba(17,24,39,0.6);
+      --nc-search-border: rgba(75,85,99,0.5);
+      --nc-result-hover: rgba(55,65,81,0.7);
+      --nc-chip-bg: rgba(96,165,250,0.15);
+      --nc-chip-border: rgba(96,165,250,0.3);
+      --nc-chip-text: #93c5fd;
+      --nc-divider: rgba(75,85,99,0.4);
+      --nc-btn-bg: #2563eb;
+      --nc-btn-text: #fff;
+      --nc-btn-hover: #1d4ed8;
+      --nc-btn-group-bg: #16a34a;
+      --nc-btn-group-hover: #15803d;
+      --nc-close-hover: rgba(255,255,255,0.06);
+    }
+
+    body.theme-twilight {
+      --nc-bg: rgba(30,27,46,0.85);
+      --nc-border: rgba(124,58,237,0.25);
+      --nc-shadow: 0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(167,139,250,0.07);
+      --nc-search-bg: rgba(19,17,31,0.6);
+      --nc-search-border: rgba(124,58,237,0.3);
+      --nc-result-hover: rgba(45,38,64,0.8);
+      --nc-chip-bg: rgba(167,139,250,0.15);
+      --nc-chip-border: rgba(167,139,250,0.3);
+      --nc-chip-text: #c4b5fd;
+      --nc-divider: rgba(124,58,237,0.2);
+      --nc-btn-bg: #7c3aed;
+      --nc-btn-text: #fff;
+      --nc-btn-hover: #6d28d9;
+      --nc-btn-group-bg: #059669;
+      --nc-btn-group-hover: #047857;
+      --nc-close-hover: rgba(167,139,250,0.1);
+    }
+
+    body.theme-dawn {
+      --nc-bg: rgba(240,250,244,0.82);
+      --nc-border: rgba(34,197,94,0.2);
+      --nc-shadow: 0 8px 40px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.95);
+      --nc-search-bg: rgba(209,237,224,0.5);
+      --nc-search-border: rgba(34,197,94,0.2);
+      --nc-result-hover: rgba(187,222,206,0.6);
+      --nc-chip-bg: rgba(22,163,74,0.12);
+      --nc-chip-border: rgba(22,163,74,0.25);
+      --nc-chip-text: #15803d;
+      --nc-divider: rgba(34,197,94,0.2);
+      --nc-btn-bg: #16a34a;
+      --nc-btn-text: #fff;
+      --nc-btn-hover: #15803d;
+      --nc-btn-group-bg: #0d9488;
+      --nc-btn-group-hover: #0f766e;
+      --nc-close-hover: rgba(22,163,74,0.1);
+    }
+
+    body.theme-sunset {
+      --nc-bg: rgba(255,248,240,0.82);
+      --nc-border: rgba(234,88,12,0.2);
+      --nc-shadow: 0 8px 40px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.95);
+      --nc-search-bg: rgba(253,224,192,0.4);
+      --nc-search-border: rgba(234,88,12,0.2);
+      --nc-result-hover: rgba(252,208,160,0.5);
+      --nc-chip-bg: rgba(234,88,12,0.1);
+      --nc-chip-border: rgba(234,88,12,0.25);
+      --nc-chip-text: #c2410c;
+      --nc-divider: rgba(234,88,12,0.15);
+      --nc-btn-bg: #ea580c;
+      --nc-btn-text: #fff;
+      --nc-btn-hover: #c2410c;
+      --nc-btn-group-bg: #b45309;
+      --nc-btn-group-hover: #92400e;
+      --nc-close-hover: rgba(234,88,12,0.08);
+    }
+
+    body.theme-coral {
+      --nc-bg: rgba(255,245,245,0.82);
+      --nc-border: rgba(239,68,68,0.2);
+      --nc-shadow: 0 8px 40px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.95);
+      --nc-search-bg: rgba(255,214,214,0.4);
+      --nc-search-border: rgba(239,68,68,0.2);
+      --nc-result-hover: rgba(255,192,192,0.5);
+      --nc-chip-bg: rgba(239,68,68,0.1);
+      --nc-chip-border: rgba(239,68,68,0.25);
+      --nc-chip-text: #b91c1c;
+      --nc-divider: rgba(239,68,68,0.15);
+      --nc-btn-bg: #ef4444;
+      --nc-btn-text: #fff;
+      --nc-btn-hover: #dc2626;
+      --nc-btn-group-bg: #b45309;
+      --nc-btn-group-hover: #92400e;
+      --nc-close-hover: rgba(239,68,68,0.08);
+    }
+
+    body.theme-ocean {
+      --nc-bg: rgba(10,22,40,0.88);
+      --nc-border: rgba(14,165,233,0.2);
+      --nc-shadow: 0 8px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(14,165,233,0.07);
+      --nc-search-bg: rgba(6,14,28,0.6);
+      --nc-search-border: rgba(14,165,233,0.25);
+      --nc-result-hover: rgba(15,32,64,0.8);
+      --nc-chip-bg: rgba(14,165,233,0.15);
+      --nc-chip-border: rgba(14,165,233,0.3);
+      --nc-chip-text: #38bdf8;
+      --nc-divider: rgba(14,165,233,0.15);
+      --nc-btn-bg: #0ea5e9;
+      --nc-btn-text: #fff;
+      --nc-btn-hover: #0284c7;
+      --nc-btn-group-bg: #059669;
+      --nc-btn-group-hover: #047857;
+      --nc-close-hover: rgba(14,165,233,0.1);
+    }
+
+    body.theme-mint {
+      --nc-bg: rgba(240,255,254,0.82);
+      --nc-border: rgba(13,148,136,0.2);
+      --nc-shadow: 0 8px 40px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.98);
+      --nc-search-bg: rgba(184,240,237,0.4);
+      --nc-search-border: rgba(13,148,136,0.2);
+      --nc-result-hover: rgba(142,232,228,0.4);
+      --nc-chip-bg: rgba(13,148,136,0.1);
+      --nc-chip-border: rgba(13,148,136,0.25);
+      --nc-chip-text: #0f766e;
+      --nc-divider: rgba(13,148,136,0.15);
+      --nc-btn-bg: #0d9488;
+      --nc-btn-text: #fff;
+      --nc-btn-hover: #0f766e;
+      --nc-btn-group-bg: #0369a1;
+      --nc-btn-group-hover: #075985;
+      --nc-close-hover: rgba(13,148,136,0.08);
+    }
+
+    .new-chat-header { }
+
+    .new-chat-close-btn {
+      color: var(--text-muted);
+      transition: background 0.2s, color 0.2s;
+    }
+    .new-chat-close-btn:hover { background: var(--nc-close-hover); color: var(--text-main); }
+
+    .new-chat-divider {
+      height: 1px;
+      background: var(--nc-divider);
+    }
+
+    .new-chat-search-input {
+      background: var(--nc-search-bg);
+      border: 1px solid var(--nc-search-border);
+      color: var(--text-main);
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .new-chat-search-input::placeholder { color: var(--text-muted); opacity: 0.7; }
+    .new-chat-search-input:focus { border-color: var(--accent-color); outline: none; }
+
+    /* Search result items */
+    #search-results .nc-result-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+      position: relative;
+    }
+    #search-results .nc-result-item:hover { background: var(--nc-result-hover); }
+    #search-results .nc-result-item.selected { background: var(--nc-chip-bg); }
+    #search-results .nc-result-item .nc-check {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--nc-chip-border);
+      background: transparent;
+      transition: background 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #search-results .nc-result-item.selected .nc-check {
+      background: var(--accent-color);
+      border-color: var(--accent-color);
+    }
+
+    /* Chips */
+    .nc-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px 4px 6px;
+      border-radius: 999px;
+      background: var(--nc-chip-bg);
+      border: 1px solid var(--nc-chip-border);
+      color: var(--nc-chip-text);
+      font-size: 12px; font-weight: 500;
+      animation: chipIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes chipIn {
+      from { transform: scale(0.7); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+    .nc-chip-avatar {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--accent-color);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: #fff;
+    }
+    .nc-chip-remove {
+      width: 14px; height: 14px;
+      opacity: 0.5; cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .nc-chip-remove:hover { opacity: 1; }
+
+    /* Action button */
+    .create-chat-btn {
+      background: var(--nc-btn-bg);
+      color: var(--nc-btn-text);
+      border-radius: 14px;
+      font-weight: 600;
+      font-size: 14px;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    }
+    .create-chat-btn:hover { background: var(--nc-btn-hover); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+    .create-chat-btn:active { transform: translateY(0); }
+    .create-chat-btn.group-mode {
+      background: var(--nc-btn-group-bg);
+    }
+    .create-chat-btn.group-mode:hover { background: var(--nc-btn-group-hover); }
+
+    /* Footer slide-in */
+    #new-chat-footer {
+      animation: footerSlideIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes footerSlideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ══ New Chat Button ══ */
+    #new-chat-btn {
+      position: relative;
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      color: var(--text-muted);
+      transition: color 0.25s, background 0.25s, transform 0.2s, box-shadow 0.3s;
+      outline: none;
+    }
+
+    /* Пульсирующее кольцо */
+    #new-chat-btn::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 2px solid rgba(34,197,94,0);
+      transition: border-color 0.3s, inset 0.3s;
+      pointer-events: none;
+    }
+
+    /* Свечение-фон */
+    #new-chat-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(34,197,94,0.18) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    #new-chat-btn:hover {
+      color: #22c55e;
+      background: rgba(34,197,94,0.1);
+      transform: scale(1.1);
+    }
+    #new-chat-btn:hover::before { border-color: rgba(34,197,94,0.45); inset: -5px; }
+    #new-chat-btn:hover::after  { opacity: 1; }
+
+    /* Иконка плюса — поворот при hover */
+    #new-chat-btn svg {
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    #new-chat-btn:hover svg { transform: rotate(90deg) scale(1.12); }
+
+    /* Клик */
+    #new-chat-btn:active { transform: scale(0.9); background: rgba(34,197,94,0.2); }
+
+    /* Анимация вспышки */
+    @keyframes newChatFlash {
+      0%   { box-shadow: 0 0 0 0   rgba(34,197,94,0.6);  transform: scale(0.9); }
+      35%  { box-shadow: 0 0 0 10px rgba(34,197,94,0.22); transform: scale(1.14); }
+      65%  { box-shadow: 0 0 0 18px rgba(34,197,94,0.07); transform: scale(1.04); }
+      100% { box-shadow: 0 0 0 24px rgba(34,197,94,0);    transform: scale(1); }
+    }
+    #new-chat-btn.clicked { animation: newChatFlash 0.55s cubic-bezier(0.22,1,0.36,1) forwards; }
+
+    /* Пульс кольца после клика */
+    @keyframes newChatRing {
+      0%   { inset: -4px;  border-color: rgba(34,197,94,0.65); }
+      100% { inset: -16px; border-color: rgba(34,197,94,0); }
+    }
+    #new-chat-btn.pulsing::before { animation: newChatRing 0.7s ease-out 2; }
