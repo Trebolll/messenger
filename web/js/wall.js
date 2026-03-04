@@ -9,77 +9,48 @@ function toggleWall() {
     }
 }
 
-async function openWall() {
+async function openWall(userId = null) {
     const overlay = document.getElementById('wall-overlay');
     const modal   = document.getElementById('wall-modal');
     
-    // Заполняем данные пользователя
-    const user = window.app.currentUser;
-    if (user) {
-        document.getElementById('wall-username').textContent = user.username || 'User';
-        document.getElementById('wall-status').textContent   = user.status || 'Статус не установлен';
-        
-        const avatarEl = document.getElementById('wall-avatar');
-        setAvatarEl(avatarEl, user);
-        
+    // Если id не передан или совпадает с текущим, открываем свою стену
+    const isMe = !userId || String(userId) === String(window.app.currentUser?.id);
+    const targetUserId = isMe ? window.app.currentUser?.id : userId;
+
+    if (!targetUserId) return;
+
+    // Скрываем/показываем кнопки редактирования
+    const editProfileBtn = document.getElementById('wall-settings-btn');
+    const editBioBtn     = document.getElementById('edit-bio-btn');
+    // Находим контейнер создания поста
+    const postInputContainer = document.getElementById('wall-post-creator');
+    
+    if (editProfileBtn) editProfileBtn.style.display = isMe ? 'flex' : 'none';
+    if (editBioBtn)     editBioBtn.style.display     = isMe ? 'block' : 'none';
+    if (postInputContainer) postInputContainer.style.display = isMe ? 'block' : 'none';
+
+    // Очищаем/Заполняем начальные данные
+    document.getElementById('wall-username').textContent = isMe ? (window.app.currentUser?.username || 'User') : 'Загрузка...';
+    document.getElementById('wall-status').textContent   = isMe ? (window.app.currentUser?.status || '') : '';
+    
+    const avatarEl = document.getElementById('wall-avatar');
+    if (isMe) {
+        setAvatarEl(avatarEl, window.app.currentUser);
         const creatorAvatar = document.getElementById('creator-avatar');
-        setAvatarEl(creatorAvatar, user);
+        setAvatarEl(creatorAvatar, window.app.currentUser);
     }
 
     overlay.classList.remove('hidden');
     document.body.classList.add('wall-open');
     const dockBtn = document.getElementById('profile-dock-btn');
-    if (dockBtn) dockBtn.classList.add('active');
+    if (dockBtn && isMe) dockBtn.classList.add('active');
 
     setTimeout(() => {
         overlay.classList.remove('opacity-0');
         modal.classList.remove('scale-95');
     }, 10);
     
-    loadWallPosts();
-}
-
-function toggleBioEdit(show = true) {
-    const display = document.getElementById('wall-info-bio');
-    const edit    = document.getElementById('wall-info-bio-edit');
-    const text    = document.getElementById('wall-bio-textarea');
-    const btn     = document.getElementById('edit-bio-btn');
-
-    if (show) {
-        display.classList.add('hidden');
-        edit.classList.remove('hidden');
-        btn.classList.add('hidden');
-        text.value = display.textContent.trim();
-        text.focus();
-    } else {
-        display.classList.remove('hidden');
-        edit.classList.add('hidden');
-        btn.classList.remove('hidden');
-    }
-}
-
-async function saveBio() {
-    const text = document.getElementById('wall-bio-textarea').value.trim();
-    if (!text) return;
-
-    try {
-        const response = await fetch('/api/wall/settings', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('alpha_token')}`
-            },
-            body: JSON.stringify({ bio: text })
-        });
-
-        if (response.ok) {
-            document.getElementById('wall-info-bio').textContent = text;
-            toggleBioEdit(false);
-            window.app.notify('Информация обновлена ✓', 'success');
-        }
-    } catch (err) {
-        window.app.notify('Ошибка сохранения', 'error');
-    }
+    loadWallPosts(targetUserId);
 }
 
 function closeWall() {
@@ -97,25 +68,40 @@ function closeWall() {
     }, 400);
 }
 
-async function loadWallPosts() {
+async function loadWallPosts(userId) {
     const feed = document.getElementById('wall-feed');
-    const user = window.app.currentUser;
-    if (!user) return;
+    const targetId = userId || window.app.currentUser?.id;
+    const isMe = String(targetId) === String(window.app.currentUser?.id);
 
     try {
-        const response = await fetch(`/api/wall/${user.id}`, {
+        const response = await fetch(`/api/wall/${targetId}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('alpha_token')}`
             }
         });
         const result = await response.json();
-        const posts = result.posts || [];
         
-        // Обновляем БИО на стене из данных сервера
-        if (result.wall && result.wall.bio) {
-            document.getElementById('wall-info-bio').textContent = result.wall.bio;
+        // Обновляем данные владельца стены (Bio, Username, Avatar)
+        if (result.wall) {
+            document.getElementById('wall-info-bio').textContent = result.wall.bio || 'Привет! Это мой уголок в λ.';
+            
+            // Если это не я, обновляем заголовок данными из объекта wall
+            if (!isMe) {
+                document.getElementById('wall-username').textContent = result.wall.username || 'User';
+                document.getElementById('wall-status').textContent   = result.wall.status || '';
+                
+                const avatarEl = document.getElementById('wall-avatar');
+                if (result.wall.avatar_url) {
+                    avatarEl.innerHTML = `<img src="${result.wall.avatar_url}" class="w-full h-full object-cover">`;
+                } else {
+                    avatarEl.innerHTML = '';
+                    avatarEl.textContent = (result.wall.username || 'U')[0].toUpperCase();
+                }
+            }
         }
 
+        const posts = result.posts || [];
+        
         if (!posts || posts.length === 0) {
             feed.innerHTML = `
                 <div class="text-center py-10 opacity-50">
@@ -190,5 +176,48 @@ async function publishWallPost() {
     } catch (err) {
         console.error('Ошибка публикации:', err);
         window.app.notify('Ошибка сети', 'error');
+    }
+}
+
+function toggleBioEdit(show = true) {
+    const display = document.getElementById('wall-info-bio');
+    const edit    = document.getElementById('wall-info-bio-edit');
+    const text    = document.getElementById('wall-bio-textarea');
+    const btn     = document.getElementById('edit-bio-btn');
+
+    if (show) {
+        display.classList.add('hidden');
+        edit.classList.remove('hidden');
+        btn.classList.add('hidden');
+        text.value = display.textContent.trim();
+        text.focus();
+    } else {
+        display.classList.remove('hidden');
+        edit.classList.add('hidden');
+        btn.classList.remove('hidden');
+    }
+}
+
+async function saveBio() {
+    const text = document.getElementById('wall-bio-textarea').value.trim();
+    if (!text) return;
+
+    try {
+        const response = await fetch('/api/wall/settings', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('alpha_token')}`
+            },
+            body: JSON.stringify({ bio: text })
+        });
+
+        if (response.ok) {
+            document.getElementById('wall-info-bio').textContent = text;
+            toggleBioEdit(false);
+            window.app.notify('Информация обновлена ✓', 'success');
+        }
+    } catch (err) {
+        window.app.notify('Ошибка сохранения', 'error');
     }
 }

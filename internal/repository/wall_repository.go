@@ -24,14 +24,20 @@ func (r *WallRepository) CreateWall(userID uuid.UUID) error {
 
 func (r *WallRepository) GetWallByUserID(userID uuid.UUID) (*model.Wall, error) {
 	w := new(model.Wall)
-	var bio, banner sql.NullString
-	query := `SELECT id, user_id, bio, banner_url FROM walls WHERE user_id = $1`
-	err := r.db.QueryRow(query, userID).Scan(&w.ID, &w.UserID, &bio, &banner)
+	var bio, banner, avatar, status sql.NullString
+	query := `
+		SELECT w.id, w.user_id, w.bio, w.banner_url, u.username, u.avatar_url, u.status 
+		FROM walls w
+		JOIN users u ON w.user_id = u.id
+		WHERE w.user_id = $1`
+	err := r.db.QueryRow(query, userID).Scan(&w.ID, &w.UserID, &bio, &banner, &w.Username, &avatar, &status)
 	if err != nil {
 		return nil, err
 	}
 	w.Bio = bio.String
 	w.BannerUrl = banner.String
+	w.AvatarUrl = avatar.String
+	w.Status = status.String
 	return w, nil
 }
 

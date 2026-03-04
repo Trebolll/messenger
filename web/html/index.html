@@ -127,9 +127,9 @@
           <button id="back-btn" onclick="handleBackBtn()" title="Назад" class="p-2 rounded-xl hover:bg-custom-sidebar transition text-custom-muted hover:text-custom-main" style="margin-left:-4px;flex-shrink:0;">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
           </button>
-          <div id="active-chat-avatar" onclick="openAvatarViewer()" class="w-10 h-10 rounded-full bg-custom-sidebar flex items-center justify-center font-bold text-custom-muted cursor-pointer hover:ring-2 hover:ring-blue-400 hover:ring-offset-2 transition">?</div>
+          <div id="active-chat-avatar" onclick="toggleInfoPanel()" class="w-10 h-10 rounded-full bg-custom-sidebar flex items-center justify-center font-bold text-custom-muted cursor-pointer hover:ring-2 hover:ring-blue-400 hover:ring-offset-2 transition">?</div>
           <div>
-            <h3 id="active-chat-name" onclick="toggleInfoPanel()" class="font-bold text-custom-main leading-tight cursor-pointer hover:text-blue-600 transition">Чат</h3>
+            <h3 id="active-chat-name" onclick="handleHeaderNameClick()" class="font-bold text-custom-main leading-tight cursor-pointer hover:text-blue-600 transition">Чат</h3>
             <p id="active-chat-status" class="text-xs text-custom-muted"></p>
           </div>
         </div>
@@ -540,7 +540,7 @@
       <div class="flex-grow flex flex-col gap-6 overflow-y-auto scrollbar-hide pb-8">
         
         <!-- New Post Creator -->
-        <div class="p-6 bg-custom-sidebar/40 rounded-[32px] border border-white/10 shadow-sm">
+        <div id="wall-post-creator" class="p-6 bg-custom-sidebar/40 rounded-[32px] border border-white/10 shadow-sm">
            <div class="flex gap-4">
               <div id="creator-avatar" class="w-10 h-10 rounded-full bg-custom-sidebar flex-shrink-0 overflow-hidden font-bold flex items-center justify-center border border-white/10">?</div>
               <textarea id="wall-post-input" rows="2" placeholder="Что нового?" class="flex-grow bg-custom-sidebar/30 rounded-2xl p-3 outline-none text-custom-main placeholder-custom-muted resize-none text-sm"></textarea>

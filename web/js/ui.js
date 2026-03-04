@@ -232,6 +232,19 @@ function toggleInfoPanel() {
   document.getElementById('info-panel').classList.toggle('hidden');
 }
 
+function handleHeaderNameClick() {
+  const app = window.app;
+  if (!app.activeChatId) return;
+  const chat = app.chats.find(c => String(c.id) === String(app.activeChatId));
+  if (!chat) return;
+
+  if (!chat.is_group && chat.interlocutor_id) {
+    openWall(chat.interlocutor_id);
+  } else {
+    toggleInfoPanel();
+  }
+}
+
 // ── Profile Modal ──────────────────────────────────────────────────────────
 
 let _profileModalOpen = false;

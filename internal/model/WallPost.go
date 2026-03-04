@@ -11,6 +11,9 @@ type Wall struct {
 	UserID    uuid.UUID `json:"user_id"`
 	Bio       string    `json:"bio"`
 	BannerUrl string    `json:"banner_url"`
+	Username  string    `json:"username,omitempty"`
+	AvatarUrl string    `json:"avatar_url,omitempty"`
+	Status    string    `json:"status,omitempty"`
 }
 
 type WallResponse struct {

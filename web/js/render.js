@@ -160,7 +160,7 @@ function renderMessages() {
     const activeChat = app.chats.find(c => String(c.id) === String(app.activeChatId));
     const isGroup = activeChat && activeChat.is_group;
     const nicknameHtml = (!isMe && isGroup && msg.sender_name)
-        ? `<div style="font-size:11px;font-weight:600;color:var(--text-muted,#6b7280);margin-bottom:2px;padding-left:2px;">${escapeHtml(msg.sender_name)}</div>`
+        ? `<div style="font-size:11px;font-weight:600;color:var(--text-muted,#6b7280);margin-bottom:2px;padding-left:2px;cursor:pointer;" onclick="openWall('${msg.sender_id}')">${escapeHtml(msg.sender_name)}</div>`
         : '';
 
     // Если сообщение загружается — показываем прогресс
@@ -482,7 +482,7 @@ function renderChatHeader() {
       return `
                 <div class="member-row flex items-center gap-3 py-1.5">
                     <div class="relative flex-shrink-0">
-                        <div onclick="openMemberAvatarViewer(${JSON.stringify(m).replace(/"/g,'&quot;')})"
+                        <div onclick="openMemberAvatarViewer(JSON.parse(this.parentNode.parentNode.dataset.member))"
                             class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-400 hover:ring-offset-1 transition text-sm">
                             ${avatarInner}
                         </div>
@@ -496,7 +496,7 @@ function renderChatHeader() {
                         ${m.status ? `<div class="text-xs text-custom-muted truncate" style="font-style:italic;opacity:0.8;">${m.status}</div>` : ''}
                     </div>
                     ${removeBtn}
-                </div>`;
+                </div>`.replace('this.parentNode.parentNode.dataset.member', `'${JSON.stringify(m).replace(/'/g, "\\'").replace(/"/g, '&quot;')}'`);
     }).join('');
 
     // Кнопка + рядом с заголовком — только для создателя
@@ -575,7 +575,9 @@ function renderSearchResults(users) {
                 <div class="font-semibold text-custom-main text-sm truncate">${user.username}</div>
                 <div class="text-xs text-custom-muted truncate">${user.email}</div>
             </div>
-            <div class="nc-check">${checkSvg}</div>
+            <div class="flex items-center gap-2">
+                <div class="nc-check">${checkSvg}</div>
+            </div>
         </div>`;
   }).join('');
 }
