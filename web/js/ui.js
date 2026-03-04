@@ -845,7 +845,20 @@ function ashDisintegrate(el, onDone) {
     } else if (!done) {
       done = true;
       cv.remove();
-      onDone?.();
+      // Плавно схлопываем высоту элемента перед удалением — убираем пустое место
+      const elHeight = el.offsetHeight;
+      el.style.transition = 'height 0.22s ease, margin 0.22s ease, opacity 0.1s ease';
+      el.style.overflow = 'hidden';
+      el.style.height = elHeight + 'px';
+      el.style.opacity = '0';
+      requestAnimationFrame(() => {
+        el.style.height = '0';
+        el.style.marginTop = '0';
+        el.style.marginBottom = '0';
+        el.style.paddingTop = '0';
+        el.style.paddingBottom = '0';
+      });
+      setTimeout(() => onDone?.(), 230);
     }
   }
 

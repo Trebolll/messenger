@@ -28,8 +28,12 @@ func (h *AIHandler) Suggest(c *gin.Context) {
 		return
 	}
 
-	if len(req.Text) > 2000 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Текст слишком длинный (максимум 2000 символов)"})
+	maxLen := 2000
+	if req.Action == "reply" {
+		maxLen = 8000
+	}
+	if len(req.Text) > maxLen {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Текст слишком длинный"})
 		return
 	}
 

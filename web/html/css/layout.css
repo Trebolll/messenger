@@ -195,6 +195,8 @@ body.theme-ocean #chat-header { box-shadow: 0 4px 20px rgba(0,0,0,0.22) !importa
   border: none !important;
   box-shadow: 0 -4px 16px rgba(0,0,0,0.07) !important;
   position: relative; z-index: 4;
+  display: flex !important;
+  flex-direction: column !important;
 }
 body.theme-gray #input-area,
 body.theme-twilight #input-area,

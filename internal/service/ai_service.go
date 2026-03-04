@@ -43,11 +43,13 @@ const (
 	AIActionShorten  AIAction = "shorten"
 	AIActionTone     AIAction = "tone"
 	AIActionContinue AIAction = "continue"
+	AIActionReply    AIAction = "reply"
 )
 
 type AISuggestRequest struct {
-	Text   string   `json:"text" binding:"required"`
-	Action AIAction `json:"action" binding:"required"`
+	Text    string   `json:"text" binding:"required"`
+	Action  AIAction `json:"action" binding:"required"`
+	Context string   `json:"context,omitempty"`
 }
 
 type AISuggestResponse struct {
@@ -78,7 +80,7 @@ type anthropicResponse struct {
 func (s *AIService) Suggest(req AISuggestRequest) (*AISuggestResponse, error) {
 	log.Printf("[AI] action=%s, apiKey set=%v", req.Action, s.apiKey != "")
 
-	prompt, isAdvice := s.buildPrompt(req.Action, req.Text)
+	prompt, isAdvice := s.buildPrompt(req.Action, req.Text, req.Context)
 
 	body, err := json.Marshal(anthropicRequest{
 		Model:     s.model,
@@ -132,7 +134,7 @@ func (s *AIService) Suggest(req AISuggestRequest) (*AISuggestResponse, error) {
 	}, nil
 }
 
-func (s *AIService) buildPrompt(action AIAction, text string) (string, bool) {
+func (s *AIService) buildPrompt(action AIAction, text string, context string) (string, bool) {
 	switch action {
 	case AIActionImprove:
 		return fmt.Sprintf(
@@ -157,6 +159,16 @@ func (s *AIService) buildPrompt(action AIAction, text string) (string, bool) {
 			"Предложи естественное продолжение для этого незаконченного сообщения. "+
 				"Верни ТОЛЬКО продолжение (не повторяй начало) без пояснений и кавычек:\n%s", text,
 		), false
+
+	case AIActionReply:
+		return fmt.Sprintf(
+			"Ты — умный помощник в мессенджере. Проанализируй этот диалог и дай совет пользователю.\n\n"+
+				"Диалог (последние сообщения):\n%s\n\n"+
+				"Ответь на русском языке. Дай конкретный совет: что лучше ответить, "+
+				"как сформулировать, или объясни почему лучше промолчать. "+
+				"Если есть хороший вариант ответа — предложи готовый текст в кавычках. "+
+				"Будь кратким (2-4 предложения).", context,
+		), true
 
 	default:
 		return fmt.Sprintf("Улучши это сообщение:\n%s", text), false

@@ -154,19 +154,19 @@
   let aiLastResult = null;
 
   window.toggleAiPanel = function () {
-    const panel  = document.getElementById('ai-panel');
+    const row    = document.getElementById('ai-actions-row');
     const btn    = document.getElementById('ai-btn');
-    const isOpen = !panel.classList.contains('hidden');
+    const isOpen = !row.classList.contains('ai-actions-hidden');
 
-    panel.classList.toggle('hidden', isOpen);
+    row.classList.toggle('ai-actions-hidden', isOpen);
     active = !isOpen;
     btn.classList.toggle('active', active);
     canvas.classList.toggle('active', active);
 
     if (active) {
-      themeRGB      = getThemeRGB();
-      time          = 0;
-      lastTime      = 0;
+      themeRGB       = getThemeRGB();
+      time           = 0;
+      lastTime       = 0;
       expandProgress = 0;
       createNodes();
       animFrame = requestAnimationFrame(drawFrame);
@@ -174,31 +174,66 @@
       cancelAnimationFrame(animFrame);
       animFrame = null;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      document.getElementById('ai-result').classList.add('hidden');
-      document.getElementById('ai-apply-btn').classList.add('hidden');
+      const result   = document.getElementById('ai-result');
+      const applyBtn = document.getElementById('ai-apply-btn');
+      if (result)   { result.textContent = ''; result.classList.add('hidden'); }
+      if (applyBtn) { applyBtn.style.display = 'none'; }
       aiLastResult = null;
     }
   };
 
+  // Собирает последние N сообщений чата в текстовый контекст для ИИ
+  function buildChatContext(maxMessages) {
+    const app = window.app;
+    if (!app || !app.messages || !app.messages.length) return '';
+    const msgs = app.messages.slice(-maxMessages);
+    return msgs.map(m => {
+      const isMe = String(m.sender_id) === String(app.currentUser?.id);
+      const who  = isMe ? 'Я' : (m.sender_name || 'Собеседник');
+      const text = m.content || m.text || '';
+      return `${who}: ${text}`;
+    }).join('\n');
+  }
+
   window.aiAction = async function (type) {
-    const text = document.getElementById('message-input').value.trim();
-    if (!text) return;
     const loading  = document.getElementById('ai-loading');
     const result   = document.getElementById('ai-result');
     const applyBtn = document.getElementById('ai-apply-btn');
+
+    let text    = '';
+    let context = '';
+
+    if (type === 'reply') {
+      // Для совета по ответу — берём историю чата, текст ввода необязателен
+      context = buildChatContext(20);
+      text    = context || 'нет сообщений';
+      if (!context) {
+        result.textContent = 'Нет сообщений для анализа.';
+        result.classList.remove('hidden');
+        return;
+      }
+    } else {
+      text = document.getElementById('message-input').value.trim();
+      if (!text) return;
+    }
+
     loading.classList.remove('hidden');
     result.classList.add('hidden');
-    applyBtn.classList.add('hidden');
+    if (applyBtn) applyBtn.style.display = 'none';
     aiLastResult = null;
     try {
+      const body = type === 'reply'
+          ? { text, action: type, context }
+          : { text, action: type };
+
       const data = await app.apiFetch('/api/ai/suggest', {
         method: 'POST',
-        body: JSON.stringify({ text, action: type })
+        body: JSON.stringify(body)
       });
       aiLastResult = data.result;
       result.textContent = data.result;
       result.classList.remove('hidden');
-      if (!data.is_advice) applyBtn.classList.remove('hidden');
+      if (!data.is_advice && applyBtn) applyBtn.style.display = '';
     } catch (err) {
       result.textContent = 'Ошибка: ' + err.message;
       result.classList.remove('hidden');
