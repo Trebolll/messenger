@@ -80,22 +80,40 @@ async function loadWallPosts(userId) {
             }
         });
         const result = await response.json();
+        console.log('Wall Data Loaded:', result);
         
         // Обновляем данные владельца стены (Bio, Username, Avatar)
         if (result.wall) {
-            document.getElementById('wall-info-bio').textContent = result.wall.bio || 'Привет! Это мой уголок в λ.';
+            const bioText = result.wall.bio || 'Привет! Это мой уголок в λ. Здесь я делюсь мыслями и медиа.';
+            document.getElementById('wall-info-bio').textContent = bioText;
+            document.getElementById('wall-bio-textarea').value = bioText;
             
-            // Если это не я, обновляем заголовок данными из объекта wall
-            if (!isMe) {
-                document.getElementById('wall-username').textContent = result.wall.username || 'User';
-                document.getElementById('wall-status').textContent   = result.wall.status || '';
-                
-                const avatarEl = document.getElementById('wall-avatar');
-                if (result.wall.avatar_url) {
-                    avatarEl.innerHTML = `<img src="${result.wall.avatar_url}" class="w-full h-full object-cover">`;
-                } else {
-                    avatarEl.innerHTML = '';
-                    avatarEl.textContent = (result.wall.username || 'U')[0].toUpperCase();
+            // Всегда обновляем заголовок, если данные есть
+            const uname = result.wall.username || (isMe ? window.app.currentUser?.username : 'User');
+            const status = result.wall.status || (isMe ? window.app.currentUser?.status : '');
+            
+            document.getElementById('wall-username').textContent = uname;
+            document.getElementById('wall-status').textContent   = status;
+            
+            const avatarEl = document.getElementById('wall-avatar');
+            const avatarUrl = result.wall.avatar_url || (isMe ? window.app.currentUser?.avatar_url : '');
+            
+            if (avatarUrl) {
+                avatarEl.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover">`;
+            } else {
+                avatarEl.innerHTML = '';
+                avatarEl.textContent = (uname || 'U')[0].toUpperCase();
+            }
+
+            // Если это я — обновляем аватар в поле создания поста
+            if (isMe) {
+                const creatorAvatar = document.getElementById('creator-avatar');
+                if (creatorAvatar) {
+                    if (avatarUrl) {
+                        creatorAvatar.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover">`;
+                    } else {
+                        creatorAvatar.textContent = (uname || 'U')[0].toUpperCase();
+                    }
                 }
             }
         }

@@ -255,23 +255,34 @@ function renderMessages() {
             <div class="flex items-end gap-2 ${animClass}"
                  style="justify-content:${isMe ? 'flex-end' : 'flex-start'};${delay}"
                  data-msg-id="${msg.id}"
+                 data-sender-id="${msg.sender_id}"
                  oncontextmenu="showMessageMenu(event, '${msg.id}', ${isMe})">
                 ${!isMe ? senderAvatarHtml : ''}
                 <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};max-width:75%;">
-                    ${nicknameHtml}
-                    <div class="message-bubble ${bubblePadding} ${isMe ? 'message-sent' : 'message-received'}" style="width:fit-content;max-width:100%;${isMediaAttachment ? 'overflow:hidden;' : ''}">
-                        ${attachmentHtml}
-                        ${captionWrap}
-                        <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:2px;flex-wrap:nowrap;${isMediaAttachment ? 'padding:0 6px 4px;' : ''}">
-                            ${isEdited ? `<span class="msg-edited-label">изменено</span>` : ''}
-                            <span style="font-size:10px;white-space:nowrap;flex-shrink:0;opacity:${isMe ? '0.7' : '1'};" class="${isMe ? '' : 'text-custom-muted'}">
-                                ${new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                            ${isMe ? `
-                                <span style="font-size:11px;letter-spacing:-0.5em;display:inline-block;flex-shrink:0;opacity:${isRead ? '0.9' : '0.4'};">
-                                    ${isRead ? '✓✓' : '✓'}
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        ${nicknameHtml}
+                        ${renderRatingBadge(msg.sender_rating)}
+                    </div>
+                    <!-- Обертка для пузыря и кнопок (relative для absolute позиционирования кнопок) -->
+                    <div style="position:relative; width:fit-content; max-width:100%;">
+                        <div class="message-bubble ${bubblePadding} ${isMe ? 'message-sent' : 'message-received'}" style="width:fit-content;max-width:100%;${isMediaAttachment ? 'overflow:hidden;' : ''}">
+                            ${attachmentHtml}
+                            ${captionWrap}
+                            <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:2px;flex-wrap:nowrap;${isMediaAttachment ? 'padding:0 6px 4px;' : ''}">
+                                ${isEdited ? `<span class="msg-edited-label">изменено</span>` : ''}
+                                <span style="font-size:10px;white-space:nowrap;flex-shrink:0;opacity:${isMe ? '0.7' : '1'};" class="${isMe ? '' : 'text-custom-muted'}">
+                                    ${new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
-                            ` : ''}
+                                ${isMe ? `
+                                    <span style="font-size:11px;letter-spacing:-0.5em;display:inline-block;flex-shrink:0;opacity:${isRead ? '0.9' : '0.4'};">
+                                        ${isRead ? '✓✓' : '✓'}
+                                    </span>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <!-- Блок голосования (абсолютно спозиционирован под пузырем) -->
+                        <div class="msg-votes ${msg.my_vote !== 0 ? 'has-active' : ''}">
+                            ${renderVotesHtml(msg.likes || 0, msg.dislikes || 0, msg.my_vote || 0, msg.id)}
                         </div>
                     </div>
                 </div>
@@ -318,7 +329,6 @@ function renderVotesHtml(likes, dislikes, myVote, messageId) {
                 title="Дизлайк">
             <span class="vote-icon">−</span>
             <span class="vote-ring"></span>
-            ${dislikes > 0 ? `<span class="vote-count">${dislikes}</span>` : ''}
         </button>
     `;
 }
@@ -332,6 +342,13 @@ async function voteMessage(e, messageId, vote) {
   // Находим пузырь сообщения
   const msgWrap = btn.closest('[data-msg-id]');
   const bubble  = msgWrap ? msgWrap.querySelector('.message-bubble') : null;
+  const votesPanel = msgWrap ? msgWrap.querySelector('.msg-votes') : null;
+
+  // Проверка на своё сообщение
+  if (bubble && bubble.classList.contains('message-sent')) {
+    window.app && window.app.notify('Нельзя голосовать за своё сообщение', 'error');
+    return;
+  }
 
   // Анимация кнопки — вспышка + пульс кольца
   btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
@@ -348,12 +365,21 @@ async function voteMessage(e, messageId, vote) {
     }
   }, 180);
 
+  // Скрываем панель через 1.5 секунды после голоса
+  if (votesPanel) {
+    setTimeout(() => {
+      votesPanel.classList.add('msg-votes-hidden');
+      // Возвращаем возможность показа при следующем ховере через некоторое время
+      setTimeout(() => votesPanel.classList.remove('msg-votes-hidden'), 3000);
+    }, 1500);
+  }
+
   try {
     await apiVoteMessage(messageId, vote);
   } catch(err) {
     // убираем анимацию если ошибка
     btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
-    window.app && window.app.notify('Нельзя голосовать за своё сообщение', 'error');
+    if (votesPanel) votesPanel.classList.remove('msg-votes-hidden');
   }
 }
 

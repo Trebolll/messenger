@@ -1,49 +1,59 @@
 /* ══ Система голосования ══════════════════════════════════════════ */
 
-/* Контейнер кнопок — скрыт, появляется при hover на сообщение */
+/* Контейнер кнопок — пузыри-ушки */
 .msg-votes {
+  position: absolute;
+  bottom: -10px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 4px;
+  gap: 3px;
   opacity: 0;
-  transform: translateY(4px) scale(0.92);
-  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34,1.4,0.64,1);
+  transform: translateY(-5px) scale(0.9);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   pointer-events: none;
-}
-[data-msg-id]:hover .msg-votes,
-.msg-votes:has(.vote-active-like),
-.msg-votes:has(.vote-active-dislike) {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
-/* Фолбэк для браузеров без :has() */
-.msg-votes.has-active {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
+  z-index: 10;
 }
 
-/* Базовая кнопка голосования */
+/* Прижимаем к стороне сообщения */
+.message-bubble.message-sent ~ .msg-votes { right: 8px; flex-direction: row-reverse; }
+.message-bubble.message-received ~ .msg-votes { left: 8px; }
+
+[data-msg-id]:hover .msg-votes:not(.msg-votes-hidden),
+.msg-votes.has-active:not(.msg-votes-hidden) {
+  opacity: 1 !important;
+  transform: translateY(0) scale(1) !important;
+  pointer-events: auto !important;
+}
+
+.msg-votes-hidden {
+  opacity: 0 !important;
+  transform: translateY(5px) scale(0.9) !important;
+  pointer-events: none !important;
+}
+
+/* Базовая кнопка голосования — мини-пузырёк */
 .vote-btn {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
   width: 28px; height: 28px;
   border: none;
-  border-radius: 50% !important;
+  border-radius: 14px !important;
   cursor: pointer;
-  background: var(--bg-sidebar);
+  background: var(--bg-main);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: var(--text-muted);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
-  line-height: 1;
-  transition: color 0.2s, background 0.2s, transform 0.18s, box-shadow 0.25s;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(255,255,255,0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
-  overflow: visible;
+}
+.vote-btn:hover {
+  transform: translateY(-2px);
+  background: var(--bg-item-hover);
 }
 .vote-btn .vote-icon {
   display: block;

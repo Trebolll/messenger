@@ -63,10 +63,12 @@ func (s *RatingService) Vote(messageID, voterID uuid.UUID, vote int) error {
 				"message_id":    result.MessageID,
 				"chat_id":       result.ChatID,
 				"sender_id":     result.SenderID,
+				"voter_id":      voterID,
 				"likes":         result.Likes,
 				"dislikes":      result.Dislikes,
 				"my_vote":       myVote,
 				"sender_rating": publicRating,
+				"just_voted":    vote,
 			},
 		})
 	}

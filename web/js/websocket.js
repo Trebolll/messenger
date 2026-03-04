@@ -284,16 +284,41 @@ function _handleVoteUpdated(data) {
     if (msg) {
         msg.likes    = data.likes;
         msg.dislikes = data.dislikes;
-        msg.my_vote  = data.my_vote;
+        // Обновляем my_vote ТОЛЬКО если это наш голос пришёл в WS
+        if (data.voter_id && String(data.voter_id) === String(app.currentUser?.id)) {
+            msg.my_vote = data.my_vote;
+        }
     }
     // Точечное обновление DOM
     const el = document.querySelector(`[data-msg-id="${data.message_id}"]`);
     if (el) {
         const votesEl = el.querySelector('.msg-votes');
         if (votesEl) {
-            votesEl.innerHTML = renderVotesHtml(data.likes, data.dislikes, data.my_vote, data.message_id);
-            // has-active — фолбэк для браузеров без :has()
-            votesEl.classList.toggle('has-active', data.my_vote !== 0);
+            const currentMyVote = msg ? msg.my_vote : 0;
+            votesEl.innerHTML = renderVotesHtml(data.likes, data.dislikes, currentMyVote, data.message_id);
+            votesEl.classList.toggle('has-active', currentMyVote !== 0);
+        }
+
+        // ── Анимация для всех участников ──────────────────────────
+        const bubble = el.querySelector('.message-bubble');
+        if (bubble && data.just_voted) {
+            const isLike = data.just_voted === 1;
+            const glowClass = isLike ? 'bubble-glow-like' : 'bubble-glow-dislike';
+
+            // Находим конкретную кнопку (если она есть) для вспышки
+            const btn = el.querySelector(isLike ? '.vote-like' : '.vote-dislike');
+            if (btn) {
+                const flashClass = isLike ? 'vote-flash-like' : 'vote-flash-dislike';
+                btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
+                void btn.offsetWidth;
+                btn.classList.add(flashClass);
+            }
+
+            // Свечение пузыря
+            bubble.classList.remove('bubble-glow-like', 'bubble-glow-dislike');
+            void bubble.offsetWidth;
+            bubble.classList.add(glowClass);
+            setTimeout(() => bubble.classList.remove('bubble-glow-like', 'bubble-glow-dislike'), 1000);
         }
     }
     // Обновляем бейджи рейтинга отправителя

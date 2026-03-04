@@ -76,13 +76,13 @@ func (h *WallHandler) GetWall(c *gin.Context) {
 		return
 	}
 
-	posts, err := h.wallService.GetWall(userID)
+	wallRes, err := h.wallService.GetWall(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, posts)
+	c.JSON(http.StatusOK, wallRes)
 }
 
 func (h *WallHandler) UploadAttachment(c *gin.Context) {
