@@ -108,6 +108,7 @@ func main() {
 		api.PUT("/users/avatar", userHandler.UpdateAvatar)
 		api.PUT("/users/status", userHandler.UpdateStatus)
 		api.POST("/chats/:chat_id/read", messageHandler.MarkAsRead)
+		api.GET("/ai/agents", aiHandler.Agents)
 		api.POST("/ai/suggest", aiHandler.Suggest)
 		api.POST("/chats/:chat_id/attachments", attachmentHandler.Upload)
 		api.POST("/messages/:message_id/vote", ratingHandler.Vote)

@@ -222,9 +222,10 @@
     if (applyBtn) applyBtn.style.display = 'none';
     aiLastResult = null;
     try {
+      const agent = typeof window.getCurrentAgent === 'function' ? window.getCurrentAgent() : 'claude';
       const body = type === 'reply'
-          ? { text, action: type, context }
-          : { text, action: type };
+          ? { text, action: type, context, agent }
+          : { text, action: type, agent };
 
       const data = await app.apiFetch('/api/ai/suggest', {
         method: 'POST',
@@ -254,4 +255,111 @@
     btn.classList.add('sending');
     setTimeout(() => btn.classList.remove('sending'), 600);
   };
+
+  // ═══ Выбор агента ИИ ═══════════════════════════════════════════════════════
+
+  let currentAgent = localStorage.getItem('ai_agent') || 'claude';
+  let agentsList   = [];
+
+  // Загружаем список агентов с сервера
+  async function loadAgents() {
+    try {
+      const data = await window.app.apiFetch('/api/ai/agents');
+      agentsList = data.agents || [];
+      updateAgentLabel();
+    } catch (e) {
+      // fallback — статичный список
+      agentsList = [
+        { id: 'claude',  name: 'Claude Haiku',   description: 'Anthropic · быстрый и точный',    free: false, icon: '✦' },
+        { id: 'groq',    name: 'Llama 3.3 70B',  description: 'Groq · бесплатно · очень быстро', free: true,  icon: '⚡' },
+        { id: 'gemini',  name: 'Gemini Flash',   description: 'Google · бесплатно · 1500/день',  free: true,  icon: '◆' },
+        { id: 'ollama',  name: 'Ollama (local)', description: 'Локально · полностью бесплатно',  free: true,  icon: '🖥' },
+      ];
+      updateAgentLabel();
+    }
+  }
+
+  function updateAgentLabel() {
+    const agent = agentsList.find(a => a.id === currentAgent);
+    if (!agent) return;
+    const iconEl = document.getElementById('ai-agent-icon');
+    const nameEl = document.getElementById('ai-agent-name');
+    if (iconEl) iconEl.textContent = agent.icon;
+    if (nameEl) nameEl.textContent = agent.name.split(' ').slice(0,2).join(' ');
+  }
+
+  function renderAgentPicker() {
+    const picker = document.getElementById('ai-agent-picker');
+    if (!picker) return;
+    picker.innerHTML = agentsList.map(a => `
+      <button type="button" class="ai-agent-option ${a.id === currentAgent ? 'active' : ''}"
+              onclick="selectAgent('${a.id}')">
+        <span class="ai-agent-opt-icon">${a.icon}</span>
+        <span class="ai-agent-opt-body">
+          <span class="ai-agent-opt-name">${a.name}</span>
+          <span class="ai-agent-opt-desc">${a.description}</span>
+        </span>
+        ${a.free ? '<span class="ai-agent-opt-free">free</span>' : ''}
+        ${a.id === currentAgent ? '<span class="ai-agent-opt-check">✓</span>' : ''}
+      </button>
+    `).join('');
+  }
+
+  // ── Agent picker ──────────────────────────────────────────────────────────
+  // Простая логика: data-атрибут на body сигнализирует что пикер открыт
+  // Закрытие через mousedown на document (раньше click — не конфликтует)
+
+  window.toggleAgentPicker = function () {
+    const picker = document.getElementById('ai-agent-picker');
+    if (!picker) return;
+    const isHidden = picker.classList.contains('hidden');
+    if (isHidden) {
+      renderAgentPicker();
+      picker.classList.remove('hidden');
+      document.body.setAttribute('data-agent-picker', '1');
+    } else {
+      picker.classList.add('hidden');
+      document.body.removeAttribute('data-agent-picker');
+    }
+  };
+
+  // Закрываем по mousedown вне пикера и вне кнопки
+  document.addEventListener('mousedown', function (e) {
+    if (!document.body.hasAttribute('data-agent-picker')) return;
+    const picker = document.getElementById('ai-agent-picker');
+    const label  = document.querySelector('.ai-agent-label');
+    const inPicker = picker && picker.contains(e.target);
+    const inLabel  = label  && label.contains(e.target);
+    if (!inPicker && !inLabel) {
+      picker.classList.add('hidden');
+      document.body.removeAttribute('data-agent-picker');
+    }
+  });
+
+  window.selectAgent = function (id) {
+    currentAgent = id;
+    localStorage.setItem('ai_agent', id);
+    updateAgentLabel();
+    const picker = document.getElementById('ai-agent-picker');
+    if (picker) picker.classList.add('hidden');
+    document.body.removeAttribute('data-agent-picker');
+    themeRGB = getThemeRGB();
+  };
+
+  // Получаем текущего агента для запросов
+  window.getCurrentAgent = function () { return currentAgent; };
+
+  // Загружаем агентов только ПОСЛЕ успешного логина
+  // Слушаем кастомное событие которое app.js бросает после авторизации
+  document.addEventListener('app:authenticated', () => {
+    loadAgents();
+  });
+  // Если уже залогинен (страница обновлена) — грузим после небольшой задержки
+  // только если app.currentUser уже заполнен
+  setTimeout(() => {
+    if (window.app && window.app.currentUser) {
+      loadAgents();
+    }
+  }, 1000);
+
 })();

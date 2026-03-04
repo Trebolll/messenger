@@ -15,11 +15,17 @@ func NewAIHandler(aiService *service.AIService) *AIHandler {
 	return &AIHandler{aiService: aiService}
 }
 
+// GET /api/ai/agents — список доступных агентов
+func (h *AIHandler) Agents(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"agents": service.Agents})
+}
+
+// POST /api/ai/suggest
 func (h *AIHandler) Suggest(c *gin.Context) {
 	var req service.AISuggestRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Укажите text и action (improve | shorten | tone | continue)"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Укажите text и action"})
 		return
 	}
 
@@ -39,7 +45,7 @@ func (h *AIHandler) Suggest(c *gin.Context) {
 
 	result, err := h.aiService.Suggest(req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось получить ответ от AI"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось получить ответ: " + err.Error()})
 		return
 	}
 

@@ -29,6 +29,7 @@ class AlphaApp {
         return;
       }
       this.showChat();
+      setTimeout(() => document.dispatchEvent(new CustomEvent('app:authenticated')), 300);
     } else {
       this.showLanding();
     }
@@ -117,6 +118,7 @@ class AlphaApp {
       this.notify('Успешно!', 'success');
       closeAuthModal();
       this.showChat();
+      document.dispatchEvent(new CustomEvent('app:authenticated'));
     } catch (err) {
       errorEl.textContent = err.message;
       errorEl.classList.remove('hidden');

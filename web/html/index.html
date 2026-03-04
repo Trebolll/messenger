@@ -151,15 +151,23 @@
 
         <!-- AI actions row — появляется над строкой ввода внутри input-area -->
         <div id="ai-actions-row" class="ai-actions-row ai-actions-hidden">
-          <div class="ai-actions-inner">
-            <span class="ai-actions-label">✦ ИИ</span>
-            <button type="button" onclick="aiAction('improve')" class="ai-action-btn ai-action-primary">✨ Улучшить</button>
-            <button type="button" onclick="aiAction('shorten')" class="ai-action-btn ai-action-secondary">📝 Сократить</button>
-            <button type="button" onclick="aiAction('tone')" class="ai-action-btn ai-action-secondary">🎯 Тон</button>
-            <button type="button" onclick="aiAction('continue')" class="ai-action-btn ai-action-secondary">💡 Продолжить</button>
-            <button type="button" onclick="aiAction('reply')" class="ai-action-btn ai-action-reply">💬 Что ответить</button>
-            <button type="button" onclick="applyAiResult()" id="ai-apply-btn" class="ai-action-btn ai-action-apply" style="display:none;">✅ Применить</button>
-          </div>
+          <!-- Дропдаун — вне ai-actions-inner, не обрезается overflow -->
+          <div id="ai-agent-picker" class="ai-agent-picker hidden"></div>
+          <div class="ai-actions-clip">
+            <div class="ai-actions-inner">
+              <button type="button" class="ai-agent-label" onclick="toggleAgentPicker()" title="Выбрать агента ИИ">
+                <span class="ai-agent-icon" id="ai-agent-icon">✦</span>
+                <span id="ai-agent-name">ИИ</span>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" style="opacity:0.5;margin-left:1px"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+              </button>
+              <button type="button" onclick="aiAction('improve')" class="ai-action-btn ai-action-primary">✨ Улучшить</button>
+              <button type="button" onclick="aiAction('shorten')" class="ai-action-btn ai-action-secondary">📝 Сократить</button>
+              <button type="button" onclick="aiAction('tone')" class="ai-action-btn ai-action-secondary">🎯 Тон</button>
+              <button type="button" onclick="aiAction('continue')" class="ai-action-btn ai-action-secondary">💡 Продолжить</button>
+              <button type="button" onclick="aiAction('reply')" class="ai-action-btn ai-action-reply">💬 Что ответить</button>
+              <button type="button" onclick="applyAiResult()" id="ai-apply-btn" class="ai-action-btn ai-action-apply" style="display:none;">✅ Применить</button>
+            </div>
+          </div><!-- /ai-actions-clip -->
           <div id="ai-loading" class="ai-inline-loading hidden">
             <span class="ai-loading-dot"></span><span class="ai-loading-dot"></span><span class="ai-loading-dot"></span>
           </div>
