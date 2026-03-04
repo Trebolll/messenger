@@ -1,5 +1,7 @@
 /**
  * Neural AI Button — neural-ai-btn.js
+ * При нажатии кнопка «расширяется» — нейросеть вырастает из кнопки наружу.
+ * 30 узлов, цвет под тему через --accent-color-rgb.
  */
 (function () {
   const canvas = document.getElementById('neural-canvas');
@@ -9,15 +11,14 @@
   let nodes = [];
   let time = 0;
   let lastTime = 0;
-  let themeRGB = '59,130,246'; // fallback
+  let expandProgress = 0; // 0 → 1, анимация расширения
+  let themeRGB = '59,130,246';
 
-  // Читаем --accent-color-rgb: body.theme-* переопределяет :root
   function getThemeRGB() {
     let rgb = getComputedStyle(document.body).getPropertyValue('--accent-color-rgb');
     if (!rgb || !rgb.trim()) {
       rgb = getComputedStyle(document.documentElement).getPropertyValue('--accent-color-rgb');
     }
-    // Убираем пробелы вокруг запятых: "59, 130, 246" -> "59,130,246"
     return (rgb || '').trim().replace(/\s*,\s*/g, ',') || '59,130,246';
   }
 
@@ -26,31 +27,45 @@
     canvas.height = window.innerHeight;
   }
   resize();
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize', () => {
+    resize();
+    if (active) createNodes();
+  });
 
-  function createNodes() {
+  function getBtnCenter() {
     const btn  = document.getElementById('ai-btn');
     const rect = btn.getBoundingClientRect();
-    const cx   = rect.left + rect.width  / 2;
-    const cy   = rect.top  + rect.height / 2;
+    return {
+      cx: rect.left + rect.width  / 2,
+      cy: rect.top  + rect.height / 2,
+    };
+  }
+
+  function createNodes() {
+    const { cx, cy } = getBtnCenter();
     nodes = [];
-    const count = 38;
+    const count = 30;
     for (let i = 0; i < count; i++) {
-      const angle  = (Math.PI * 2 / count) * i + Math.random() * 0.5;
-      const radius = 60 + Math.random() * 160;
+      const angle  = (Math.PI * 2 / count) * i + (Math.random() - 0.5) * 0.4;
+      const targetR = 70 + Math.random() * 170;
       nodes.push({
-        x:     cx + Math.cos(angle) * radius,
-        y:     cy + Math.sin(angle) * radius,
-        ox:    cx + Math.cos(angle) * radius,
-        oy:    cy + Math.sin(angle) * radius,
-        vx:    (Math.random() - 0.5) * 0.3,
-        vy:    (Math.random() - 0.5) * 0.3,
-        r:     1.5 + Math.random() * 2.2,
+        x:  cx,
+        y:  cy,
+        tx: cx + Math.cos(angle) * targetR,
+        ty: cy + Math.sin(angle) * targetR,
+        ox: cx + Math.cos(angle) * targetR,
+        oy: cy + Math.sin(angle) * targetR,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+        r:  1.5 + Math.random() * 2.2,
         phase: Math.random() * Math.PI * 2,
       });
     }
-    // Центральный узел — позиция кнопки
     nodes.push({ x: cx, y: cy, r: 5, isCenter: true });
+  }
+
+  function ease(t) {
+    return 1 - Math.pow(1 - t, 3);
   }
 
   function drawFrame(now) {
@@ -59,26 +74,38 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     time += 0.013 * (delta / 0.016);
 
+    if (expandProgress < 1) {
+      expandProgress = Math.min(expandProgress + delta / 0.6, 1);
+    }
+    const ep = ease(expandProgress);
+
     const rgb    = themeRGB;
     const center = nodes[nodes.length - 1];
-    const cx = center.x, cy = center.y;
+    const { cx, cy } = getBtnCenter();
+    center.x = cx;
+    center.y = cy;
 
-    // Двигаем узлы
     for (const n of nodes) {
       if (n.isCenter) continue;
-      n.x += n.vx + Math.sin(time + n.phase) * 0.28;
-      n.y += n.vy + Math.cos(time + n.phase) * 0.28;
-      // Притяжение к начальной позиции
-      n.x += (n.ox - n.x) * 0.009;
-      n.y += (n.oy - n.y) * 0.009;
+      if (expandProgress >= 1) {
+        n.x += n.vx + Math.sin(time + n.phase) * 0.28;
+        n.y += n.vy + Math.cos(time + n.phase) * 0.28;
+        n.x += (n.ox - n.x) * 0.009;
+        n.y += (n.oy - n.y) * 0.009;
+      } else {
+        const baseX = cx + (n.ox - cx) * ep;
+        const baseY = cy + (n.oy - cy) * ep;
+        n.x = baseX + Math.sin(time + n.phase) * 4 * ep;
+        n.y = baseY + Math.cos(time + n.phase) * 4 * ep;
+      }
     }
 
-    // Связи от центра к узлам
+    // Связи центр → узлы
     for (let i = 0; i < nodes.length - 1; i++) {
       const a = nodes[i];
       const dCenter = Math.hypot(a.x - cx, a.y - cy);
-      if (dCenter < 240) {
-        const alpha = (1 - dCenter / 240) * 0.6;
+      if (dCenter < 260) {
+        const alpha = (1 - dCenter / 260) * 0.55 * ep;
         const grad  = ctx.createLinearGradient(cx, cy, a.x, a.y);
         grad.addColorStop(0, `rgba(${rgb},${alpha})`);
         grad.addColorStop(1, `rgba(${rgb},0)`);
@@ -94,30 +121,27 @@
     // Связи между узлами
     for (let i = 0; i < nodes.length - 1; i++) {
       for (let j = i + 1; j < nodes.length - 1; j++) {
-        const a    = nodes[i];
-        const b    = nodes[j];
+        const a = nodes[i], b = nodes[j];
         const dist = Math.hypot(a.x - b.x, a.y - b.y);
-        if (dist < 90) {
+        if (dist < 95) {
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
-          ctx.strokeStyle = `rgba(${rgb},${(1 - dist / 90) * 0.22})`;
+          ctx.strokeStyle = `rgba(${rgb},${(1 - dist / 95) * 0.25 * ep})`;
           ctx.lineWidth   = 0.5;
           ctx.stroke();
         }
       }
     }
 
-    // Узлы-точки
+    // Узлы
     for (const n of nodes) {
       if (n.isCenter) continue;
-      const pulse = 0.7 + Math.sin(time * 2.2 + (n.phase || 0)) * 0.3;
-      // Ядро точки
+      const pulse = (0.7 + Math.sin(time * 2.2 + (n.phase || 0)) * 0.3) * ep;
       ctx.beginPath();
       ctx.arc(n.x, n.y, n.r * pulse, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(${rgb},0.88)`;
       ctx.fill();
-      // Мягкое свечение
       ctx.beginPath();
       ctx.arc(n.x, n.y, n.r * pulse * 3.5, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(${rgb},0.07)`;
@@ -140,9 +164,10 @@
     canvas.classList.toggle('active', active);
 
     if (active) {
-      themeRGB = getThemeRGB();
-      time      = 0;
-      lastTime  = 0;
+      themeRGB      = getThemeRGB();
+      time          = 0;
+      lastTime      = 0;
+      expandProgress = 0;
       createNodes();
       animFrame = requestAnimationFrame(drawFrame);
     } else {
@@ -156,7 +181,7 @@
   };
 
   window.aiAction = async function (type) {
-    const text     = document.getElementById('message-input').value.trim();
+    const text = document.getElementById('message-input').value.trim();
     if (!text) return;
     const loading  = document.getElementById('ai-loading');
     const result   = document.getElementById('ai-result');
