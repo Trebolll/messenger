@@ -263,9 +263,10 @@ function renderMessages() {
                         ${nicknameHtml}
                         ${renderRatingBadge(msg.sender_rating)}
                     </div>
-                    <!-- Обертка для пузыря и кнопок (relative для absolute позиционирования кнопок) -->
+                    <!-- Обертка для пузыря и кнопок -->
                     <div style="position:relative; width:fit-content; max-width:100%;">
-                        <div class="message-bubble ${bubblePadding} ${isMe ? 'message-sent' : 'message-received'}" style="width:fit-content;max-width:100%;${isMediaAttachment ? 'overflow:hidden;' : ''}">
+                        <div class="message-bubble ${bubblePadding} ${isMe ? 'message-sent' : 'message-received'}" 
+                             style="position:relative; z-index:10; width:fit-content; max-width:100%; ${isMediaAttachment ? 'overflow:hidden;' : ''}">
                             ${attachmentHtml}
                             ${captionWrap}
                             <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:2px;flex-wrap:nowrap;${isMediaAttachment ? 'padding:0 6px 4px;' : ''}">
@@ -280,10 +281,18 @@ function renderMessages() {
                                 ` : ''}
                             </div>
                         </div>
-                        <!-- Блок голосования (абсолютно спозиционирован под пузырем) -->
-                        <div class="msg-votes ${msg.my_vote !== 0 ? 'has-active' : ''}">
-                            ${renderVotesHtml(msg.likes || 0, msg.dislikes || 0, msg.my_vote || 0, msg.id)}
+
+                        ${!isMe ? `
+                        <!-- Контейнер для Gooey-эффекта (только для чужих сообщений) -->
+                        <div class="gooey-vote-container">
+                            <div class="message-bubble message-received" 
+                                 style="position:absolute; inset:0; z-index:-1; margin:0; opacity: 1;"></div>
+                            
+                            <div class="msg-votes ${msg.my_vote !== 0 ? 'has-active' : ''}">
+                                ${renderVotesHtml(msg.likes || 0, msg.dislikes || 0, msg.my_vote || 0, msg.id)}
+                            </div>
                         </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
