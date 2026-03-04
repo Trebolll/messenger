@@ -249,6 +249,8 @@ function openProfileModal() {
   const modal   = document.getElementById('profile-modal');
   const user    = window.app.currentUser;
 
+  document.body.classList.add('profile-open');
+
   if (user) {
     document.getElementById('profile-username').value    = user.username  || '';
     document.getElementById('profile-email').value       = user.email     || '';
@@ -270,6 +272,7 @@ function closeProfileModal() {
   const modal   = document.getElementById('profile-modal');
   overlay.classList.add('opacity-0');
   modal.classList.add('scale-95');
+  document.body.classList.remove('profile-open');
   _profileModalOpen = false;
   setTimeout(() => overlay.classList.add('hidden'), 300);
   const btn = document.getElementById('profile-dock-btn');

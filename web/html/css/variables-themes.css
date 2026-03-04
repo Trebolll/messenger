@@ -216,8 +216,9 @@ body.theme-volcano {
 
 /* ── Стеклянные панели ── */
 .left-panel, #view-chat, #info-panel, #bottom-dock, .modal-content,
-#auth-modal, .new-chat-modal-card, #profile-modal {
+#auth-modal, .new-chat-modal-card, #profile-modal, #wall-modal {
   border: 0.5px solid var(--glass-border) !important;
+  border-radius: 28px !important;
   box-shadow:
       var(--glass-shadow),
       inset 0 1px 1px rgba(255, 255, 255, 0.4),
@@ -236,33 +237,39 @@ body.theme-volcano {
 }
 
 #view-chat, #info-panel, .left-panel {
-  border-radius: 24px 24px 0 0 !important;
+  border-radius: 28px !important;
 }
 
 /* ── iOS-стиль: отступы и полное скругление для всех панелей ── */
 #main-chat {
-  padding: 12px 12px 0 12px;
-  gap: 10px;
-  align-items: flex-end;
+  padding: 12px 12px 20px 12px;
+  gap: 12px;
+  align-items: stretch;
   box-sizing: border-box;
   overflow: hidden;
   min-width: 0;
 }
 
+.left-panel, #view-chat, #info-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .left-panel {
-  border-radius: 24px 24px 0 0 !important;
+  border-radius: 28px !important;
   overflow: hidden;
   flex-shrink: 0;
 }
 
 #view-chat {
-  border-radius: 24px 24px 0 0 !important;
+  border-radius: 28px !important;
   overflow: hidden;
   min-width: 0;
 }
 
 #info-panel {
-  border-radius: 24px 24px 0 0 !important;
+  border-radius: 28px !important;
   overflow: hidden;
   flex-shrink: 0;
   flex-basis: 0;
@@ -296,7 +303,38 @@ body.theme-volcano {
       rgba(255, 255, 255, 0.0) 95%,
       transparent 100%
   );
-  border-radius: 24px 24px 0 0;
+  border-radius: 28px 28px 0 0;
+}
+
+/* ── Нижний блик ── */
+.left-panel::after,
+#view-chat::after,
+#info-panel::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  z-index: 10;
+  pointer-events: none;
+  background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.0) 5%,
+      rgba(255, 255, 255, 0.25) 30%,
+      rgba(255, 255, 255, 0.40) 50%,
+      rgba(255, 255, 255, 0.25) 70%,
+      rgba(255, 255, 255, 0.0) 95%,
+      transparent 100%
+  );
+  border-radius: 0 0 28px 28px;
+}
+
+/* Эффект матового/шлифованного стекла по контуру */
+.left-panel, #view-chat, #info-panel {
+  box-shadow: 
+    var(--glass-shadow),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 4px 24px rgba(0, 0, 0, 0.08) !important;
 }
 
 /* Для тёмных тем — менее интенсивный блик */
@@ -311,18 +349,25 @@ body.theme-ocean #view-chat::before,
 body.theme-ocean #info-panel::before,
 body.theme-dark-gold .left-panel::before,
 body.theme-dark-gold #view-chat::before,
+body.theme-dark-gold #info-panel::before,
 body.theme-jungle .left-panel::before,
 body.theme-jungle #view-chat::before,
+body.theme-jungle #info-panel::before,
 body.theme-blood .left-panel::before,
 body.theme-blood #view-chat::before,
+body.theme-blood #info-panel::before,
 body.theme-cyberpunk .left-panel::before,
 body.theme-cyberpunk #view-chat::before,
+body.theme-cyberpunk #info-panel::before,
 body.theme-cosmos .left-panel::before,
 body.theme-cosmos #view-chat::before,
+body.theme-cosmos #info-panel::before,
 body.theme-amethyst .left-panel::before,
 body.theme-amethyst #view-chat::before,
+body.theme-amethyst #info-panel::before,
 body.theme-volcano .left-panel::before,
-body.theme-volcano #view-chat::before {
+body.theme-volcano #view-chat::before,
+body.theme-volcano #info-panel::before {
   background: linear-gradient(
       90deg,
       transparent 0%,
@@ -330,6 +375,48 @@ body.theme-volcano #view-chat::before {
       rgba(255, 255, 255, 0.18) 30%,
       rgba(255, 255, 255, 0.30) 50%,
       rgba(255, 255, 255, 0.18) 70%,
+      rgba(255, 255, 255, 0.0) 95%,
+      transparent 100%
+  );
+}
+
+body.theme-gray .left-panel::after,
+body.theme-gray #view-chat::after,
+body.theme-gray #info-panel::after,
+body.theme-twilight .left-panel::after,
+body.theme-twilight #view-chat::after,
+body.theme-twilight #info-panel::after,
+body.theme-ocean .left-panel::after,
+body.theme-ocean #view-chat::after,
+body.theme-ocean #info-panel::after,
+body.theme-dark-gold .left-panel::after,
+body.theme-dark-gold #view-chat::after,
+body.theme-dark-gold #info-panel::after,
+body.theme-jungle .left-panel::after,
+body.theme-jungle #view-chat::after,
+body.theme-jungle #info-panel::after,
+body.theme-blood .left-panel::after,
+body.theme-blood #view-chat::after,
+body.theme-blood #info-panel::after,
+body.theme-cyberpunk .left-panel::after,
+body.theme-cyberpunk #view-chat::after,
+body.theme-cyberpunk #info-panel::after,
+body.theme-cosmos .left-panel::after,
+body.theme-cosmos #view-chat::after,
+body.theme-cosmos #info-panel::after,
+body.theme-amethyst .left-panel::after,
+body.theme-amethyst #view-chat::after,
+body.theme-amethyst #info-panel::after,
+body.theme-volcano .left-panel::after,
+body.theme-volcano #view-chat::after,
+body.theme-volcano #info-panel::after {
+  background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.0) 5%,
+      rgba(255, 255, 255, 0.12) 30%,
+      rgba(255, 255, 255, 0.20) 50%,
+      rgba(255, 255, 255, 0.12) 70%,
       rgba(255, 255, 255, 0.0) 95%,
       transparent 100%
   );

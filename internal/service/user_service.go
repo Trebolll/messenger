@@ -22,16 +22,20 @@ type UserRepository interface {
 	UpdateAvatarUrl(userID uuid.UUID, url string) error
 }
 
-type UserService struct {
-	repo UserRepository
+type WallManager interface {
+	InitWall(userID uuid.UUID) error
 }
 
-func NewUserService(repo UserRepository) *UserService {
-	return &UserService{repo: repo}
+type UserService struct {
+	repo UserRepository
+	wall WallManager
+}
+
+func NewUserService(repo UserRepository, wall WallManager) *UserService {
+	return &UserService{repo: repo, wall: wall}
 }
 
 func (s *UserService) CreateUser(u *model.User) error {
-
 	if !isValidEmail(u.Email) {
 		return errors.New("неверный формат электронной почты, формат должен быть в виде example@example.com")
 	}
@@ -55,7 +59,12 @@ func (s *UserService) CreateUser(u *model.User) error {
 	}
 	u.Password = hashedPassword
 
-	return s.repo.Create(u)
+	if err := s.repo.Create(u); err != nil {
+		return err
+	}
+
+	// Инициализируем стену для нового пользователя
+	return s.wall.InitWall(u.ID)
 }
 
 func (s *UserService) LoginUser(email, password string) (*model.User, error) {

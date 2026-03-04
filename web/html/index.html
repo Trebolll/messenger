@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <link rel="icon" type="image/svg+xml" href="/web/favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="/web/favicon1.svg">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>λ</title>
@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="/web/html/css/groups.css">
   <link rel="stylesheet" href="/web/html/css/new-chat-modal.css">
   <link rel="stylesheet" href="/web/html/css/profile-modal.css">
+  <link rel="stylesheet" href="/web/html/css/wall.css">
   <link rel="stylesheet" href="/web/html/css/layout.css">
 </head>
 <body class="bg-custom-main min-h-screen text-custom-main">
@@ -261,7 +262,7 @@
     <div class="dock-divider"></div>
 
     <!-- Профиль -->
-    <button id="profile-dock-btn" class="dock-btn dock-btn--avatar" onclick="toggleProfileModal()" title="Профиль">
+    <button id="profile-dock-btn" class="dock-btn dock-btn--avatar" onclick="toggleWall()" title="Профиль">
       <span style="position:relative;display:inline-flex;align-items:center;justify-content:center;">
         <div id="current-user-avatar" class="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden text-xs">U</div>
         <div id="my-status-dot" class="nav-status-dot" style="width:8px;height:8px;bottom:0;right:0;border-width:1.5px;"></div>
@@ -365,7 +366,7 @@
 </div>
 
 <!-- Profile Modal -->
-<div id="profile-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+<div id="profile-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[170] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
   <div id="profile-modal" class="profile-modal w-full max-w-sm rounded-3xl relative transform scale-95 transition-all duration-300 p-8">
     <!-- Галочка (сохранить) в левом верхнем углу -->
     <button onclick="saveProfile()" title="Сохранить" class="absolute top-5 left-5 text-custom-accent hover:scale-110 transition-all">
@@ -460,11 +461,119 @@
   <img id="img-lightbox-img" src="" alt="">
 </div>
 
+<!-- Wall Modal (iOS-style Profile Wall) -->
+<div id="wall-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[150] hidden opacity-0 transition-opacity duration-400 flex items-center justify-center p-0 sm:p-4">
+  <div id="wall-modal" class="w-full h-full sm:h-[90vh] max-w-4xl rounded-none sm:rounded-[32px] relative overflow-hidden transform scale-95 transition-all duration-500 flex flex-col bg-custom-main border border-white/10 shadow-2xl">
+    
+    <!-- Top Banner & Header -->
+    <div class="wall-header-section relative flex-shrink-0 h-48 sm:h-64">
+      <div id="wall-banner" class="absolute inset-0 bg-gradient-to-r from-blue-600/40 to-purple-600/40 overflow-hidden">
+      </div>
+      
+      <!-- Close Button -->
+      <button onclick="closeWall()" class="absolute top-6 right-6 z-20 p-2 bg-black/20 backdrop-blur-md rounded-full text-white hover:bg-black/40 transition">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <!-- Profile Header Info -->
+      <div class="absolute -bottom-12 left-8 flex items-end gap-6 z-10">
+        <div id="wall-avatar-container" class="relative group">
+           <div id="wall-avatar" class="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-custom-sidebar border-4 border-custom-main flex items-center justify-center text-4xl font-bold shadow-xl overflow-hidden">?</div>
+           <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition rounded-full cursor-pointer" onclick="triggerAvatarUpload()">
+              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+           </div>
+        </div>
+        <div class="mb-4">
+          <h2 id="wall-username" class="text-2xl sm:text-3xl font-extrabold text-custom-main tracking-tight drop-shadow-md">User Name</h2>
+          <p id="wall-status" class="text-sm text-custom-muted font-medium bg-custom-main/80 backdrop-blur px-2 py-0.5 rounded-lg inline-block mt-1">Status goes here...</p>
+        </div>
+      </div>
+      
+      <!-- Edit Profile Button -->
+      <div class="absolute bottom-4 right-8 flex gap-3">
+         <button id="wall-settings-btn" onclick="toggleProfileModal()" class="w-10 h-10 bg-custom-accent/10 border border-custom-accent/30 text-custom-accent rounded-full flex items-center justify-center hover:bg-custom-accent/20 transition-all duration-300 hover:rotate-90" title="Настройки профиля">
+           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+         </button>
+      </div>
+    </div>
+
+    <!-- Wall Content Area -->
+    <div class="flex-grow flex flex-col sm:flex-row gap-6 p-8 mt-16 overflow-hidden">
+      <!-- Left: Sidebar Info -->
+      <div class="w-full sm:w-64 flex-shrink-0 space-y-6">
+        <div class="p-5 bg-custom-sidebar/30 rounded-3xl border border-white/5 space-y-4 group/info">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-custom-muted uppercase tracking-wider">Информация</h3>
+            <button id="edit-bio-btn" onclick="toggleBioEdit()" class="text-custom-muted hover:text-custom-accent opacity-0 group-hover/info:opacity-100 transition-opacity">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            </button>
+          </div>
+          <div id="wall-info-bio-container">
+            <div id="wall-info-bio" class="text-sm text-custom-main leading-relaxed cursor-pointer hover:bg-white/5 rounded-lg transition p-1" onclick="toggleBioEdit()">
+               Привет! Это мой уголок в λ. Здесь я делюсь мыслями и медиа.
+            </div>
+            <div id="wall-info-bio-edit" class="hidden space-y-3">
+              <textarea id="wall-bio-textarea" class="w-full bg-custom-sidebar/50 border border-white/10 rounded-xl p-3 text-sm text-custom-main outline-none focus:border-custom-accent/50 resize-none" rows="4"></textarea>
+              <div class="flex gap-2">
+                <button onclick="saveBio()" class="flex-grow py-2 bg-custom-accent text-white text-xs font-bold rounded-xl shadow-lg shadow-custom-accent/20 hover:scale-[1.02] transition">Сохранить</button>
+                <button onclick="toggleBioEdit(false)" class="px-4 py-2 bg-white/5 text-custom-muted text-xs font-bold rounded-xl hover:bg-white/10 transition">Отмена</button>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-2">
+             <div class="flex items-center gap-3 text-xs text-custom-muted">
+               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
+               <span>В λ с марта 2024</span>
+             </div>
+          </div>
+        </div>
+        
+        <!-- Media Preview Box -->
+        <div class="p-5 bg-custom-sidebar/30 rounded-3xl border border-white/5">
+           <h3 class="text-xs font-bold text-custom-muted uppercase tracking-wider mb-4">Медиа</h3>
+           <div id="wall-media-grid" class="grid grid-cols-3 gap-2">
+           </div>
+        </div>
+      </div>
+
+      <!-- Right: Main Feed -->
+      <div class="flex-grow flex flex-col gap-6 overflow-y-auto scrollbar-hide pb-8">
+        
+        <!-- New Post Creator -->
+        <div class="p-6 bg-custom-sidebar/40 rounded-[32px] border border-white/10 shadow-sm">
+           <div class="flex gap-4">
+              <div id="creator-avatar" class="w-10 h-10 rounded-full bg-custom-sidebar flex-shrink-0 overflow-hidden font-bold flex items-center justify-center border border-white/10">?</div>
+              <textarea id="wall-post-input" rows="2" placeholder="Что нового?" class="flex-grow bg-custom-sidebar/30 rounded-2xl p-3 outline-none text-custom-main placeholder-custom-muted resize-none text-sm"></textarea>
+           </div>
+           <div class="mt-4 flex items-center justify-between border-t border-white/5 pt-4">
+              <div class="flex gap-2">
+                 <button class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-custom-accent/10">
+                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
+                 </button>
+                 <button class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-custom-accent/10">
+                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                 </button>
+              </div>
+              <button onclick="publishWallPost()" class="px-6 py-2 bg-custom-accent text-white rounded-2xl font-bold text-sm shadow-lg shadow-custom-accent/20 hover:scale-105 transition-all">
+                Опубликовать
+              </button>
+           </div>
+        </div>
+
+        <!-- Feed Container -->
+        <div id="wall-feed" class="space-y-6">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="/web/js/api.js"></script>
 <script src="/web/js/render.js"></script>
 <script src="/web/js/websocket.js"></script>
 <script src="/web/js/app.js"></script>
 <script src="/web/js/ui.js"></script>
+<script src="/web/js/wall.js"></script>
 <script src="/web/js/news.js"></script>
 <script src="/web/js/ai.js"></script>
 <script src="/web/js/neural-ai-btn.js"></script>

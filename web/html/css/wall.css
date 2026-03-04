@@ -1,0 +1,100 @@
+/* ══ Wall Modal — iOS profile style ══ */
+
+#wall-overlay {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+#wall-modal {
+    background: rgba(var(--bg-sidebar-rgb), var(--glass-bg-opacity, 0.35)) !important;
+}
+
+#wall-banner {
+    border-radius: 0 0 32px 32px;
+}
+
+#wall-avatar {
+    border-radius: 9999px !important;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#wall-post-input {
+    border-radius: 20px !important;
+}
+
+#wall-avatar-container:hover #wall-avatar {
+    transform: scale(1.05);
+}
+
+/* Glassy containers for posts */
+.wall-post-card {
+    background: rgba(var(--bg-sidebar-rgb), 0.4);
+    backdrop-filter: blur(12px);
+    border: 0.5px solid var(--glass-border);
+    border-radius: 28px;
+    padding: 24px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Анимации и плавные переходы для всех модалок */
+#wall-modal, #profile-modal, #auth-modal, .new-chat-modal-card {
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), 
+                opacity 0.4s ease, 
+                filter 0.4s ease !important;
+}
+
+/* Если открыто поверх стены, раздвигаем окна side-by-side (iOS Split View style) */
+body.wall-open.profile-open #wall-modal {
+    transform: translateX(210px) scale(0.96) !important;
+    opacity: 0.85;
+    filter: blur(4px);
+    pointer-events: none;
+}
+
+body.wall-open #profile-overlay {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    pointer-events: none;
+}
+
+body.wall-open #profile-modal {
+    pointer-events: auto !important;
+}
+
+body.wall-open.profile-open #profile-modal {
+    transform: translateX(-450px) scale(1) !important;
+    box-shadow: -20px 40px 100px rgba(0,0,0,0.3) !important;
+    z-index: 200;
+}
+
+/* Эффект для кнопки шестеренки */
+#wall-settings-btn:active {
+    transform: scale(0.9);
+}
+
+.wall-post-card:hover {
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+#wall-post-input:focus {
+    min-height: 80px;
+}
+
+/* Custom Scrollbar for wall */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Animations */
+@keyframes wallFadeUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+#wall-modal {
+    animation: wallFadeUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
