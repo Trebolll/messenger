@@ -24,7 +24,7 @@ func (r *MessageRepository) SendMessage(message *model.Message) error {
 			VALUES ($1, $2, $3)
 			RETURNING id, chat_id, sender_id, content, created_at, read_at, edited_at, likes, dislikes
 		)
-		SELECT m.id, m.chat_id, m.sender_id, u.username, COALESCE(u.avatar_url, ''), u.rating, m.content, m.created_at, m.read_at, m.edited_at, m.likes, m.dislikes
+		SELECT m.id, m.chat_id, m.sender_id, u.username, COALESCE(u.avatar_url, ''), GREATEST(0, u.rating), m.content, m.created_at, m.read_at, m.edited_at, m.likes, m.dislikes
 		FROM inserted_msg m
 		JOIN users u ON m.sender_id = u.id`
 
@@ -44,7 +44,7 @@ func (r *MessageRepository) SendMessage(message *model.Message) error {
 
 func (r *MessageRepository) GetMessagesByChatID(chatID uuid.UUID) ([]model.Message, error) {
 	query := `
-		SELECT m.id, m.chat_id, m.sender_id, u.username, COALESCE(u.avatar_url, ''), u.rating, m.content, m.created_at, m.read_at, m.edited_at, m.likes, m.dislikes
+		SELECT m.id, m.chat_id, m.sender_id, u.username, COALESCE(u.avatar_url, ''), GREATEST(0, u.rating), m.content, m.created_at, m.read_at, m.edited_at, m.likes, m.dislikes
 		FROM messages m
 		JOIN users u ON m.sender_id = u.id
 		WHERE m.chat_id = $1
@@ -80,7 +80,7 @@ func (r *MessageRepository) EditMessage(messageID, senderID uuid.UUID, content s
 			WHERE id=$2 AND sender_id=$3
 			RETURNING id, chat_id, sender_id, content, created_at, read_at, edited_at, likes, dislikes
 		)
-		SELECT u.id, u.chat_id, u.sender_id, usr.username, COALESCE(usr.avatar_url, ''), usr.rating, u.content, u.created_at, u.read_at, u.edited_at, u.likes, u.dislikes
+		SELECT u.id, u.chat_id, u.sender_id, usr.username, COALESCE(usr.avatar_url, ''), GREATEST(0, usr.rating), u.content, u.created_at, u.read_at, u.edited_at, u.likes, u.dislikes
 		FROM updated u
 		JOIN users usr ON u.sender_id = usr.id`
 

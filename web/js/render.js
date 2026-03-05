@@ -260,7 +260,7 @@ function renderMessages() {
                  oncontextmenu="showMessageMenu(event, '${msg.id}', ${isMe})">
                 ${!isMe ? senderAvatarHtml : ''}
                 <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};max-width:75%;">
-                    <div style="display:flex;align-items:center;gap:6px;">
+                    <div class="msg-header-line" style="display:flex;align-items:center;gap:6px;">
                         ${nicknameHtml}
                         ${renderRatingBadge(msg.sender_rating)}
                     </div>
@@ -303,20 +303,23 @@ function renderMessages() {
 
 // ─── Рейтинговый бейдж ────────────────────────────────────────────────────────
 function renderRatingBadge(rating) {
-  if (!rating || rating <= 0) return '';
+  if (rating === undefined || rating === null) return '';
+  const rVal = Number(rating);
+  if (isNaN(rVal) || rVal < 0) return '';
+  
   const ranks = [
-    { min: 1000, name: 'Легенда',   color: '#f59e0b' },
-    { min: 500,  name: 'Авторитет', color: '#8b5cf6' },
-    { min: 200,  name: 'Активный',  color: '#22c55e' },
-    { min: 50,   name: 'Участник',  color: '#3b82f6' },
-    { min: 1,    name: 'Новичок',   color: '#9ca3af' },
+    { min: 1000, name: 'Legend',    color: '#f59e0b' },
+    { min: 500,  name: 'Elite',     color: '#8b5cf6' },
+    { min: 200,  name: 'Expert',    color: '#22c55e' },
+    { min: 50,   name: 'Skilled',    color: '#3b82f6' },
+    { min: 0,    name: 'Beginner',    color: '#9ca3af' },
   ];
-  const rank = ranks.find(r => rating >= r.min) || ranks[ranks.length - 1];
+  const rank = ranks.find(r => rVal >= r.min) || ranks[ranks.length - 1];
   return `<span class="msg-rating-badge" title="${rank.name}"
         style="display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:600;
                color:${rank.color};background:${rank.color}18;
                padding:1px 5px;border-radius:3px;line-height:1.4;">
-        ★ ${rating}
+        ★ ${rank.name}
     </span>`;
 }
 
@@ -331,7 +334,6 @@ function renderVotesHtml(likes, dislikes, myVote, messageId) {
                 title="Лайк">
             <span class="vote-icon">+</span>
             <span class="vote-ring"></span>
-            ${likes > 0 ? `<span class="vote-count">${likes}</span>` : ''}
         </button>
         <button class="vote-btn vote-dislike ${dislikeActive ? 'vote-active-dislike' : ''}"
                 data-vote-msg="${messageId}" data-vote="-1"
@@ -548,7 +550,7 @@ function renderChatHeader() {
                     </button>`
           : '';
       return `
-                <div class="member-row flex items-center gap-3 py-1.5">
+                <div class="member-row flex items-center gap-3 py-1.5" data-uid="${m.id}">
                     <div class="relative flex-shrink-0">
                         <div onclick="openMemberAvatarViewer(JSON.parse(this.parentNode.parentNode.dataset.member))"
                             class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-400 hover:ring-offset-1 transition text-sm">
