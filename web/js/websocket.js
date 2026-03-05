@@ -60,6 +60,15 @@ function _handleNewMessage(msg) {
     const app = window.app;
     console.log('New message:', msg, '| activeChatId:', app.activeChatId);
 
+    // Если пришло сообщение — отправитель точно онлайн.
+    // Обновляем его статус в глобальном мапе, чтобы интерфейс сразу отреагировал.
+    if (!app.userStatusMap) app.userStatusMap = {};
+    app.userStatusMap[String(msg.sender_id)] = { online: true, status: '' };
+    
+    // Если это приватный чат с этим отправителем — помечаем его онлайн и там
+    const directChat = app.chats.find(c => String(c.interlocutor_id) === String(msg.sender_id));
+    if (directChat) directChat.is_online = true;
+
     if (app.activeChatId && String(msg.chat_id) === String(app.activeChatId)) {
         // Проверяем по id — и по множеству уже добавленных нами сообщений
         const already = app.messages.find(m =>
@@ -156,29 +165,55 @@ function updateUserProfile(data) {
 
 function updateUserStatus(status) {
     const app = window.app;
-    const chat = app.chats.find(c => String(c.interlocutor_id) === String(status.user_id));
-    if (chat) {
-        chat.is_online   = status.online;
-        chat.user_status = status.status || '';
-        renderChats();
-    }
-    // Обновляем онлайн-статус в членах групп
-    app.chats.forEach(c => {
-        if (c.members) {
-            c.members.forEach(m => {
-                if (String(m.id) === String(status.user_id)) m.is_online = status.online;
+    const uid = String(status.user_id);
+    const isOnline = !!status.online;
+    
+    console.log(`[WS] Status Change: User=${uid} Online=${isOnline}`);
+
+    // Сохраняем в глобальный мап статусов
+    if (!app.userStatusMap) app.userStatusMap = {};
+    app.userStatusMap[uid] = {
+        online: isOnline,
+        status: status.status || ''
+    };
+
+    let affected = false;
+    app.chats.forEach(chat => {
+        // 1. Приватный чат
+        if (chat.interlocutor_id && String(chat.interlocutor_id) === uid) {
+            chat.is_online = isOnline;
+            chat.user_status = status.status || '';
+            affected = true;
+        }
+        
+        // 2. Участники групп
+        if (chat.members) {
+            chat.members.forEach(m => {
+                if (String(m.id) === uid) {
+                    m.is_online = isOnline;
+                    affected = true;
+                }
             });
         }
     });
+
+    // Всегда перерисовываем список чатов для надежности, если пользователь нам знаком
+    renderChats();
+    
+    // Если это активный чат — обновляем хедер и элементы статуса
     const activeChat = app.chats.find(c => String(c.id) === String(app.activeChatId));
-    if (activeChat && String(activeChat.interlocutor_id) === String(status.user_id)) {
-        renderStatusElements(status.online, status.status || '');
+    if (activeChat) {
+        const isTargetUser = !activeChat.is_group && String(activeChat.interlocutor_id) === uid;
+        const isInGroup = activeChat.is_group && activeChat.members && activeChat.members.some(m => String(m.id) === uid);
+        
+        if (isTargetUser || isInGroup) {
+            console.log('[WS] Updating active chat UI');
+            renderChatHeader();
+            if (!activeChat.is_group) {
+                renderStatusElements(isOnline, status.status || '');
+            }
+        }
     }
-    // Обновляем индикаторы онлайн в сообщениях без перерисовки всего списка
-    const dots = document.querySelectorAll(`[data-online-uid="${status.user_id}"]`);
-    dots.forEach(dot => {
-        dot.style.background = status.online ? '#22c55e' : '#9ca3af';
-    });
 }
 
 // ─── Подсветка чата при новом входящем сообщении ────────────────────────────

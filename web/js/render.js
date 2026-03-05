@@ -76,10 +76,15 @@ function renderChats() {
     }
 
     // Приватный чат
+    let isOnline = !!chat.is_online;
+    if (chat.interlocutor_id && app.userStatusMap && app.userStatusMap[String(chat.interlocutor_id)]) {
+        isOnline = app.userStatusMap[String(chat.interlocutor_id)].online;
+    }
+
     const avatarHtml = `<div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
             ${chatAvatarHtml(chat)}
         </div>
-        ${chat.is_online ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>' : ''}`;
+        ${isOnline ? '<div class="online-dot-glass"></div>' : ''}`;
 
     return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
             <div class="relative flex-shrink-0">${avatarHtml}</div>
@@ -139,9 +144,6 @@ function renderMessages() {
       const avatarInner = msg.sender_avatar_url
           ? `<img src="${msg.sender_avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
           : `<span>${(msg.sender_name || '?')[0].toUpperCase()}</span>`;
-      const onlineDot = isOnline
-          ? `<span style="position:absolute;bottom:0;right:0;width:9px;height:9px;background:#22c55e;border:2px solid var(--bg-main,#fff);border-radius:50%;display:block;" data-online-uid="${msg.sender_id}"></span>`
-          : `<span style="position:absolute;bottom:0;right:0;width:9px;height:9px;background:#9ca3af;border:2px solid var(--bg-main,#fff);border-radius:50%;display:block;" data-online-uid="${msg.sender_id}"></span>`;
 
       const senderData = JSON.stringify({ id: msg.sender_id, username: msg.sender_name, avatar_url: msg.sender_avatar_url || '' }).replace(/"/g, '&quot;');
       senderAvatarHtml = `
@@ -152,7 +154,6 @@ function renderMessages() {
                     <div style="width:30px;height:30px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#2563eb;overflow:hidden;">
                         ${avatarInner}
                     </div>
-                    ${onlineDot}
                 </div>`;
     }
 
@@ -432,7 +433,15 @@ function renderChatHeader() {
   const headerStatus = document.getElementById('active-chat-status');
   if (isGroup) {
     if (headerStatus) {
-      headerStatus.textContent = '';   // не показываем "офлайн/онлайн" для группы
+      const total = (chat.members || []).length;
+      const online = (chat.members || []).filter(m => {
+          if (String(m.id) === String(app.currentUser?.id)) return true;
+          // Используем статус из глобального мапа, если он там есть
+          const globalStatus = app.userStatusMap && app.userStatusMap[String(m.id)];
+          if (globalStatus) return globalStatus.online;
+          return m.is_online;
+      }).length;
+      headerStatus.textContent = `${online} из ${total} online`;
       headerStatus.className   = 'text-xs text-custom-muted';
     }
     const badge = document.getElementById('info-status-badge');
@@ -440,7 +449,13 @@ function renderChatHeader() {
     const statusEl = document.getElementById('info-user-status');
     if (statusEl) statusEl.textContent = '';
   } else {
-    renderStatusElements(chat.is_online, chat.user_status || '');
+    let isOnline = !!chat.is_online;
+    let userStatus = chat.user_status || '';
+    if (chat.interlocutor_id && app.userStatusMap && app.userStatusMap[String(chat.interlocutor_id)]) {
+        isOnline = app.userStatusMap[String(chat.interlocutor_id)].online;
+        userStatus = app.userStatusMap[String(chat.interlocutor_id)].status || '';
+    }
+    renderStatusElements(isOnline, userStatus);
     const badge = document.getElementById('info-status-badge');
     if (badge) badge.style.display = '';
   }
@@ -497,14 +512,32 @@ function renderChatHeader() {
     const localChat = app.chats.find(c => String(c.id) === String(chat.id));
     if (localChat) localChat.members = members;
 
+    // После загрузки участников — обновляем счетчик онлайн в хедере
+    const headerStatus = document.getElementById('active-chat-status');
+    if (headerStatus) {
+        const total = members.length;
+        const online = members.filter(m => {
+            if (String(m.id) === String(app.currentUser?.id)) return true;
+            const globalStatus = app.userStatusMap && app.userStatusMap[String(m.id)];
+            if (globalStatus) return globalStatus.online;
+            return m.is_online;
+        }).length;
+        headerStatus.textContent = `${online} из ${total} online`;
+    }
+
     const membersList = members.map(m => {
       const isMe = String(m.id) === String(app.currentUser?.id);
+      
+      // Статус из глобального мапа (если есть) имеет приоритет над тем что пришло от API
+      let isOnline = m.is_online;
+      const globalStatus = app.userStatusMap && app.userStatusMap[String(m.id)];
+      if (globalStatus) isOnline = globalStatus.online;
+      if (isMe) isOnline = true;
+
       const avatarInner = m.avatar_url
           ? `<img src="${m.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`
           : (m.username || '?')[0].toUpperCase();
-      const onlineDot = m.is_online
-          ? `<span class="member-online-dot"></span>`
-          : '';
+      const onlineDot = isOnline ? `<span class="member-online-dot"></span>` : '';
       const removeBtn = (isCreator && !isMe)
           ? `<button onclick="removeGroupMember('${chat.id}','${m.id}')"
                         title="Удалить из группы"
@@ -559,11 +592,18 @@ function renderChatHeader() {
 
 
 function renderStatusElements(isOnline, userStatus) {
-  // Бейдж онлайн/офлайн в правой панели
+  // Бейдж онлайн в правой панели
   const badge = document.getElementById('info-status-badge');
   const text  = document.getElementById('info-status-text');
-  if (badge) badge.className   = 'info-status-badge ' + (isOnline ? 'online' : 'offline');
-  if (text)  text.textContent  = isOnline ? 'онлайн' : 'офлайн';
+  if (badge) {
+    if (isOnline) {
+      badge.style.display = 'inline-flex';
+      badge.className = 'info-status-badge online mb-2';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  if (text) text.textContent = isOnline ? 'online' : '';
 
   // Текстовый статус — всегда показываем, пустой если нет
   const statusEl = document.getElementById('info-user-status');
@@ -572,8 +612,8 @@ function renderStatusElements(isOnline, userStatus) {
   // Статус под именем в хедере чата
   const headerStatus = document.getElementById('active-chat-status');
   if (headerStatus) {
-    headerStatus.textContent = isOnline ? 'онлайн' : 'офлайн';
-    headerStatus.className   = 'text-xs ' + (isOnline ? 'text-green-500' : 'text-custom-muted');
+    headerStatus.textContent = isOnline ? 'online' : '';
+    headerStatus.className   = 'text-xs text-green-500';
   }
 }
 

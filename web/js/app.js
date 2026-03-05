@@ -8,6 +8,7 @@ class AlphaApp {
     this.socket       = null;
     this.chats        = [];
     this.messages     = [];
+    this.userStatusMap = {}; // { userId: { online: bool, status: string } }
 
     const userId = this.currentUser?.id || 'default';
     this.theme   = localStorage.getItem(`alpha_theme_${userId}`) || 'gray';

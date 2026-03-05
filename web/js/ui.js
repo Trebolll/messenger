@@ -370,7 +370,7 @@ function openMyAvatarViewer() {
   circleEl.style.overflow = 'hidden';
   circleEl.innerHTML = userAvatarHtml(user);
   document.getElementById('avatar-viewer-name').textContent   = name;
-  document.getElementById('avatar-viewer-status').textContent = 'вы · онлайн';
+  document.getElementById('avatar-viewer-status').textContent = 'вы · online';
   document.getElementById('avatar-viewer-overlay').classList.remove('hidden');
 }
 
@@ -388,7 +388,7 @@ function openAvatarViewer() {
     circleEl.textContent = name[0].toUpperCase();
   }
   document.getElementById('avatar-viewer-name').textContent   = name;
-  document.getElementById('avatar-viewer-status').textContent = chat.is_online ? 'онлайн' : 'офлайн';
+  document.getElementById('avatar-viewer-status').textContent = chat.is_online ? 'online' : '';
   document.getElementById('avatar-viewer-overlay').classList.remove('hidden');
 }
 
@@ -1113,12 +1113,17 @@ function openMemberAvatarViewer(member) {
   const dot   = document.getElementById('avatar-viewer-online-dot');
   const label = document.getElementById('avatar-viewer-online-label');
   if (dot && label) {
-    dot.style.display    = 'block';
-    label.style.display  = 'inline-block';
-    dot.style.background = isOnline ? '#22c55e' : '#9ca3af';
-    label.textContent    = isOnline ? 'онлайн' : 'офлайн';
-    label.style.background  = isOnline ? 'rgba(34,197,94,0.15)' : 'rgba(156,163,175,0.15)';
-    label.style.color        = isOnline ? '#16a34a' : '#6b7280';
+    if (isOnline) {
+      dot.style.display    = 'block';
+      label.style.display  = 'inline-block';
+      dot.style.background = '#22c55e';
+      label.textContent    = 'online';
+      label.style.background  = 'rgba(34,197,94,0.15)';
+      label.style.color        = '#16a34a';
+    } else {
+      dot.style.display    = 'none';
+      label.style.display  = 'none';
+    }
   }
 
   document.getElementById('avatar-viewer-overlay').classList.remove('hidden');
