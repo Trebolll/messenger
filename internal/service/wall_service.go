@@ -40,9 +40,16 @@ func (s *WallService) GetWall(userID uuid.UUID) (*model.WallResponse, error) {
 		return nil, err
 	}
 
+	media, err := s.repo.GetAllMediaByUserID(userID)
+	if err != nil {
+		// Не фатально
+		media = []model.WallAttachment{}
+	}
+
 	return &model.WallResponse{
 		Wall:  *wall,
 		Posts: posts,
+		Media: media,
 	}, nil
 }
 

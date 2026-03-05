@@ -22,8 +22,9 @@ type Wall struct {
 }
 
 type WallResponse struct {
-	Wall  Wall       `json:"wall"`
-	Posts []WallPost `json:"posts"`
+	Wall  Wall             `json:"wall"`
+	Posts []WallPost       `json:"posts"`
+	Media []WallAttachment `json:"media"`
 }
 
 type WallPost struct {

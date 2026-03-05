@@ -92,7 +92,7 @@
         <!-- Лента активности (по умолчанию скрыта инлайном, чтобы не мигала до init) -->
         <div id="view-home" class="flex flex-col h-full" style="display:none;">
           <div class="p-4 flex items-center gap-3" style="border-bottom: 1px solid rgba(0,0,0,0.04);">
-            <span class="font-bold text-custom-main text-base">Лента</span>
+            <span class="font-bold text-custom-main text-base"> </span>
           </div>
           <div class="flex-grow flex flex-col items-center justify-center gap-4 select-none px-6">
             <div style="opacity:0.12;">
@@ -515,8 +515,8 @@
     <!-- Wall Content Area -->
     <div class="flex-grow flex flex-col sm:flex-row gap-6 p-8 mt-16 overflow-hidden">
       <!-- Left: Sidebar Info -->
-      <div class="w-full sm:w-64 flex-shrink-0 space-y-6">
-        <div class="p-5 bg-custom-sidebar/30 rounded-3xl border border-white/5 space-y-3 group/info">
+      <div id="wall-left-sidebar" class="w-full sm:w-64 flex-shrink-0 space-y-6">
+        <div id="wall-info-sidebar-box" class="p-5 bg-custom-sidebar/30 rounded-3xl border border-white/5 space-y-3 group/info">
           <div class="space-y-2">
             <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70" id="wall-info-age-row">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -541,8 +541,8 @@
           </div>
         </div>
 
-        <!-- Media Preview Box -->
-        <div class="p-5 bg-custom-sidebar/30 rounded-3xl border border-white/5">
+        <!-- Media Preview Box (Mini) -->
+        <div id="wall-media-preview-box" class="p-5 bg-custom-sidebar/30 rounded-3xl border border-white/5">
           <h3 class="text-xs font-bold text-custom-muted uppercase tracking-wider mb-4">Медиа</h3>
           <div id="wall-media-grid" class="grid grid-cols-3 gap-2">
           </div>
@@ -551,30 +551,51 @@
 
       <!-- Right: Main Feed -->
       <div class="flex-grow flex flex-col gap-6 overflow-y-auto scrollbar-hide pb-8">
+        
+        <!-- Wall Tabs -->
+        <div class="flex items-center gap-8 border-b border-white/5 pb-1">
+          <button onclick="switchWallTab('posts')" id="wall-tab-posts" class="pb-3 text-custom-main border-b-2 border-custom-accent transition-all" title="Записи">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+          </button>
+          <button onclick="switchWallTab('media')" id="wall-tab-media" class="pb-3 text-custom-muted hover:text-custom-main transition-all border-b-2 border-transparent" title="Медиа">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
+          </button>
+        </div>
 
         <!-- New Post Creator -->
-        <div id="wall-post-creator" class="p-6 bg-custom-sidebar/40 rounded-[32px] border border-white/10 shadow-sm">
+        <div id="wall-post-creator" class="p-6 bg-white/5 rounded-[32px] border border-white/10 shadow-sm">
           <div class="flex gap-4">
             <div id="creator-avatar" class="w-10 h-10 rounded-full bg-custom-sidebar flex-shrink-0 overflow-hidden font-bold flex items-center justify-center border border-white/10">?</div>
-            <textarea id="wall-post-input" rows="2" placeholder="Что нового?" class="flex-grow bg-custom-sidebar/30 rounded-2xl p-3 outline-none text-custom-main placeholder-custom-muted resize-none text-sm"></textarea>
+            <textarea id="wall-post-input" rows="2" placeholder="Что нового?" class="flex-grow bg-white/5 rounded-2xl p-3 outline-none text-custom-main placeholder-custom-muted resize-none text-sm"></textarea>
           </div>
           <div class="mt-4 flex items-center justify-between border-t border-white/5 pt-4">
-            <div class="flex gap-2">
-              <button class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-custom-accent/10">
+            <div class="flex gap-3">
+              <button onclick="document.getElementById('wall-media-upload').click()" class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-white/10" title="Добавить медиа">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
               </button>
-              <button class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-custom-accent/10">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <button onclick="document.getElementById('wall-file-upload').click()" class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-white/10" title="Прикрепить файл">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
               </button>
+              <input type="file" id="wall-media-upload" class="hidden" accept="image/*,video/*" multiple onchange="handleWallMediaSelect(event)">
+              <input type="file" id="wall-file-upload" class="hidden" multiple onchange="handleWallMediaSelect(event)">
             </div>
-            <button onclick="publishWallPost()" class="px-6 py-2 bg-custom-accent text-white rounded-2xl font-bold text-sm shadow-lg shadow-custom-accent/20 hover:scale-105 transition-all">
-              Опубликовать
+            <button onclick="publishWallPost()" class="w-10 h-10 bg-custom-accent text-white rounded-full flex items-center justify-center shadow-lg shadow-custom-accent/20 hover:scale-110 transition-all">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>
           </div>
+          <!-- Preview for selected media -->
+          <div id="wall-media-preview" class="flex gap-2 mt-3 overflow-x-auto hidden pb-2"></div>
         </div>
 
         <!-- Feed Container -->
         <div id="wall-feed" class="space-y-6">
+        </div>
+
+        <!-- Media Grid Container (Instagram Style) -->
+        <div id="wall-media-container" class="hidden space-y-6">
+           <div id="wall-media-grid-main" class="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <!-- Media items and Add Button will be injected here by renderMediaGrid -->
+           </div>
         </div>
       </div>
     </div>

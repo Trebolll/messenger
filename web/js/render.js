@@ -306,13 +306,19 @@ function renderRatingBadge(rating) {
   if (rating === undefined || rating === null) return '';
   const rVal = Number(rating);
   if (isNaN(rVal) || rVal < 0) return '';
-  
+
   const ranks = [
-    { min: 1000, name: 'Legend',    color: '#f59e0b' },
-    { min: 500,  name: 'Elite',     color: '#8b5cf6' },
-    { min: 200,  name: 'Expert',    color: '#22c55e' },
-    { min: 50,   name: 'Skilled',    color: '#3b82f6' },
-    { min: 0,    name: 'Beginner',    color: '#9ca3af' },
+    { min: 1000000000, name: 'SINGULARITY',   color: '#ffd700',    border: '2px solid #ffd700', bg: 'rgba(255, 215, 0, 0.1)' },
+    { min: 100000000,  name: 'GALACTIC',      color: '#ffb347',    border: '2px solid #ffb347', bg: 'rgba(255, 179, 71, 0.1)' },
+    { min: 10000000,   name: 'STELLAR',       color: '#ff8c00',    border: '2px solid #ff8c00', bg: 'rgba(255, 140, 0, 0.1)' },
+    { min: 1000000,    name: 'MYTHIC',        color: '#ff6600',    border: '2px solid #ff6600', bg: 'rgba(255, 102, 0, 0.1)' },
+    { min: 100000,     name: 'GODLIKE',       color: '#ff4444',    border: '2px solid #ff4444', bg: 'rgba(255, 68, 68, 0.1)' },
+    { min: 50000,      name: 'IMMORTAL',      color: '#ff6b6b',    border: '2px solid #ff6b6b', bg: 'rgba(255, 107, 107, 0.1)' },
+    { min: 1000,       name: 'LEGEND',        color: '#f59e0b',    border: '2px solid #f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
+    { min: 500,        name: 'ELITE',         color: '#8b5cf6',    border: '2px solid #8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
+    { min: 200,        name: 'EXPERT',        color: '#22c55e',    border: '2px solid #22c55e', bg: 'rgba(34, 197, 94, 0.1)' },
+    { min: 50,         name: 'SKILLED',       color: '#3b82f6',    border: '2px solid #3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
+    { min: 0,          name: 'BEGINNER',      color: '#9ca3af',    border: '1px solid #9ca3af', bg: 'transparent' }
   ];
   const rank = ranks.find(r => rVal >= r.min) || ranks[ranks.length - 1];
   return `<span class="msg-rating-badge" title="${rank.name}"

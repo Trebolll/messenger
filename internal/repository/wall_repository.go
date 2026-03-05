@@ -137,3 +137,30 @@ func (r *WallRepository) GetAttachmentsByPostID(postID uuid.UUID) ([]model.WallA
 	}
 	return attachments, nil
 }
+
+func (r *WallRepository) GetAllMediaByUserID(userID uuid.UUID) ([]model.WallAttachment, error) {
+	query := `
+		SELECT wa.id, wa.post_id, wa.url, wa.filename, wa.mime_type, wa.size_bytes, wa.created_at
+		FROM wall_attachments wa
+		JOIN wall_posts wp ON wa.post_id = wp.id
+		WHERE wp.user_id = $1 AND (wa.mime_type LIKE 'image/%' OR wa.mime_type LIKE 'video/%')
+		ORDER BY wa.created_at DESC`
+
+	rows, err := r.db.Query(query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var media []model.WallAttachment
+	for rows.Next() {
+		var a model.WallAttachment
+		if err := rows.Scan(
+			&a.ID, &a.PostID, &a.Url, &a.Filename, &a.MimeType, &a.SizeBytes, &a.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		media = append(media, a)
+	}
+	return media, nil
+}
