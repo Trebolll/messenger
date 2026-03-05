@@ -26,11 +26,15 @@ func (r *WallRepository) GetWallByUserID(userID uuid.UUID) (*model.Wall, error) 
 	w := new(model.Wall)
 	var bio, banner, avatar, status sql.NullString
 	query := `
-		SELECT w.id, w.user_id, w.bio, w.banner_url, u.username, u.avatar_url, u.status 
+		SELECT w.id, w.user_id, w.bio, w.banner_url, u.username, u.avatar_url, u.status,
+		       GREATEST(0, u.rating) as rating, u.location, u.created_at, u.profession, u.birth_date
 		FROM walls w
 		JOIN users u ON w.user_id = u.id
 		WHERE w.user_id = $1`
-	err := r.db.QueryRow(query, userID).Scan(&w.ID, &w.UserID, &bio, &banner, &w.Username, &avatar, &status)
+	err := r.db.QueryRow(query, userID).Scan(
+		&w.ID, &w.UserID, &bio, &banner, &w.Username, &avatar, &status,
+		&w.UserRating, &w.UserLocation, &w.UserCreatedAt, &w.UserProfession, &w.UserBirthDate,
+	)
 	if err != nil {
 		return nil, err
 	}

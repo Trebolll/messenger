@@ -7,13 +7,18 @@ import (
 )
 
 type Wall struct {
-	ID        uuid.UUID `json:"id"`
-	UserID    uuid.UUID `json:"user_id"`
-	Bio       string    `json:"bio"`
-	BannerUrl string    `json:"banner_url"`
-	Username  string    `json:"username,omitempty"`
-	AvatarUrl string    `json:"avatar_url,omitempty"`
-	Status    string    `json:"status,omitempty"`
+	ID             uuid.UUID  `json:"id"`
+	UserID         uuid.UUID  `json:"user_id"`
+	Bio            string     `json:"bio"`
+	BannerUrl      string     `json:"banner_url"`
+	Username       string     `json:"username,omitempty"`
+	AvatarUrl      string     `json:"avatar_url,omitempty"`
+	Status         string     `json:"status,omitempty"`
+	UserRating     int        `json:"user_rating,omitempty"`
+	UserLocation   string     `json:"user_location,omitempty"`
+	UserProfession string     `json:"user_profession,omitempty"`
+	UserBirthDate  *time.Time `json:"user_birth_date,omitempty"`
+	UserCreatedAt  time.Time  `json:"user_created_at,omitempty"`
 }
 
 type WallResponse struct {

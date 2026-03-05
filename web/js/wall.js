@@ -82,18 +82,59 @@ async function loadWallPosts(userId) {
         const result = await response.json();
         console.log('Wall Data Loaded:', result);
         
-        // Обновляем данные владельца стены (Bio, Username, Avatar)
+        // Обновляем данные владельца стены (Username, Avatar)
         if (result.wall) {
-            const bioText = result.wall.bio || 'Привет! Это мой уголок в λ. Здесь я делюсь мыслями и медиа.';
-            document.getElementById('wall-info-bio').textContent = bioText;
-            document.getElementById('wall-bio-textarea').value = bioText;
-            
             // Всегда обновляем заголовок, если данные есть
             const uname = result.wall.username || (isMe ? window.app.currentUser?.username : 'User');
             const status = result.wall.status || (isMe ? window.app.currentUser?.status : '');
             
             document.getElementById('wall-username').textContent = uname;
             document.getElementById('wall-status').textContent   = status;
+
+            // Обновляем статистику пользователя (место, дата, лайки)
+            const locEl = document.getElementById('wall-info-location');
+            const locRow = document.getElementById('wall-info-location-row');
+            if (result.wall.user_location) {
+                locEl.textContent = result.wall.user_location;
+                if (locRow) locRow.classList.remove('hidden');
+            } else {
+                if (locRow) locRow.classList.add('hidden');
+            }
+
+            const createdEl = document.getElementById('wall-info-created');
+            if (createdEl && result.wall.user_created_at) {
+                const date = new Date(result.wall.user_created_at);
+                const y = String(date.getFullYear()).slice(-2);
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                createdEl.textContent = `${y}.${m}.${d}`;
+            }
+
+            // Профессия
+            const profEl = document.getElementById('wall-info-profession');
+            const profRow = document.getElementById('wall-info-profession-row');
+            if (result.wall.user_profession) {
+                profEl.textContent = result.wall.user_profession;
+                if (profRow) profRow.classList.remove('hidden');
+            } else {
+                if (profRow) profRow.classList.add('hidden');
+            }
+
+            // Возраст (из birth_date)
+            const ageEl = document.getElementById('wall-info-age');
+            const ageRow = document.getElementById('wall-info-age-row');
+            if (result.wall.user_birth_date) {
+                const age = calculateAge(new Date(result.wall.user_birth_date));
+                ageEl.textContent = `${age} лет`;
+                if (ageRow) ageRow.classList.remove('hidden');
+            } else {
+                if (ageRow) ageRow.classList.add('hidden');
+            }
+
+            const likesEl = document.getElementById('wall-info-likes');
+            if (likesEl) {
+                likesEl.textContent = result.wall.user_rating || 0;
+            }
             
             const avatarEl = document.getElementById('wall-avatar');
             const avatarUrl = result.wall.avatar_url || (isMe ? window.app.currentUser?.avatar_url : '');
@@ -197,45 +238,12 @@ async function publishWallPost() {
     }
 }
 
-function toggleBioEdit(show = true) {
-    const display = document.getElementById('wall-info-bio');
-    const edit    = document.getElementById('wall-info-bio-edit');
-    const text    = document.getElementById('wall-bio-textarea');
-    const btn     = document.getElementById('edit-bio-btn');
-
-    if (show) {
-        display.classList.add('hidden');
-        edit.classList.remove('hidden');
-        btn.classList.add('hidden');
-        text.value = display.textContent.trim();
-        text.focus();
-    } else {
-        display.classList.remove('hidden');
-        edit.classList.add('hidden');
-        btn.classList.remove('hidden');
+function calculateAge(birthDate) {
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
     }
-}
-
-async function saveBio() {
-    const text = document.getElementById('wall-bio-textarea').value.trim();
-    if (!text) return;
-
-    try {
-        const response = await fetch('/api/wall/settings', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('alpha_token')}`
-            },
-            body: JSON.stringify({ bio: text })
-        });
-
-        if (response.ok) {
-            document.getElementById('wall-info-bio').textContent = text;
-            toggleBioEdit(false);
-            window.app.notify('Информация обновлена ✓', 'success');
-        }
-    } catch (err) {
-        window.app.notify('Ошибка сохранения', 'error');
-    }
+    return age;
 }
