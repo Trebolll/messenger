@@ -354,12 +354,4 @@
   document.addEventListener('app:authenticated', () => {
     loadAgents();
   });
-  // Если уже залогинен (страница обновлена) — грузим после небольшой задержки
-  // только если app.currentUser уже заполнен
-  setTimeout(() => {
-    if (window.app && window.app.currentUser) {
-      loadAgents();
-    }
-  }, 1000);
-
 })();

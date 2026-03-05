@@ -5,7 +5,7 @@
 
   var state = {
     chatsVisible:   false,
-    feedVisible:    true,
+    feedVisible:    false,
     chatOpen:       false,
     infoOpen:       false,
     feedWasVisible: true
@@ -21,6 +21,7 @@
   // Показать/скрыть элемент с нужным display (flex или block)
   function show(elem, displayType) {
     if (!elem) return;
+    elem.classList.remove('hidden');
     elem.style.display = displayType || 'block';
   }
   function hide(elem) {
@@ -44,12 +45,12 @@
     if (leftPanel) {
       leftPanel.style.marginTop = '12px';
       leftPanel.style.height = 'calc(100% - 12px)';
-      
+
       // Фиксированная ширина левой панели
       leftPanel.style.flex = '0 0 320px';
       leftPanel.style.width = '320px';
       leftPanel.style.minWidth = '320px';
-      
+
       leftPanel.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease';
       if (!state.chatsVisible && !state.feedVisible) {
         leftPanel.style.transform = 'translateY(30px)';
@@ -62,16 +63,16 @@
       viewChat.style.marginLeft = '12px';
       viewChat.style.marginRight = '12px';
       viewChat.style.height = 'calc(100% - 12px)';
-      
+
       // Чат занимает фиксированные 59%
-      viewChat.style.flex = '0 0 59%'; 
+      viewChat.style.flex = '0 0 59%';
       viewChat.style.width = '59%';
       viewChat.style.maxWidth = '59%';
-      
+
       viewChat.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s ease';
-      
+
       if (!state.chatOpen) {
-        viewChat.style.transform = 'translateX(-40px)'; 
+        viewChat.style.transform = 'translateX(-40px)';
         viewChat.style.opacity   = '0';
       }
     }
@@ -80,12 +81,12 @@
       infoPanel.style.marginTop = '12px';
       infoPanel.style.marginRight = '12px';
       infoPanel.style.height = 'calc(100% - 12px)';
-      
+
       // Инфо-панель занимает ровно то, что осталось от чата (примерно 32% с учетом отступов)
-      infoPanel.style.flex = '0 0 32%'; 
+      infoPanel.style.flex = '0 0 32%';
       infoPanel.style.width = '32%';
-      infoPanel.style.marginLeft = 'auto'; 
-      
+      infoPanel.style.marginLeft = 'auto';
+
       infoPanel.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s ease';
     }
 
@@ -102,14 +103,15 @@
       if (inputArea) show(inputArea, 'flex');
       if (noChat)    hide(noChat);
     } else {
+      // Нет активного чата: панель чата скрыта, ничего не открыто заранее
       document.body.classList.remove('chat-open');
       if (viewChat) {
-        viewChat.style.transform = 'translateX(-40px)'; 
+        viewChat.style.transform = 'translateX(-40px)';
         viewChat.style.opacity   = '0';
         // Убираем из потока после анимации
         if (viewChat._hideTimer) clearTimeout(viewChat._hideTimer);
-        viewChat._hideTimer = setTimeout(() => { 
-          if (!state.chatOpen) viewChat.style.display = 'none'; 
+        viewChat._hideTimer = setTimeout(() => {
+          if (!state.chatOpen) viewChat.style.display = 'none';
         }, 500);
       }
       if (inputArea) hide(inputArea);
@@ -138,7 +140,7 @@
         leftPanel.style.transform = 'translateY(0)';
         leftPanel.style.opacity   = '1';
       });
-      
+
       if (state.chatsVisible) {
         if (chatsSidebar) show(chatsSidebar, 'flex');
         if (viewHome)     hide(viewHome);
@@ -198,7 +200,13 @@
   window.switchLeftTab = function (tab) {
     if (tab === 'chats') {
       state.chatsVisible = !state.chatsVisible;
-      if (state.chatsVisible) state.feedVisible = false; 
+      if (state.chatsVisible) {
+        state.feedVisible = false;
+        // Перерисовываем список — данные уже загружены, DOM мог не обновиться
+        if (typeof renderChats === 'function' && window.app && window.app.chats) {
+          renderChats();
+        }
+      }
     } else if (tab === 'home') {
       if (state.chatOpen) {
         closeChat(true);
@@ -298,8 +306,9 @@
     var origShowChat = app.showChat.bind(app);
     app.showChat = function () {
       origShowChat();
+      // После успешной авторизации на главном экране сразу показываем список чатов
       state.chatsVisible = false;
-      state.feedVisible  = true;
+      state.feedVisible  = false;
       state.chatOpen     = false;
       applyLayout();
     };
@@ -312,8 +321,9 @@
 
     // Применить layout сразу если уже в чат-режиме
     if (isMainChatVisible()) {
+      // По умолчанию сразу показываем список чатов слева и заглушку "выберите чат"
       state.chatsVisible = false;
-      state.feedVisible  = false; // По умолчанию скрываем ленту, чтобы видеть анимацию
+      state.feedVisible  = false;
       state.chatOpen     = false;
       applyLayout();
     }
