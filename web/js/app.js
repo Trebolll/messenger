@@ -8,6 +8,7 @@ class AlphaApp {
     this.socket       = null;
     this.chats        = [];
     this.messages     = [];
+    this.userStatusMap = {}; // { userId: { online: bool, status: string } }
 
     const userId = this.currentUser?.id || 'default';
     this.theme   = localStorage.getItem(`alpha_theme_${userId}`) || 'gray';
@@ -17,6 +18,11 @@ class AlphaApp {
 
     this.init();
     this.applyTheme();
+
+    // После инициализации убираем прелоадер, чтобы не мигали все окна при загрузке
+    if (document && document.body) {
+      document.body.style.visibility = '';
+    }
   }
 
   // ── Инициализация ──────────────────────────────────────────────────────
@@ -29,6 +35,7 @@ class AlphaApp {
         return;
       }
       this.showChat();
+      setTimeout(() => document.dispatchEvent(new CustomEvent('app:authenticated')), 300);
     } else {
       this.showLanding();
     }
@@ -117,6 +124,7 @@ class AlphaApp {
       this.notify('Успешно!', 'success');
       closeAuthModal();
       this.showChat();
+      document.dispatchEvent(new CustomEvent('app:authenticated'));
     } catch (err) {
       errorEl.textContent = err.message;
       errorEl.classList.remove('hidden');
@@ -146,11 +154,7 @@ class AlphaApp {
   notify(text, type = 'info') {
     const center = document.getElementById('notification-center');
     const note   = document.createElement('div');
-    note.className = `p-4 rounded-2xl shadow-xl border text-sm font-medium fade-in ${
-        type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-500'  :
-            type === 'error'   ? 'bg-red-500/10 border-red-500/20 text-red-500'        :
-                'bg-custom-main border-custom text-custom-main'
-    }`;
+    note.className = `app-toast app-toast-${type}`;
     note.textContent = text;
     center.appendChild(note);
     setTimeout(() => note.remove(), 5000);

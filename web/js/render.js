@@ -76,10 +76,15 @@ function renderChats() {
     }
 
     // Приватный чат
+    let isOnline = !!chat.is_online;
+    if (chat.interlocutor_id && app.userStatusMap && app.userStatusMap[String(chat.interlocutor_id)]) {
+        isOnline = app.userStatusMap[String(chat.interlocutor_id)].online;
+    }
+
     const avatarHtml = `<div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
             ${chatAvatarHtml(chat)}
         </div>
-        ${chat.is_online ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>' : ''}`;
+        ${isOnline ? '<div class="online-dot-glass"></div>' : ''}`;
 
     return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
             <div class="relative flex-shrink-0">${avatarHtml}</div>
@@ -139,9 +144,6 @@ function renderMessages() {
       const avatarInner = msg.sender_avatar_url
           ? `<img src="${msg.sender_avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
           : `<span>${(msg.sender_name || '?')[0].toUpperCase()}</span>`;
-      const onlineDot = isOnline
-          ? `<span style="position:absolute;bottom:0;right:0;width:9px;height:9px;background:#22c55e;border:2px solid var(--bg-main,#fff);border-radius:50%;display:block;" data-online-uid="${msg.sender_id}"></span>`
-          : `<span style="position:absolute;bottom:0;right:0;width:9px;height:9px;background:#9ca3af;border:2px solid var(--bg-main,#fff);border-radius:50%;display:block;" data-online-uid="${msg.sender_id}"></span>`;
 
       const senderData = JSON.stringify({ id: msg.sender_id, username: msg.sender_name, avatar_url: msg.sender_avatar_url || '' }).replace(/"/g, '&quot;');
       senderAvatarHtml = `
@@ -152,7 +154,6 @@ function renderMessages() {
                     <div style="width:30px;height:30px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#2563eb;overflow:hidden;">
                         ${avatarInner}
                     </div>
-                    ${onlineDot}
                 </div>`;
     }
 
@@ -160,7 +161,7 @@ function renderMessages() {
     const activeChat = app.chats.find(c => String(c.id) === String(app.activeChatId));
     const isGroup = activeChat && activeChat.is_group;
     const nicknameHtml = (!isMe && isGroup && msg.sender_name)
-        ? `<div style="font-size:11px;font-weight:600;color:var(--text-muted,#6b7280);margin-bottom:2px;padding-left:2px;">${escapeHtml(msg.sender_name)}</div>`
+        ? `<div style="font-size:11px;font-weight:600;color:var(--text-muted,#6b7280);margin-bottom:2px;padding-left:2px;cursor:pointer;" onclick="openWall('${msg.sender_id}')">${escapeHtml(msg.sender_name)}</div>`
         : '';
 
     // Если сообщение загружается — показываем прогресс
@@ -255,24 +256,44 @@ function renderMessages() {
             <div class="flex items-end gap-2 ${animClass}"
                  style="justify-content:${isMe ? 'flex-end' : 'flex-start'};${delay}"
                  data-msg-id="${msg.id}"
+                 data-sender-id="${msg.sender_id}"
                  oncontextmenu="showMessageMenu(event, '${msg.id}', ${isMe})">
                 ${!isMe ? senderAvatarHtml : ''}
                 <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};max-width:75%;">
-                    ${nicknameHtml}
-                    <div class="message-bubble ${bubblePadding} ${isMe ? 'message-sent' : 'message-received'}" style="width:fit-content;max-width:100%;${isMediaAttachment ? 'overflow:hidden;' : ''}">
-                        ${attachmentHtml}
-                        ${captionWrap}
-                        <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:2px;flex-wrap:nowrap;${isMediaAttachment ? 'padding:0 6px 4px;' : ''}">
-                            ${isEdited ? `<span class="msg-edited-label">изменено</span>` : ''}
-                            <span style="font-size:10px;white-space:nowrap;flex-shrink:0;opacity:${isMe ? '0.7' : '1'};" class="${isMe ? '' : 'text-custom-muted'}">
-                                ${new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                            ${isMe ? `
-                                <span style="font-size:11px;letter-spacing:-0.5em;display:inline-block;flex-shrink:0;opacity:${isRead ? '0.9' : '0.4'};">
-                                    ${isRead ? '✓✓' : '✓'}
+                    <div class="msg-header-line" style="display:flex;align-items:center;gap:6px;">
+                        ${nicknameHtml}
+                        ${renderRatingBadge(msg.sender_rating)}
+                    </div>
+                    <!-- Обертка для пузыря и кнопок -->
+                    <div style="position:relative; width:fit-content; max-width:100%;">
+                        <div class="message-bubble ${bubblePadding} ${isMe ? 'message-sent' : 'message-received'}" 
+                             style="position:relative; z-index:10; width:fit-content; max-width:100%; ${isMediaAttachment ? 'overflow:hidden;' : ''}">
+                            ${attachmentHtml}
+                            ${captionWrap}
+                            <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:2px;flex-wrap:nowrap;${isMediaAttachment ? 'padding:0 6px 4px;' : ''}">
+                                ${isEdited ? `<span class="msg-edited-label">изменено</span>` : ''}
+                                <span style="font-size:10px;white-space:nowrap;flex-shrink:0;opacity:${isMe ? '0.7' : '1'};" class="${isMe ? '' : 'text-custom-muted'}">
+                                    ${new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
-                            ` : ''}
+                                ${isMe ? `
+                                    <span style="font-size:11px;letter-spacing:-0.5em;display:inline-block;flex-shrink:0;opacity:${isRead ? '0.9' : '0.4'};">
+                                        ${isRead ? '✓✓' : '✓'}
+                                    </span>
+                                ` : ''}
+                            </div>
                         </div>
+
+                        ${!isMe ? `
+                        <!-- Контейнер для Gooey-эффекта (только для чужих сообщений) -->
+                        <div class="gooey-vote-container">
+                            <div class="message-bubble message-received" 
+                                 style="position:absolute; inset:0; z-index:-1; margin:0; opacity: 1;"></div>
+                            
+                            <div class="msg-votes ${msg.my_vote !== 0 ? 'has-active' : ''}">
+                                ${renderVotesHtml(msg.likes || 0, msg.dislikes || 0, msg.my_vote || 0, msg.id)}
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -282,20 +303,29 @@ function renderMessages() {
 
 // ─── Рейтинговый бейдж ────────────────────────────────────────────────────────
 function renderRatingBadge(rating) {
-  if (!rating || rating <= 0) return '';
+  if (rating === undefined || rating === null) return '';
+  const rVal = Number(rating);
+  if (isNaN(rVal) || rVal < 0) return '';
+
   const ranks = [
-    { min: 1000, name: 'Легенда',   color: '#f59e0b' },
-    { min: 500,  name: 'Авторитет', color: '#8b5cf6' },
-    { min: 200,  name: 'Активный',  color: '#22c55e' },
-    { min: 50,   name: 'Участник',  color: '#3b82f6' },
-    { min: 1,    name: 'Новичок',   color: '#9ca3af' },
+    { min: 1000000000, name: 'SINGULARITY',   color: '#ffd700',    border: '2px solid #ffd700', bg: 'rgba(255, 215, 0, 0.1)' },
+    { min: 100000000,  name: 'GALACTIC',      color: '#ffb347',    border: '2px solid #ffb347', bg: 'rgba(255, 179, 71, 0.1)' },
+    { min: 10000000,   name: 'STELLAR',       color: '#ff8c00',    border: '2px solid #ff8c00', bg: 'rgba(255, 140, 0, 0.1)' },
+    { min: 1000000,    name: 'MYTHIC',        color: '#ff6600',    border: '2px solid #ff6600', bg: 'rgba(255, 102, 0, 0.1)' },
+    { min: 100000,     name: 'GODLIKE',       color: '#ff4444',    border: '2px solid #ff4444', bg: 'rgba(255, 68, 68, 0.1)' },
+    { min: 50000,      name: 'IMMORTAL',      color: '#ff6b6b',    border: '2px solid #ff6b6b', bg: 'rgba(255, 107, 107, 0.1)' },
+    { min: 1000,       name: 'LEGEND',        color: '#f59e0b',    border: '2px solid #f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
+    { min: 500,        name: 'ELITE',         color: '#8b5cf6',    border: '2px solid #8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
+    { min: 200,        name: 'EXPERT',        color: '#22c55e',    border: '2px solid #22c55e', bg: 'rgba(34, 197, 94, 0.1)' },
+    { min: 50,         name: 'SKILLED',       color: '#3b82f6',    border: '2px solid #3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
+    { min: 0,          name: 'BEGINNER',      color: '#9ca3af',    border: '1px solid #9ca3af', bg: 'transparent' }
   ];
-  const rank = ranks.find(r => rating >= r.min) || ranks[ranks.length - 1];
+  const rank = ranks.find(r => rVal >= r.min) || ranks[ranks.length - 1];
   return `<span class="msg-rating-badge" title="${rank.name}"
         style="display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:600;
                color:${rank.color};background:${rank.color}18;
                padding:1px 5px;border-radius:3px;line-height:1.4;">
-        ★ ${rating}
+        ★ ${rank.name}
     </span>`;
 }
 
@@ -310,7 +340,6 @@ function renderVotesHtml(likes, dislikes, myVote, messageId) {
                 title="Лайк">
             <span class="vote-icon">+</span>
             <span class="vote-ring"></span>
-            ${likes > 0 ? `<span class="vote-count">${likes}</span>` : ''}
         </button>
         <button class="vote-btn vote-dislike ${dislikeActive ? 'vote-active-dislike' : ''}"
                 data-vote-msg="${messageId}" data-vote="-1"
@@ -318,7 +347,6 @@ function renderVotesHtml(likes, dislikes, myVote, messageId) {
                 title="Дизлайк">
             <span class="vote-icon">−</span>
             <span class="vote-ring"></span>
-            ${dislikes > 0 ? `<span class="vote-count">${dislikes}</span>` : ''}
         </button>
     `;
 }
@@ -332,6 +360,13 @@ async function voteMessage(e, messageId, vote) {
   // Находим пузырь сообщения
   const msgWrap = btn.closest('[data-msg-id]');
   const bubble  = msgWrap ? msgWrap.querySelector('.message-bubble') : null;
+  const votesPanel = msgWrap ? msgWrap.querySelector('.msg-votes') : null;
+
+  // Проверка на своё сообщение
+  if (bubble && bubble.classList.contains('message-sent')) {
+    window.app && window.app.notify('Нельзя голосовать за своё сообщение', 'error');
+    return;
+  }
 
   // Анимация кнопки — вспышка + пульс кольца
   btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
@@ -348,12 +383,21 @@ async function voteMessage(e, messageId, vote) {
     }
   }, 180);
 
+  // Скрываем панель через 1.5 секунды после голоса
+  if (votesPanel) {
+    setTimeout(() => {
+      votesPanel.classList.add('msg-votes-hidden');
+      // Возвращаем возможность показа при следующем ховере через некоторое время
+      setTimeout(() => votesPanel.classList.remove('msg-votes-hidden'), 3000);
+    }, 1500);
+  }
+
   try {
     await apiVoteMessage(messageId, vote);
   } catch(err) {
     // убираем анимацию если ошибка
     btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
-    window.app && window.app.notify('Нельзя голосовать за своё сообщение', 'error');
+    if (votesPanel) votesPanel.classList.remove('msg-votes-hidden');
   }
 }
 
@@ -397,7 +441,15 @@ function renderChatHeader() {
   const headerStatus = document.getElementById('active-chat-status');
   if (isGroup) {
     if (headerStatus) {
-      headerStatus.textContent = '';   // не показываем "офлайн/онлайн" для группы
+      const total = (chat.members || []).length;
+      const online = (chat.members || []).filter(m => {
+          if (String(m.id) === String(app.currentUser?.id)) return true;
+          // Используем статус из глобального мапа, если он там есть
+          const globalStatus = app.userStatusMap && app.userStatusMap[String(m.id)];
+          if (globalStatus) return globalStatus.online;
+          return m.is_online;
+      }).length;
+      headerStatus.textContent = `${online} из ${total} online`;
       headerStatus.className   = 'text-xs text-custom-muted';
     }
     const badge = document.getElementById('info-status-badge');
@@ -405,7 +457,13 @@ function renderChatHeader() {
     const statusEl = document.getElementById('info-user-status');
     if (statusEl) statusEl.textContent = '';
   } else {
-    renderStatusElements(chat.is_online, chat.user_status || '');
+    let isOnline = !!chat.is_online;
+    let userStatus = chat.user_status || '';
+    if (chat.interlocutor_id && app.userStatusMap && app.userStatusMap[String(chat.interlocutor_id)]) {
+        isOnline = app.userStatusMap[String(chat.interlocutor_id)].online;
+        userStatus = app.userStatusMap[String(chat.interlocutor_id)].status || '';
+    }
+    renderStatusElements(isOnline, userStatus);
     const badge = document.getElementById('info-status-badge');
     if (badge) badge.style.display = '';
   }
@@ -462,14 +520,32 @@ function renderChatHeader() {
     const localChat = app.chats.find(c => String(c.id) === String(chat.id));
     if (localChat) localChat.members = members;
 
+    // После загрузки участников — обновляем счетчик онлайн в хедере
+    const headerStatus = document.getElementById('active-chat-status');
+    if (headerStatus) {
+        const total = members.length;
+        const online = members.filter(m => {
+            if (String(m.id) === String(app.currentUser?.id)) return true;
+            const globalStatus = app.userStatusMap && app.userStatusMap[String(m.id)];
+            if (globalStatus) return globalStatus.online;
+            return m.is_online;
+        }).length;
+        headerStatus.textContent = `${online} из ${total} online`;
+    }
+
     const membersList = members.map(m => {
       const isMe = String(m.id) === String(app.currentUser?.id);
+      
+      // Статус из глобального мапа (если есть) имеет приоритет над тем что пришло от API
+      let isOnline = m.is_online;
+      const globalStatus = app.userStatusMap && app.userStatusMap[String(m.id)];
+      if (globalStatus) isOnline = globalStatus.online;
+      if (isMe) isOnline = true;
+
       const avatarInner = m.avatar_url
           ? `<img src="${m.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`
           : (m.username || '?')[0].toUpperCase();
-      const onlineDot = m.is_online
-          ? `<span class="member-online-dot"></span>`
-          : '';
+      const onlineDot = isOnline ? `<span class="member-online-dot"></span>` : '';
       const removeBtn = (isCreator && !isMe)
           ? `<button onclick="removeGroupMember('${chat.id}','${m.id}')"
                         title="Удалить из группы"
@@ -480,9 +556,9 @@ function renderChatHeader() {
                     </button>`
           : '';
       return `
-                <div class="member-row flex items-center gap-3 py-1.5">
+                <div class="member-row flex items-center gap-3 py-1.5" data-uid="${m.id}">
                     <div class="relative flex-shrink-0">
-                        <div onclick="openMemberAvatarViewer(${JSON.stringify(m).replace(/"/g,'&quot;')})"
+                        <div onclick="openMemberAvatarViewer(JSON.parse(this.parentNode.parentNode.dataset.member))"
                             class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-400 hover:ring-offset-1 transition text-sm">
                             ${avatarInner}
                         </div>
@@ -496,7 +572,7 @@ function renderChatHeader() {
                         ${m.status ? `<div class="text-xs text-custom-muted truncate" style="font-style:italic;opacity:0.8;">${m.status}</div>` : ''}
                     </div>
                     ${removeBtn}
-                </div>`;
+                </div>`.replace('this.parentNode.parentNode.dataset.member', `'${JSON.stringify(m).replace(/'/g, "\\'").replace(/"/g, '&quot;')}'`);
     }).join('');
 
     // Кнопка + рядом с заголовком — только для создателя
@@ -524,11 +600,18 @@ function renderChatHeader() {
 
 
 function renderStatusElements(isOnline, userStatus) {
-  // Бейдж онлайн/офлайн в правой панели
+  // Бейдж онлайн в правой панели
   const badge = document.getElementById('info-status-badge');
   const text  = document.getElementById('info-status-text');
-  if (badge) badge.className   = 'info-status-badge ' + (isOnline ? 'online' : 'offline');
-  if (text)  text.textContent  = isOnline ? 'онлайн' : 'офлайн';
+  if (badge) {
+    if (isOnline) {
+      badge.style.display = 'inline-flex';
+      badge.className = 'info-status-badge online mb-2';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  if (text) text.textContent = isOnline ? 'online' : '';
 
   // Текстовый статус — всегда показываем, пустой если нет
   const statusEl = document.getElementById('info-user-status');
@@ -537,8 +620,8 @@ function renderStatusElements(isOnline, userStatus) {
   // Статус под именем в хедере чата
   const headerStatus = document.getElementById('active-chat-status');
   if (headerStatus) {
-    headerStatus.textContent = isOnline ? 'онлайн' : 'офлайн';
-    headerStatus.className   = 'text-xs ' + (isOnline ? 'text-green-500' : 'text-custom-muted');
+    headerStatus.textContent = isOnline ? 'online' : '';
+    headerStatus.className   = 'text-xs text-green-500';
   }
 }
 
@@ -575,7 +658,9 @@ function renderSearchResults(users) {
                 <div class="font-semibold text-custom-main text-sm truncate">${user.username}</div>
                 <div class="text-xs text-custom-muted truncate">${user.email}</div>
             </div>
-            <div class="nc-check">${checkSvg}</div>
+            <div class="flex items-center gap-2">
+                <div class="nc-check">${checkSvg}</div>
+            </div>
         </div>`;
   }).join('');
 }

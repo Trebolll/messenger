@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <link rel="icon" type="image/svg+xml" href="/web/favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="/web/favicon1.svg">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>λ</title>
+  <title>lambda </title>
+  <!-- Минимальный CSS, который сразу прячет элементы с классом hidden
+       чтобы модалки/окна не мигали до загрузки Tailwind -->
+  <style>
+    .hidden { display: none !important; }
+  </style>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/web/html/css/variables-themes.css">
@@ -18,9 +23,10 @@
   <link rel="stylesheet" href="/web/html/css/groups.css">
   <link rel="stylesheet" href="/web/html/css/new-chat-modal.css">
   <link rel="stylesheet" href="/web/html/css/profile-modal.css">
+  <link rel="stylesheet" href="/web/html/css/wall.css">
   <link rel="stylesheet" href="/web/html/css/layout.css">
 </head>
-<body class="bg-custom-main min-h-screen text-custom-main">
+<body class="bg-custom-main min-h-screen text-custom-main" style="visibility:hidden;">
 <!-- Глобальный фон λ (остается неизменным после входа) -->
 <canvas id="lambda-canvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
 
@@ -83,10 +89,10 @@
       <!-- Контент левой панели -->
       <div id="left-panel-content" class="flex-grow flex flex-col overflow-hidden">
 
-        <!-- Лента активности -->
-        <div id="view-home" class="flex flex-col h-full">
+        <!-- Лента активности (по умолчанию скрыта инлайном, чтобы не мигала до init) -->
+        <div id="view-home" class="flex flex-col h-full" style="display:none;">
           <div class="p-4 flex items-center gap-3" style="border-bottom: 1px solid rgba(0,0,0,0.04);">
-            <span class="font-bold text-custom-main text-base">Лента</span>
+            <span class="font-bold text-custom-main text-base"> </span>
           </div>
           <div class="flex-grow flex flex-col items-center justify-center gap-4 select-none px-6">
             <div style="opacity:0.12;">
@@ -126,9 +132,9 @@
           <button id="back-btn" onclick="handleBackBtn()" title="Назад" class="p-2 rounded-xl hover:bg-custom-sidebar transition text-custom-muted hover:text-custom-main" style="margin-left:-4px;flex-shrink:0;">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
           </button>
-          <div id="active-chat-avatar" onclick="openAvatarViewer()" class="w-10 h-10 rounded-full bg-custom-sidebar flex items-center justify-center font-bold text-custom-muted cursor-pointer hover:ring-2 hover:ring-blue-400 hover:ring-offset-2 transition">?</div>
+          <div id="active-chat-avatar" onclick="toggleInfoPanel()" class="w-10 h-10 rounded-full bg-custom-sidebar flex items-center justify-center font-bold text-custom-muted cursor-pointer hover:ring-2 hover:ring-blue-400 hover:ring-offset-2 transition">?</div>
           <div>
-            <h3 id="active-chat-name" onclick="toggleInfoPanel()" class="font-bold text-custom-main leading-tight cursor-pointer hover:text-blue-600 transition">Чат</h3>
+            <h3 id="active-chat-name" onclick="handleHeaderNameClick()" class="font-bold text-custom-main leading-tight cursor-pointer hover:text-blue-600 transition">Чат</h3>
             <p id="active-chat-status" class="text-xs text-custom-muted"></p>
           </div>
         </div>
@@ -143,26 +149,37 @@
       <div id="messages-container" class="flex-grow overflow-y-auto p-6 space-y-4 bg-custom-sidebar/30 scrollbar-hide" style="position:relative;z-index:2;"></div>
 
       <!-- Input area -->
-      <div id="input-area" class="input-area p-4 border-t border-custom bg-custom-main hidden">
-
-        <!-- AI Panel — СВЕРХУ формы, вне <form> -->
-        <div id="ai-panel" class="hidden mb-3 p-3">
-          <p class="ai-panel-title">✦ AI-ассистент</p>
-          <div id="ai-loading" class="hidden">Анализирую...</div>
-          <div id="ai-result" class="hidden"></div>
-          <div class="flex gap-2 flex-wrap">
-            <button type="button" onclick="aiAction('improve')" class="ai-action-btn ai-action-primary">✨ Улучшить</button>
-            <button type="button" onclick="aiAction('shorten')" class="ai-action-btn ai-action-secondary">📝 Сократить</button>
-            <button type="button" onclick="aiAction('tone')" class="ai-action-btn ai-action-secondary">🎯 Тон</button>
-            <button type="button" onclick="aiAction('continue')" class="ai-action-btn ai-action-secondary">💡 Продолжить</button>
-            <button type="button" onclick="applyAiResult()" id="ai-apply-btn" class="ai-action-btn ai-action-apply hidden">✅ Применить</button>
-          </div>
-        </div>
+      <div id="input-area" class="input-area px-4 pb-4 pt-3 border-t border-custom bg-custom-main hidden" style="position:relative; display:flex; flex-direction:column; gap:0;">
 
         <!-- File Preview Panel -->
         <div id="file-preview-panel"></div>
 
-        <!-- Строка ввода — flex-контейнер с min-width:0 на обёртке textarea -->
+        <!-- AI actions row — появляется над строкой ввода внутри input-area -->
+        <div id="ai-actions-row" class="ai-actions-row ai-actions-hidden">
+          <!-- Дропдаун — вне ai-actions-inner, не обрезается overflow -->
+          <div id="ai-agent-picker" class="ai-agent-picker hidden"></div>
+          <div class="ai-actions-clip">
+            <div class="ai-actions-inner">
+              <button type="button" class="ai-agent-label" onclick="toggleAgentPicker()" title="Выбрать агента ИИ">
+                <span class="ai-agent-icon" id="ai-agent-icon">✦</span>
+                <span id="ai-agent-name">ИИ</span>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" style="opacity:0.5;margin-left:1px"><path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+              </button>
+              <button type="button" onclick="aiAction('improve')" class="ai-action-btn ai-action-primary">✨ Улучшить</button>
+              <button type="button" onclick="aiAction('shorten')" class="ai-action-btn ai-action-secondary">📝 Сократить</button>
+              <button type="button" onclick="aiAction('tone')" class="ai-action-btn ai-action-secondary">🎯 Тон</button>
+              <button type="button" onclick="aiAction('continue')" class="ai-action-btn ai-action-secondary">💡 Продолжить</button>
+              <button type="button" onclick="aiAction('reply')" class="ai-action-btn ai-action-reply">💬 Что ответить</button>
+              <button type="button" onclick="applyAiResult()" id="ai-apply-btn" class="ai-action-btn ai-action-apply" style="display:none;">✅ Применить</button>
+            </div>
+          </div><!-- /ai-actions-clip -->
+          <div id="ai-loading" class="ai-inline-loading hidden">
+            <span class="ai-loading-dot"></span><span class="ai-loading-dot"></span><span class="ai-loading-dot"></span>
+          </div>
+          <div id="ai-result" class="ai-inline-result hidden"></div>
+        </div>
+
+        <!-- Строка ввода -->
         <form id="message-form" onsubmit="handleSendMessage(event)"
               style="display:flex; align-items:flex-end; gap:10px; width:100%;">
           <input type="file" id="file-input" multiple style="display:none;" accept="image/jpeg,image/png,image/gif,audio/webm,audio/ogg,audio/mpeg,video/webm,video/mp4">
@@ -177,13 +194,13 @@
             </div>
           </button>
 
-          <!-- Textarea — flex-grow + min-width:0 чтобы не выпирал -->
+          <!-- Textarea -->
           <div class="msg-input-wrap" style="flex:1 1 0; min-width:0; position:relative; z-index:20;">
             <textarea id="message-input" rows="1" placeholder="Напишите сообщение..."
                       class="w-full px-4 py-3 bg-custom-sidebar border-none rounded-2xl outline-none text-sm resize-none text-custom-main placeholder-custom-muted msg-textarea"></textarea>
           </div>
 
-          <!-- AI кнопка -->
+          <!-- AI кнопка — рядом с отправкой -->
           <button type="button" id="ai-btn" onclick="toggleAiPanel()" title="AI-ассистент">
             <div class="pulse-ring"></div>
             <div class="pulse-ring"></div>
@@ -261,10 +278,9 @@
     <div class="dock-divider"></div>
 
     <!-- Профиль -->
-    <button id="profile-dock-btn" class="dock-btn dock-btn--avatar" onclick="toggleProfileModal()" title="Профиль">
+    <button id="profile-dock-btn" class="dock-btn dock-btn--avatar" onclick="toggleWall()" title="Профиль">
       <span style="position:relative;display:inline-flex;align-items:center;justify-content:center;">
         <div id="current-user-avatar" class="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden text-xs">U</div>
-        <div id="my-status-dot" class="nav-status-dot" style="width:8px;height:8px;bottom:0;right:0;border-width:1.5px;"></div>
       </span>
     </button>
 
@@ -365,7 +381,7 @@
 </div>
 
 <!-- Profile Modal -->
-<div id="profile-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+<div id="profile-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[170] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
   <div id="profile-modal" class="profile-modal w-full max-w-sm rounded-3xl relative transform scale-95 transition-all duration-300 p-8">
     <!-- Галочка (сохранить) в левом верхнем углу -->
     <button onclick="saveProfile()" title="Сохранить" class="absolute top-5 left-5 text-custom-accent hover:scale-110 transition-all">
@@ -460,19 +476,156 @@
   <img id="img-lightbox-img" src="" alt="">
 </div>
 
+<!-- Wall Modal (iOS-style Profile Wall) -->
+<div id="wall-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[150] hidden opacity-0 transition-opacity duration-400 flex items-center justify-center p-0 sm:p-4">
+  <div id="wall-modal" class="w-full h-full sm:h-[90vh] max-w-4xl rounded-none sm:rounded-[32px] relative overflow-hidden transform scale-95 transition-all duration-500 flex flex-col bg-custom-main border border-white/10 shadow-2xl">
+
+    <!-- Top Banner & Header -->
+    <div class="wall-header-section relative flex-shrink-0 h-48 sm:h-64">
+      <div id="wall-banner" class="absolute inset-0 bg-gradient-to-r from-blue-600/40 to-purple-600/40 overflow-hidden">
+      </div>
+
+      <!-- Close Button -->
+      <button onclick="closeWall()" class="absolute top-6 right-6 z-20 p-2 bg-black/20 backdrop-blur-md rounded-full text-white hover:bg-black/40 transition">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+
+      <!-- Profile Header Info -->
+      <div class="absolute -bottom-12 left-8 flex items-end gap-6 z-10">
+        <div id="wall-avatar-container" class="relative group">
+          <div id="wall-avatar" class="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-custom-sidebar border-4 border-custom-main flex items-center justify-center text-4xl font-bold shadow-xl overflow-hidden">?</div>
+          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition rounded-full cursor-pointer" onclick="triggerAvatarUpload()">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </div>
+        </div>
+        <div class="mb-4">
+          <h2 id="wall-username" class="text-2xl sm:text-3xl font-extrabold text-custom-main tracking-tight drop-shadow-md">User Name</h2>
+          <p id="wall-status" class="text-sm text-custom-muted font-medium bg-custom-main/80 backdrop-blur px-2 py-0.5 rounded-lg inline-block mt-1">Status goes here...</p>
+        </div>
+      </div>
+
+      <!-- Edit Profile Button -->
+      <div class="absolute bottom-4 right-8 flex gap-3">
+        <button id="wall-settings-btn" onclick="toggleProfileModal()" class="w-10 h-10 bg-custom-accent/10 border border-custom-accent/30 text-custom-accent rounded-full flex items-center justify-center hover:bg-custom-accent/20 transition-all duration-300 hover:rotate-90" title="Настройки профиля">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Wall Content Area -->
+    <div class="flex-grow flex flex-col sm:flex-row gap-6 p-8 mt-16 overflow-hidden">
+      <!-- Left: Sidebar Info -->
+      <div id="wall-left-sidebar" class="w-full sm:w-64 flex-shrink-0 space-y-6">
+        <div id="wall-info-sidebar-box" class="p-5 bg-custom-sidebar/30 rounded-3xl border border-white/5 space-y-3 group/info">
+          <div class="space-y-2">
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70" id="wall-info-age-row">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span id="wall-info-age">?</span>
+            </div>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70" id="wall-info-profession-row">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <span id="wall-info-profession">...</span>
+            </div>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70" id="wall-info-location-row">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span id="wall-info-location">...</span>
+            </div>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
+              <span id="wall-info-created">...</span>
+            </div>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+              <span id="wall-info-likes">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Media Preview Box (Mini) -->
+        <div id="wall-media-preview-box" class="p-5 bg-custom-sidebar/30 rounded-3xl border border-white/5">
+          <h3 class="text-xs font-bold text-custom-muted uppercase tracking-wider mb-4">Медиа</h3>
+          <div id="wall-media-grid" class="grid grid-cols-3 gap-2">
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Main Feed -->
+      <div class="flex-grow flex flex-col gap-6 overflow-y-auto scrollbar-hide pb-8">
+        
+        <!-- Wall Tabs -->
+        <div class="flex items-center gap-8 border-b border-white/5 pb-1">
+          <button onclick="switchWallTab('posts')" id="wall-tab-posts" class="pb-3 text-custom-main border-b-2 border-custom-accent transition-all" title="Записи">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+          </button>
+          <button onclick="switchWallTab('media')" id="wall-tab-media" class="pb-3 text-custom-muted hover:text-custom-main transition-all border-b-2 border-transparent" title="Медиа">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
+          </button>
+        </div>
+
+        <!-- New Post Creator -->
+        <div id="wall-post-creator" class="p-6 bg-white/5 rounded-[32px] border border-white/10 shadow-sm">
+          <div class="flex gap-4">
+            <div id="creator-avatar" class="w-10 h-10 rounded-full bg-custom-sidebar flex-shrink-0 overflow-hidden font-bold flex items-center justify-center border border-white/10">?</div>
+            <textarea id="wall-post-input" rows="2" placeholder="Что нового?" class="flex-grow bg-white/5 rounded-2xl p-3 outline-none text-custom-main placeholder-custom-muted resize-none text-sm"></textarea>
+          </div>
+          <div class="mt-4 flex items-center justify-between border-t border-white/5 pt-4">
+            <div class="flex gap-3">
+              <button onclick="document.getElementById('wall-media-upload').click()" class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-white/10" title="Добавить медиа">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
+              </button>
+              <button onclick="document.getElementById('wall-file-upload').click()" class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-white/10" title="Прикрепить файл">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+              </button>
+              <input type="file" id="wall-media-upload" class="hidden" accept="image/*,video/*" multiple onchange="handleWallMediaSelect(event)">
+              <input type="file" id="wall-file-upload" class="hidden" multiple onchange="handleWallMediaSelect(event)">
+            </div>
+            <button onclick="publishWallPost()" class="w-10 h-10 bg-custom-accent text-white rounded-full flex items-center justify-center shadow-lg shadow-custom-accent/20 hover:scale-110 transition-all">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+          <!-- Preview for selected media -->
+          <div id="wall-media-preview" class="flex gap-2 mt-3 overflow-x-auto hidden pb-2"></div>
+        </div>
+
+        <!-- Feed Container -->
+        <div id="wall-feed" class="space-y-6">
+        </div>
+
+        <!-- Media Grid Container (Instagram Style) -->
+        <div id="wall-media-container" class="hidden space-y-6">
+           <div id="wall-media-grid-main" class="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <!-- Media items and Add Button will be injected here by renderMediaGrid -->
+           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="/web/js/api.js"></script>
 <script src="/web/js/render.js"></script>
 <script src="/web/js/websocket.js"></script>
 <script src="/web/js/app.js"></script>
 <script src="/web/js/ui.js"></script>
+<script src="/web/js/wall.js"></script>
 <script src="/web/js/news.js"></script>
 <script src="/web/js/ai.js"></script>
+<canvas id="neural-canvas"></canvas>
 <script src="/web/js/neural-ai-btn.js"></script>
 <script src="/web/js/file-upload.js"></script>
 <script src="/web/js/logo-anim.js"></script>
 <script src="/web/js/lambda-anim.js"></script>
 <script src="/web/js/btn-anim.js"></script>
 <script src="/web/js/layout.js"></script>
-<canvas id="neural-canvas"></canvas>
+<!-- SVG фильтр для эффекта "жидкой лужи" -->
+<svg style="visibility: hidden; position: absolute;" width="0" height="0" xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <defs>
+    <filter id="gooey-puddle">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+      <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10" result="goo" />
+      <feComposite in="SourceGraphic" in2="goo" operator="atop"/>
+    </filter>
+  </defs>
+</svg>
 </body>
 </html>

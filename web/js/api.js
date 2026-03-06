@@ -35,6 +35,14 @@ async function apiLoadMessages(chatId) {
     const inputArea = document.getElementById('input-area');
 
     // ── 1. Fade-out текущего контента ──────────────────────────
+    // Закрываем AI кнопки при переходе в другой чат
+    if (typeof window.toggleAiPanel === 'function') {
+        const row = document.getElementById('ai-actions-row');
+        if (row && !row.classList.contains('ai-actions-hidden')) {
+            window.toggleAiPanel();
+        }
+    }
+
     const isSwitch = !!prevChatId && prevChatId !== chatId;
     if (isSwitch && container) {
         container.classList.add('chat-switching');

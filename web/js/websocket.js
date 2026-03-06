@@ -60,6 +60,15 @@ function _handleNewMessage(msg) {
     const app = window.app;
     console.log('New message:', msg, '| activeChatId:', app.activeChatId);
 
+    // Если пришло сообщение — отправитель точно онлайн.
+    // Обновляем его статус в глобальном мапе, чтобы интерфейс сразу отреагировал.
+    if (!app.userStatusMap) app.userStatusMap = {};
+    app.userStatusMap[String(msg.sender_id)] = { online: true, status: '' };
+    
+    // Если это приватный чат с этим отправителем — помечаем его онлайн и там
+    const directChat = app.chats.find(c => String(c.interlocutor_id) === String(msg.sender_id));
+    if (directChat) directChat.is_online = true;
+
     if (app.activeChatId && String(msg.chat_id) === String(app.activeChatId)) {
         // Проверяем по id — и по множеству уже добавленных нами сообщений
         const already = app.messages.find(m =>
@@ -156,29 +165,77 @@ function updateUserProfile(data) {
 
 function updateUserStatus(status) {
     const app = window.app;
-    const chat = app.chats.find(c => String(c.interlocutor_id) === String(status.user_id));
-    if (chat) {
-        chat.is_online   = status.online;
-        chat.user_status = status.status || '';
-        renderChats();
-    }
-    // Обновляем онлайн-статус в членах групп
-    app.chats.forEach(c => {
-        if (c.members) {
-            c.members.forEach(m => {
-                if (String(m.id) === String(status.user_id)) m.is_online = status.online;
+    const uid = String(status.user_id);
+    const isOnline = !!status.online;
+    
+    console.log(`[WS] Status Change: User=${uid} Online=${isOnline}`);
+
+    // Сохраняем в глобальный мап статусов
+    if (!app.userStatusMap) app.userStatusMap = {};
+    app.userStatusMap[uid] = {
+        online: isOnline,
+        status: status.status || ''
+    };
+
+    // 1. Точечное обновление в списке чатов (левая панель)
+    app.chats.forEach(chat => {
+        if (chat.interlocutor_id && String(chat.interlocutor_id) === uid) {
+            chat.is_online = isOnline;
+            chat.user_status = status.status || '';
+            const chatEl = document.querySelector(`.chat-list-item[data-chat-id="${chat.id}"]`);
+            if (chatEl) {
+                const avatarContainer = chatEl.querySelector('.relative.flex-shrink-0');
+                if (avatarContainer) {
+                    let dot = avatarContainer.querySelector('.online-dot-glass');
+                    if (isOnline && !dot) {
+                        avatarContainer.insertAdjacentHTML('beforeend', '<div class="online-dot-glass"></div>');
+                    } else if (!isOnline && dot) {
+                        dot.remove();
+                    }
+                }
+            }
+        }
+        if (chat.members) {
+            chat.members.forEach(m => {
+                if (String(m.id) === uid) m.is_online = isOnline;
             });
         }
     });
+
+    // 2. Обновление если этот пользователь сейчас в активном чате
     const activeChat = app.chats.find(c => String(c.id) === String(app.activeChatId));
-    if (activeChat && String(activeChat.interlocutor_id) === String(status.user_id)) {
-        renderStatusElements(status.online, status.status || '');
+    if (activeChat) {
+        // Обновляем заголовок (если это группа — пересчитываем онлайн, если приват — меняем статус)
+        if (activeChat.is_group) {
+            const headerStatus = document.getElementById('active-chat-status');
+            if (headerStatus) {
+                const total = (activeChat.members || []).length;
+                const online = (activeChat.members || []).filter(m => {
+                    if (String(m.id) === String(app.currentUser?.id)) return true;
+                    const globalStatus = app.userStatusMap && app.userStatusMap[String(m.id)];
+                    if (globalStatus) return globalStatus.online;
+                    return m.is_online;
+                }).length;
+                headerStatus.textContent = `${online} из ${total} online`;
+            }
+            
+            // Обновляем точку в списке участников (инфо-панель)
+            const memberRow = document.querySelector(`.member-row[data-uid="${uid}"]`);
+            if (memberRow) {
+                const avatarContainer = memberRow.querySelector('.relative.flex-shrink-0');
+                if (avatarContainer) {
+                    let dot = avatarContainer.querySelector('.member-online-dot');
+                    if (isOnline && !dot) {
+                        avatarContainer.insertAdjacentHTML('beforeend', '<span class="member-online-dot"></span>');
+                    } else if (!isOnline && dot) {
+                        dot.remove();
+                    }
+                }
+            }
+        } else if (String(activeChat.interlocutor_id) === uid) {
+            renderStatusElements(isOnline, status.status || '');
+        }
     }
-    // Обновляем индикаторы онлайн в сообщениях без перерисовки всего списка
-    const dots = document.querySelectorAll(`[data-online-uid="${status.user_id}"]`);
-    dots.forEach(dot => {
-        dot.style.background = status.online ? '#22c55e' : '#9ca3af';
-    });
 }
 
 // ─── Подсветка чата при новом входящем сообщении ────────────────────────────
@@ -280,24 +337,84 @@ function _handleMemberRemoved(data) {
 
 function _handleVoteUpdated(data) {
     const app = window.app;
-    const msg = (app.messages || []).find(m => String(m.id) === String(data.message_id));
-    if (msg) {
-        msg.likes    = data.likes;
-        msg.dislikes = data.dislikes;
-        msg.my_vote  = data.my_vote;
+    
+    // 1. Обновляем кэш сообщений и рейтинг отправителя во всех его сообщениях
+    if (app.messages) {
+        app.messages.forEach(m => {
+            // Обновляем счетчики голосов для конкретного сообщения
+            if (String(m.id) === String(data.message_id)) {
+                m.likes    = data.likes;
+                m.dislikes = data.dislikes;
+                if (data.voter_id && String(data.voter_id) === String(app.currentUser?.id)) {
+                    m.my_vote = data.my_vote;
+                }
+            }
+            // Обновляем рейтинг отправителя во ВСЕХ его сообщениях в текущем чате
+            if (String(m.sender_id) === String(data.sender_id)) {
+                m.sender_rating = data.sender_rating;
+            }
+        });
     }
-    // Точечное обновление DOM
+
+    // 2. Обновляем рейтинг пользователя в списках участников всех чатов
+    if (app.chats) {
+        app.chats.forEach(chat => {
+            if (chat.members) {
+                const member = chat.members.find(m => String(m.id) === String(data.sender_id));
+                if (member) {
+                    member.rating = data.sender_rating;
+                }
+            }
+        });
+    }
+
+    // 3. Точечное обновление DOM для кнопок голосования
+    const msg = (app.messages || []).find(m => String(m.id) === String(data.message_id));
     const el = document.querySelector(`[data-msg-id="${data.message_id}"]`);
     if (el) {
         const votesEl = el.querySelector('.msg-votes');
         if (votesEl) {
-            votesEl.innerHTML = renderVotesHtml(data.likes, data.dislikes, data.my_vote, data.message_id);
-            // has-active — фолбэк для браузеров без :has()
-            votesEl.classList.toggle('has-active', data.my_vote !== 0);
+            const currentMyVote = msg ? msg.my_vote : 0;
+            votesEl.innerHTML = renderVotesHtml(data.likes, data.dislikes, currentMyVote, data.message_id);
+            votesEl.classList.toggle('has-active', currentMyVote !== 0);
+        }
+
+        // Анимация вспышки
+        const bubble = el.querySelector('.message-bubble');
+        if (bubble && data.just_voted) {
+            const isLike = data.just_voted === 1;
+            const glowClass = isLike ? 'bubble-glow-like' : 'bubble-glow-dislike';
+            const btn = el.querySelector(isLike ? '.vote-like' : '.vote-dislike');
+            if (btn) {
+                const flashClass = isLike ? 'vote-flash-like' : 'vote-flash-dislike';
+                btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
+                void btn.offsetWidth;
+                btn.classList.add(flashClass);
+            }
+            bubble.classList.remove('bubble-glow-like', 'bubble-glow-dislike');
+            void bubble.offsetWidth;
+            bubble.classList.add(glowClass);
+            setTimeout(() => bubble.classList.remove('bubble-glow-like', 'bubble-glow-dislike'), 1000);
         }
     }
-    // Обновляем бейджи рейтинга отправителя
-    document.querySelectorAll(`[data-sender-id="${data.sender_id}"] .msg-rating-badge`).forEach(b => {
-        b.outerHTML = renderRatingBadge(data.sender_rating);
+
+    // 4. Обновляем бейджи рейтинга отправителя во всех видимых сообщениях
+    document.querySelectorAll(`[data-sender-id="${data.sender_id}"]`).forEach(msgEl => {
+        const headerLine = msgEl.querySelector('.msg-header-line');
+        if (headerLine) {
+            const oldBadge = headerLine.querySelector('.msg-rating-badge');
+            if (oldBadge) oldBadge.remove();
+            
+            const badgeHtml = renderRatingBadge(data.sender_rating);
+            if (badgeHtml) {
+                headerLine.insertAdjacentHTML('beforeend', badgeHtml);
+            }
+        }
     });
+
+    // 5. Если открыта панель информации о группе и там есть этот пользователь — можно было бы обновить,
+    // но обычно это не критично в реальном времени. Если нужно — вызываем renderGroupInfo()
+    // if (document.getElementById('info-panel') && !document.getElementById('info-panel').classList.contains('hidden')) {
+    //    renderGroupInfo();
+    // }
 }

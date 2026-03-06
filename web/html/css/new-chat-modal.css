@@ -50,7 +50,7 @@
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 1px;
-    border-radius: 28px 28px 0 0;
+    border-radius: 28px;
     pointer-events: none;
     z-index: 10;
     background: linear-gradient(
@@ -171,13 +171,12 @@
     width: 100% !important;
     max-width: 480px !important;
     margin: 0 auto;
-    border-radius: 28px 28px 0 0 !important;
+    border-radius: 28px !important;
 
     background: rgba(var(--bg-sidebar-rgb), 0.72) !important;
     backdrop-filter: blur(40px) saturate(200%) contrast(108%) !important;
     -webkit-backdrop-filter: blur(40px) saturate(200%) contrast(108%) !important;
     border: 0.5px solid var(--glass-border) !important;
-    border-bottom: none !important;
     box-shadow:
         0 -2px 40px rgba(0,0,0,0.12),
         inset 0 1px 0 rgba(255,255,255,0.55) !important;
@@ -223,7 +222,7 @@ body.theme-volcano .new-chat-modal-card::before { background: rgba(255,255,255,0
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 1px;
-    border-radius: 28px 28px 0 0;
+    border-radius: 28px;
     pointer-events: none;
     z-index: 10;
     background: linear-gradient(

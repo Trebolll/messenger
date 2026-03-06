@@ -1,49 +1,84 @@
 /* ══ Система голосования ══════════════════════════════════════════ */
 
-/* Контейнер кнопок — скрыт, появляется при hover на сообщение */
-.msg-votes {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 4px;
-  opacity: 0;
-  transform: translateY(4px) scale(0.92);
-  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34,1.4,0.64,1);
+/* ══ Система голосования "Жидкая капля" ══════════════════════════ */
+
+.gooey-vote-container {
+  filter: url('#gooey-puddle');
+  position: absolute;
+  /* Увеличиваем область, чтобы фильтр не обрезал капли */
+  inset: -40px;
   pointer-events: none;
-}
-[data-msg-id]:hover .msg-votes,
-.msg-votes:has(.vote-active-like),
-.msg-votes:has(.vote-active-dislike) {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
-/* Фолбэк для браузеров без :has() */
-.msg-votes.has-active {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
+  z-index: 5;
 }
 
-/* Базовая кнопка голосования */
+.msg-votes {
+  position: absolute;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  pointer-events: none;
+  /* Скрыты внутри правого края сообщения */
+  right: 10px;
+  transform: translateY(-50%) scale(0.4);
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 5;
+}
+
+/* Анимация "Выливания" из правого бока */
+[data-msg-id]:hover .msg-votes:not(.msg-votes-hidden),
+.msg-votes.has-active:not(.msg-votes-hidden) {
+  opacity: 1 !important;
+  right: -42px; /* Выплывают вправо */
+  transform: translateY(-50%) scale(1) !important;
+  pointer-events: auto !important;
+}
+
+/* Анимация "Возвращения" */
+.msg-votes-hidden {
+  opacity: 0 !important;
+  right: 10px !important;
+  transform: translateY(-50%) scale(0.1) !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  pointer-events: none !important;
+}
+
+/* Кнопки для входящих всегда в стиле message-received */
+.msg-votes .vote-btn {
+  background: var(--message-received-bg) !important;
+  color: var(--message-received-text);
+}
+
 .vote-btn {
-  position: relative;
-  display: inline-flex;
+  width: 30px; height: 30px;
+  border-radius: 50% !important;
+  border: none;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  width: 28px; height: 28px;
-  border: none;
-  border-radius: 50% !important;
-  cursor: pointer;
-  background: var(--bg-sidebar);
-  color: var(--text-muted);
   font-size: 16px;
-  font-weight: 700;
-  line-height: 1;
-  transition: color 0.2s, background 0.2s, transform 0.18s, box-shadow 0.25s;
-  outline: none;
-  overflow: visible;
+  cursor: pointer;
+  box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+}
+
+.vote-btn:hover {
+  transform: scale(1.15) translateX(-2px);
+}
+
+/* Позиционирование счетчика для вертикального вида */
+.vote-count {
+  position: absolute;
+  left: -6px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 9px;
+  background: #ff3b30;
+  color: white;
+  border-radius: 8px !important;
+  padding: 1px 4px;
+  border: 1px solid white;
 }
 .vote-btn .vote-icon {
   display: block;

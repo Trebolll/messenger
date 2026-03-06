@@ -49,8 +49,12 @@ func main() {
 		log.Fatalf("Ошибка инициализации хранилища: %v", err)
 	}
 
+	wallRepository := repository.NewWallRepository(database)
+	wallService := service.NewWallService(wallRepository)
+	wallHandler := handler.NewWallHandler(wallService, storageService)
+
 	userRepository := repository.NewUserRepository(database)
-	userService := service.NewUserService(userRepository)
+	userService := service.NewUserService(userRepository, wallService)
 	userHandler := handler.NewUserHandler(userService, hub, storageService)
 
 	chatRepository := repository.NewChatRepository(database)
@@ -104,10 +108,18 @@ func main() {
 		api.PUT("/users/avatar", userHandler.UpdateAvatar)
 		api.PUT("/users/status", userHandler.UpdateStatus)
 		api.POST("/chats/:chat_id/read", messageHandler.MarkAsRead)
+		api.GET("/ai/agents", aiHandler.Agents)
 		api.POST("/ai/suggest", aiHandler.Suggest)
 		api.POST("/chats/:chat_id/attachments", attachmentHandler.Upload)
 		api.POST("/messages/:message_id/vote", ratingHandler.Vote)
 		api.GET("/users/:user_id/rating", ratingHandler.GetUserRating)
+
+		wall := api.Group("/wall")
+		{
+			wall.POST("/posts", wallHandler.CreatePost)
+			wall.GET("/:user_id", wallHandler.GetWall)
+			wall.PUT("/settings", wallHandler.UpdateSettings)
+		}
 	}
 
 	r.GET("/api/ws", wsHandler.HandleWebSocket)

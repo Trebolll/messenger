@@ -232,6 +232,19 @@ function toggleInfoPanel() {
   document.getElementById('info-panel').classList.toggle('hidden');
 }
 
+function handleHeaderNameClick() {
+  const app = window.app;
+  if (!app.activeChatId) return;
+  const chat = app.chats.find(c => String(c.id) === String(app.activeChatId));
+  if (!chat) return;
+
+  if (!chat.is_group && chat.interlocutor_id) {
+    openWall(chat.interlocutor_id);
+  } else {
+    toggleInfoPanel();
+  }
+}
+
 // ── Profile Modal ──────────────────────────────────────────────────────────
 
 let _profileModalOpen = false;
@@ -248,6 +261,8 @@ function openProfileModal() {
   const overlay = document.getElementById('profile-overlay');
   const modal   = document.getElementById('profile-modal');
   const user    = window.app.currentUser;
+
+  document.body.classList.add('profile-open');
 
   if (user) {
     document.getElementById('profile-username').value    = user.username  || '';
@@ -270,6 +285,7 @@ function closeProfileModal() {
   const modal   = document.getElementById('profile-modal');
   overlay.classList.add('opacity-0');
   modal.classList.add('scale-95');
+  document.body.classList.remove('profile-open');
   _profileModalOpen = false;
   setTimeout(() => overlay.classList.add('hidden'), 300);
   const btn = document.getElementById('profile-dock-btn');
@@ -354,7 +370,7 @@ function openMyAvatarViewer() {
   circleEl.style.overflow = 'hidden';
   circleEl.innerHTML = userAvatarHtml(user);
   document.getElementById('avatar-viewer-name').textContent   = name;
-  document.getElementById('avatar-viewer-status').textContent = 'вы · онлайн';
+  document.getElementById('avatar-viewer-status').textContent = 'вы · online';
   document.getElementById('avatar-viewer-overlay').classList.remove('hidden');
 }
 
@@ -372,7 +388,7 @@ function openAvatarViewer() {
     circleEl.textContent = name[0].toUpperCase();
   }
   document.getElementById('avatar-viewer-name').textContent   = name;
-  document.getElementById('avatar-viewer-status').textContent = chat.is_online ? 'онлайн' : 'офлайн';
+  document.getElementById('avatar-viewer-status').textContent = chat.is_online ? 'online' : '';
   document.getElementById('avatar-viewer-overlay').classList.remove('hidden');
 }
 
@@ -829,7 +845,20 @@ function ashDisintegrate(el, onDone) {
     } else if (!done) {
       done = true;
       cv.remove();
-      onDone?.();
+      // Плавно схлопываем высоту элемента перед удалением — убираем пустое место
+      const elHeight = el.offsetHeight;
+      el.style.transition = 'height 0.22s ease, margin 0.22s ease, opacity 0.1s ease';
+      el.style.overflow = 'hidden';
+      el.style.height = elHeight + 'px';
+      el.style.opacity = '0';
+      requestAnimationFrame(() => {
+        el.style.height = '0';
+        el.style.marginTop = '0';
+        el.style.marginBottom = '0';
+        el.style.paddingTop = '0';
+        el.style.paddingBottom = '0';
+      });
+      setTimeout(() => onDone?.(), 230);
     }
   }
 
@@ -1084,12 +1113,17 @@ function openMemberAvatarViewer(member) {
   const dot   = document.getElementById('avatar-viewer-online-dot');
   const label = document.getElementById('avatar-viewer-online-label');
   if (dot && label) {
-    dot.style.display    = 'block';
-    label.style.display  = 'inline-block';
-    dot.style.background = isOnline ? '#22c55e' : '#9ca3af';
-    label.textContent    = isOnline ? 'онлайн' : 'офлайн';
-    label.style.background  = isOnline ? 'rgba(34,197,94,0.15)' : 'rgba(156,163,175,0.15)';
-    label.style.color        = isOnline ? '#16a34a' : '#6b7280';
+    if (isOnline) {
+      dot.style.display    = 'block';
+      label.style.display  = 'inline-block';
+      dot.style.background = '#22c55e';
+      label.textContent    = 'online';
+      label.style.background  = 'rgba(34,197,94,0.15)';
+      label.style.color        = '#16a34a';
+    } else {
+      dot.style.display    = 'none';
+      label.style.display  = 'none';
+    }
   }
 
   document.getElementById('avatar-viewer-overlay').classList.remove('hidden');

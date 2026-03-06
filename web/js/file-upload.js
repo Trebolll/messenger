@@ -145,6 +145,86 @@ function formatTimeLeft(bytesLeft, bytesPerSec) {
     return Math.ceil(sec / 60) + ' мин';
 }
 
+// ── Оптимизация файлов перед загрузкой (сжатие изображений и ограничение размера) ──
+
+async function optimizeFileForUpload(file) {
+    // Ограничиваем максимальный размер файла (например, 25 МБ)
+    const MAX_FILE_SIZE = 25 * 1024 * 1024;
+
+    // Для изображений пытаемся ужать и уменьшить разрешение
+    if (file.type && file.type.startsWith('image/')) {
+        try {
+            const optimizedImage = await compressImageFile(file, {
+                maxWidth: 1920,
+                maxHeight: 1080,
+                quality: 0.8,
+            });
+            // Если после сжатия файл всё ещё слишком большой — всё равно вернём его
+            return optimizedImage.size <= MAX_FILE_SIZE ? optimizedImage : optimizedImage;
+        } catch (e) {
+            console.warn('Image optimize failed, sending original file', e);
+            return file;
+        }
+    }
+
+    // Для видео и остальных типов пока только ограничиваем по размеру
+    if (file.size > MAX_FILE_SIZE) {
+        window.app?.notify('Файл слишком большой для отправки (макс. 25 МБ)', 'error');
+        throw new Error('File too large');
+    }
+
+    return file;
+}
+
+async function compressImageFile(file, { maxWidth, maxHeight, quality }) {
+    // Если исходное изображение и так маленькое, нет смысла его перекодировать
+    if (!file.type.startsWith('image/')) return file;
+
+    const imageBitmap = await createImageBitmap(file).catch(() => null);
+    if (!imageBitmap) return file;
+
+    let { width, height } = imageBitmap;
+
+    const scale = Math.min(
+        maxWidth ? maxWidth / width : 1,
+        maxHeight ? maxHeight / height : 1,
+        1
+    );
+
+    if (scale >= 1 && file.size < 2 * 1024 * 1024) {
+        // Уже подходящего размера и не слишком большой
+        return file;
+    }
+
+    const targetWidth = Math.round(width * scale);
+    const targetHeight = Math.round(height * scale);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+
+    ctx.drawImage(imageBitmap, 0, 0, targetWidth, targetHeight);
+
+    const mime = file.type === 'image/png' ? 'image/jpeg' : file.type;
+
+    const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob(
+            b => (b ? resolve(b) : reject(new Error('toBlob failed'))),
+            mime,
+            quality
+        );
+    }).catch(() => null);
+
+    if (!blob) return file;
+
+    // Создаём новый File, чтобы backend по-прежнему получал имя и тип
+    const optimizedFile = new File([blob], file.name, { type: blob.type || mime });
+    return optimizedFile;
+}
+
 // ── Отправка сообщения с файлами ─────────────────────────────────────────────
 async function handleSendMessage(event) {
     event.preventDefault();
@@ -216,6 +296,8 @@ async function uploadAndSendFile(chatId, file, caption) {
     scrollToBottom();
 
     try {
+        // Перед загрузкой оптимизируем файл (сжимаем большие изображения и т.п.)
+        const processedFile = await optimizeFileForUpload(file);
         // Шаг 1: отправляем сообщение — получаем message_id
         const msgContent = caption || '';
         const sentMsg = await apiFetch('/api/messages', {
@@ -234,7 +316,7 @@ async function uploadAndSendFile(chatId, file, caption) {
         }
 
         // Шаг 2: загружаем файл с message_id
-        const attachment = await apiUploadFile(chatId, file, messageId, (loaded, total) => {
+        const attachment = await apiUploadFile(chatId, processedFile, messageId, (loaded, total) => {
             const now = Date.now();
             const elapsed = (now - lastTime) / 1000;
             const speed = elapsed > 0.2 ? (loaded - lastLoaded) / elapsed : 0;
