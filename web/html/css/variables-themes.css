@@ -216,7 +216,7 @@ body.theme-volcano {
 
 /* ── Стеклянные панели ── */
 .left-panel, #view-chat, #info-panel, #bottom-dock, .modal-content,
-#auth-modal, .new-chat-modal-card, #profile-modal, #wall-modal {
+#auth-modal, .new-chat-modal-card, #profile-modal, #wall-modal, .wall-comments-panel {
   border: 0.5px solid var(--glass-border) !important;
   border-radius: 28px !important;
   box-shadow:

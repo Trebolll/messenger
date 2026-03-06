@@ -19,5 +19,7 @@ type Message struct {
 	EditedAt        *time.Time `json:"edited_at"`
 	Likes           int        `json:"likes"`
 	Dislikes        int        `json:"dislikes"`
-	MyVote          int        `json:"my_vote"` // 0 = нет, 1 = лайк, -1 = дизлайк
+	MyVote          int        `json:"my_vote"`
+	ParentID        *uuid.UUID `json:"parent_id,omitempty"`
+	Replies         []Message  `json:"replies,omitempty"`
 }

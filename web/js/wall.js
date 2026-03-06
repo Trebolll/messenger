@@ -16,7 +16,7 @@ function toggleWall() {
 async function openWall(userId = null) {
     const overlay = document.getElementById('wall-overlay');
     const modal   = document.getElementById('wall-modal');
-
+    
     // Сбрасываем вкладку при открытии
     _wallSelectedFiles = [];
     updateWallMediaPreview();
@@ -32,7 +32,7 @@ async function openWall(userId = null) {
     const editProfileBtn = document.getElementById('wall-settings-btn');
     const editBioBtn     = document.getElementById('edit-bio-btn');
     const postInputContainer = document.getElementById('wall-post-creator');
-
+    
     if (editProfileBtn) editProfileBtn.style.display = isMe ? 'flex' : 'none';
     if (editBioBtn)     editBioBtn.style.display     = isMe ? 'block' : 'none';
     if (postInputContainer) {
@@ -43,7 +43,7 @@ async function openWall(userId = null) {
     // Очищаем начальные данные
     document.getElementById('wall-username').textContent = isMe ? (window.app.currentUser?.username || 'User') : 'Загрузка...';
     document.getElementById('wall-status').textContent   = isMe ? (window.app.currentUser?.status || '') : '';
-
+    
     const avatarEl = document.getElementById('wall-avatar');
     if (isMe) {
         setAvatarEl(avatarEl, window.app.currentUser);
@@ -69,7 +69,7 @@ async function openWall(userId = null) {
 function closeWall() {
     const overlay = document.getElementById('wall-overlay');
     const modal   = document.getElementById('wall-modal');
-
+    
     overlay.classList.add('opacity-0');
     modal.classList.add('scale-95');
     document.body.classList.remove('wall-open');
@@ -93,12 +93,12 @@ async function loadWallPosts(userId) {
             }
         });
         const result = await response.json();
-
+        
         // Обновляем данные владельца стены (Username, Avatar)
         if (result.wall) {
             const uname = result.wall.username || (isMe ? window.app.currentUser?.username : 'User');
             const status = result.wall.status || (isMe ? window.app.currentUser?.status : '');
-
+            
             document.getElementById('wall-username').textContent = uname;
             document.getElementById('wall-status').textContent   = status;
 
@@ -177,10 +177,10 @@ async function loadWallPosts(userId) {
             const mediaCount = (result.media || []).length;
             const mediaCountEl = document.getElementById('wall-media-count');
             if (mediaCountEl) mediaCountEl.textContent = mediaCount > 0 ? `${mediaCount} файлов` : 'фото и видео';
-
+            
             const avatarEl = document.getElementById('wall-avatar');
             const avatarUrl = result.wall.avatar_url || (isMe ? window.app.currentUser?.avatar_url : '');
-
+            
             if (avatarUrl) {
                 avatarEl.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover">`;
             } else {
@@ -209,7 +209,7 @@ async function loadWallPosts(userId) {
             const hasNonMedia = (p.attachments || []).some(a => !(a.mime_type || '').match(/^(image|video)\//));
             return hasText || hasNonMedia;
         });
-
+        
         if (!feedPosts || feedPosts.length === 0) {
             feed.innerHTML = `
                 <div class="text-center py-10 opacity-50">
@@ -238,16 +238,16 @@ async function loadWallPosts(userId) {
                    ${p.attachments && p.attachments.length > 0 ? `
                       <div class="grid ${p.attachments.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mt-2">
                          ${p.attachments.map(a => {
-                const isVideo = (a.mime_type || '').startsWith('video/');
-                if (isVideo) {
-                    return `<div class="rounded-lg overflow-hidden border border-white/5 bg-black/20 relative aspect-video">
+                            const isVideo = (a.mime_type || '').startsWith('video/');
+                            if (isVideo) {
+                                return `<div class="rounded-lg overflow-hidden border border-white/5 bg-black/20 relative aspect-video">
                                     <video src="${a.url}" class="w-full h-full object-cover" controls preload="metadata"></video>
                                 </div>`;
-                }
-                return `<div class="rounded-lg overflow-hidden border border-white/5 bg-black/20 aspect-video cursor-pointer" onclick="openImgLightbox('${a.url}')">
+                            }
+                            return `<div class="rounded-lg overflow-hidden border border-white/5 bg-black/20 aspect-video cursor-pointer" onclick="openImgLightbox('${a.url}')">
                                <img src="${a.url}" class="w-full h-full object-cover">
                             </div>`;
-            }).join('')}
+                         }).join('')}
                       </div>
                    ` : ''}
                    <div class="mt-2 flex gap-4 pt-3 border-t border-white/5">
@@ -255,7 +255,7 @@ async function loadWallPosts(userId) {
                          <svg class="w-4 h-4 transition-transform" fill="${p.is_liked ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
                          <span class="like-count">${p.likes_count || ''}</span>
                       </button>
-                      <button onclick="openPostChat('${p.id}')" class="flex items-center gap-1.5 text-xs text-custom-muted hover:text-custom-accent transition">
+                      <button onclick="openPostChat('${p.id}', '${p.chat_id || ''}')" class="flex items-center gap-1.5 text-xs text-custom-muted hover:text-custom-accent transition">
                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                          <span>Обсудить</span>
                       </button>
@@ -271,7 +271,7 @@ async function loadWallPosts(userId) {
 async function publishWallPost() {
     const input = document.getElementById('wall-post-input');
     const content = input.value.trim();
-
+    
     // Можно публиковать если есть текст ИЛИ если есть файлы
     if (!content && _wallSelectedFiles.length === 0) return;
 
@@ -294,7 +294,7 @@ async function publishWallPost() {
             const uploadPromises = _wallSelectedFiles.map(file => {
                 const formData = new FormData();
                 formData.append('file', file);
-
+                
                 return fetch(`/api/wall/posts/${post.id}/attachments`, {
                     method: 'POST',
                     headers: {
@@ -303,7 +303,7 @@ async function publishWallPost() {
                     body: formData
                 });
             });
-
+            
             // Ждем завершения всех загрузок перед обновлением интерфейса
             await Promise.all(uploadPromises);
         }
@@ -560,22 +560,22 @@ async function togglePostLike(postId, btn) {
 
 // ─── Открыть чат поста ───────────────────────────────────────────────────────
 
-async function openPostChat(postId) {
-    try {
-        const res = await fetch(`/api/wall/posts/${postId}/chat`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('alpha_token')}` }
-        });
-        if (!res.ok) throw new Error('Не удалось получить чат');
-        const data = await res.json();
-
-        // Добавляем чат в список если его нет и открываем
-        await window.app.loadChats();
-        closeWall();
-        await window.app.loadMessages(data.chat_id);
-    } catch (err) {
-        console.error(err);
-        window.app.notify('Не удалось открыть чат', 'error');
+async function openPostChat(postId, chatId) {
+    if (!chatId) {
+        // Получаем chat_id если не передан
+        try {
+            const res = await fetch(`/api/wall/posts/${postId}/chat`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('alpha_token')}` }
+            });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            chatId = data.chat_id;
+        } catch {
+            window.app.notify('Не удалось открыть чат', 'error');
+            return;
+        }
     }
+    openWallComments(postId, chatId);
 }
 
 // ─── Удаление поста ──────────────────────────────────────────────────────────
@@ -707,4 +707,205 @@ async function saveWallBio() {
         console.error(err);
         window.app.notify('Ошибка сохранения', 'error');
     }
+}
+
+// ═══════════════════════════════════════════════════════════
+// WALL COMMENTS — модальное окно с деревом комментариев + WS
+// ═══════════════════════════════════════════════════════════
+
+let _commentsWS = null;
+let _commentsChatId = null;
+
+function openWallComments(postId, chatId) {
+    _commentsChatId = chatId;
+
+    const overlay = document.getElementById('wall-comments-overlay');
+    overlay.classList.remove('hidden');
+    requestAnimationFrame(() => overlay.classList.add('comments-open'));
+
+    document.getElementById('wall-comments-input').value = '';
+    document.getElementById('wall-comments-input').dataset.parentId = '';
+    document.getElementById('wall-comments-reply-to').classList.add('hidden');
+    document.getElementById('wall-comments-feed').innerHTML = `
+        <div class="flex justify-center py-8 opacity-40">
+            <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+        </div>`;
+
+    loadComments(chatId);
+    connectCommentsWS(chatId);
+}
+
+function closeWallComments() {
+    const overlay = document.getElementById('wall-comments-overlay');
+    overlay.classList.remove('comments-open');
+    setTimeout(() => overlay.classList.add('hidden'), 320);
+    if (_commentsWS) { _commentsWS.close(); _commentsWS = null; }
+    _commentsChatId = null;
+}
+
+async function loadComments(chatId) {
+    try {
+        const res = await fetch(`/api/wall/chat/${chatId}/comments`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('alpha_token')}` }
+        });
+        const comments = await res.json();
+        renderCommentTree(comments);
+    } catch (e) {
+        document.getElementById('wall-comments-feed').innerHTML =
+            '<p class="text-center text-xs opacity-40 py-8">Ошибка загрузки</p>';
+    }
+}
+
+function connectCommentsWS(chatId) {
+    if (_commentsWS) _commentsWS.close();
+    const token = localStorage.getItem('alpha_token') || '';
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    _commentsWS = new WebSocket(`${proto}://${location.host}/ws/wall/${chatId}?token=${token}`);
+    _commentsWS.onmessage = (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'new_comment') {
+            appendComment(msg.comment);
+        }
+    };
+    _commentsWS.onclose = () => { _commentsWS = null; };
+}
+
+function renderCommentTree(comments) {
+    const feed = document.getElementById('wall-comments-feed');
+    if (!comments || comments.length === 0) {
+        feed.innerHTML = '<p class="text-center text-xs opacity-30 italic py-8">Первым напишите комментарий</p>';
+        return;
+    }
+    feed.innerHTML = comments.map(c => renderCommentNode(c, 0)).join('');
+}
+
+function renderCommentNode(c, depth) {
+    const indent = depth > 0 ? `style="margin-left:${Math.min(depth * 16, 64)}px"` : '';
+    const hasReplies = c.replies && c.replies.length > 0;
+    const repliesId = `replies-${c.id}`;
+    const time = new Date(c.created_at).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
+
+    return `
+    <div class="wall-comment-node" ${indent} data-id="${c.id}">
+        <div class="flex gap-2.5 group/comment">
+            <div class="w-7 h-7 rounded-full bg-custom-sidebar flex-shrink-0 overflow-hidden border border-white/10 flex items-center justify-center text-xs font-bold">
+                ${c.sender_avatar_url
+                    ? `<img src="${c.sender_avatar_url}" class="w-full h-full object-cover">`
+                    : c.sender_name?.[0]?.toUpperCase() || '?'}
+            </div>
+            <div class="flex-grow min-w-0">
+                <div class="flex items-baseline gap-2 mb-0.5">
+                    <span class="text-xs font-semibold text-custom-main">${c.sender_name}</span>
+                    <span class="text-[10px] text-custom-muted/50">${time}</span>
+                </div>
+                <p class="text-xs text-custom-main/80 leading-relaxed break-words">${escapeHtml(c.content)}</p>
+                <div class="flex items-center gap-3 mt-1.5">
+                    <button onclick="setCommentReply('${c.id}', '${escapeHtml(c.sender_name)}')"
+                        class="text-[10px] text-custom-muted/50 hover:text-custom-accent transition">
+                        ответить
+                    </button>
+                    ${hasReplies ? `
+                    <button onclick="toggleReplies('${repliesId}', this)"
+                        class="text-[10px] text-custom-muted/50 hover:text-custom-accent transition flex items-center gap-1">
+                        <svg class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                        ${c.replies.length} ${c.replies.length === 1 ? 'ответ' : c.replies.length < 5 ? 'ответа' : 'ответов'}
+                    </button>` : ''}
+                </div>
+            </div>
+        </div>
+        ${hasReplies ? `
+        <div id="${repliesId}" class="hidden mt-2 space-y-2 border-l border-white/5 pl-3">
+            ${c.replies.map(r => renderCommentNode(r, depth + 1)).join('')}
+        </div>` : ''}
+    </div>`;
+}
+
+function toggleReplies(id, btn) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const hidden = el.classList.toggle('hidden');
+    const icon = btn.querySelector('svg');
+    if (icon) icon.style.transform = hidden ? '' : 'rotate(90deg)';
+}
+
+function setCommentReply(parentId, authorName) {
+    const input = document.getElementById('wall-comments-input');
+    const replyBadge = document.getElementById('wall-comments-reply-to');
+    input.dataset.parentId = parentId;
+    replyBadge.classList.remove('hidden');
+    document.getElementById('wall-comments-reply-name').textContent = authorName;
+    input.focus();
+}
+
+function clearCommentReply() {
+    const input = document.getElementById('wall-comments-input');
+    input.dataset.parentId = '';
+    document.getElementById('wall-comments-reply-to').classList.add('hidden');
+}
+
+async function sendWallComment() {
+    const input = document.getElementById('wall-comments-input');
+    const content = input.value.trim();
+    if (!content || !_commentsChatId) return;
+
+    const parentId = input.dataset.parentId || null;
+    const body = { content };
+    if (parentId) body.parent_id = parentId;
+
+    try {
+        const res = await fetch(`/api/wall/chat/${_commentsChatId}/comments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('alpha_token')}`
+            },
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error();
+        input.value = '';
+        clearCommentReply();
+        // WS сам доставит новый комментарий
+    } catch {
+        window.app.notify('Ошибка отправки', 'error');
+    }
+}
+
+function appendComment(comment) {
+    const feed = document.getElementById('wall-comments-feed');
+    // Убираем заглушку "первым напишите"
+    const placeholder = feed.querySelector('p');
+    if (placeholder) placeholder.remove();
+
+    if (comment.parent_id) {
+        // Ищем родителя и добавляем в его replies
+        const parentEl = feed.querySelector(`[data-id="${comment.parent_id}"]`);
+        if (parentEl) {
+            let repliesContainer = parentEl.querySelector('[id^="replies-"]');
+            if (!repliesContainer) {
+                repliesContainer = document.createElement('div');
+                repliesContainer.id = `replies-${comment.parent_id}`;
+                repliesContainer.className = 'mt-2 space-y-2 border-l border-white/5 pl-3';
+                parentEl.appendChild(repliesContainer);
+            }
+            repliesContainer.classList.remove('hidden');
+            repliesContainer.insertAdjacentHTML('beforeend', renderCommentNode(comment, 1));
+            return;
+        }
+    }
+    // Корневой комментарий
+    feed.insertAdjacentHTML('beforeend', renderCommentNode(comment, 0));
+    feed.scrollTop = feed.scrollHeight;
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }

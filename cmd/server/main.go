@@ -39,6 +39,9 @@ func main() {
 	hub := websocket.NewHub()
 	go hub.Run()
 
+	wallHub := websocket.NewWallHub()
+	go wallHub.Run()
+
 	storageService, err := service.NewStorageService(
 		os.Getenv("MINIO_ENDPOINT"),
 		os.Getenv("MINIO_ACCESS_KEY"),
@@ -78,6 +81,7 @@ func main() {
 	attachmentHandler := handler.NewAttachmentHandler(attachmentService)
 
 	wsHandler := handler.NewWebSocketHandler(hub, "your_secret_key")
+	wallChatHandler := handler.NewWallChatHandler(wallHub, messageRepository, "your_secret_key")
 
 	r := gin.Default()
 	r.LoadHTMLGlob("web/html/*.html")
@@ -124,11 +128,15 @@ func main() {
 			wall.DELETE("/media/:attachment_id", wallHandler.DeleteAttachment)
 			wall.GET("/:user_id", wallHandler.GetWall)
 			wall.PUT("/settings", wallHandler.UpdateSettings)
+
+			// Комментарии к постам
+			wall.GET("/chat/:chat_id/comments", wallChatHandler.GetComments)
+			wall.POST("/chat/:chat_id/comments", wallChatHandler.PostComment)
 		}
 	}
 
 	r.GET("/api/ws", wsHandler.HandleWebSocket)
-
+	r.GET("/ws/wall/:chat_id", wallChatHandler.HandleWallWS)
 	log.Printf("Server started at port 8080")
 	if err := r.Run(":8080"); err != nil {
 		panic(err)
