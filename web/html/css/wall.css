@@ -178,3 +178,16 @@ body.wall-open.profile-open #profile-modal {
     padding-top: 0.75rem;
     border-top: 1px solid rgba(255,255,255,0.04);
 }
+
+/* ── Activity Feed ── */
+.activity-post-card {
+    background: rgba(var(--bg-sidebar-rgb), 0.2);
+    backdrop-filter: blur(10px);
+    border: 0.5px solid var(--glass-border);
+    transition: all 0.2s ease;
+}
+.activity-post-card:hover {
+    background: rgba(var(--bg-sidebar-rgb), 0.3);
+    border-color: rgba(var(--color-accent-rgb), 0.3);
+    transform: translateY(-1px);
+}

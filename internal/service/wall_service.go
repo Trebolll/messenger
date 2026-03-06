@@ -74,3 +74,7 @@ func (s *WallService) DeleteAttachment(attID uuid.UUID, userID uuid.UUID) error 
 func (s *WallService) AddAttachment(att *model.WallAttachment) error {
 	return s.repo.AddAttachment(att)
 }
+
+func (s *WallService) GetGlobalMediaFeed(viewerID uuid.UUID) ([]model.WallPost, error) {
+	return s.repo.GetGlobalMediaFeed(viewerID)
+}

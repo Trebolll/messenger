@@ -46,10 +46,10 @@
       leftPanel.style.marginTop = '12px';
       leftPanel.style.height = 'calc(100% - 12px)';
 
-      // Фиксированная ширина левой панели
-      leftPanel.style.flex = '0 0 320px';
-      leftPanel.style.width = '320px';
-      leftPanel.style.minWidth = '320px';
+      // Фиксированная ширина левой панели для сетки из 3-х постов
+      leftPanel.style.flex = '0 0 800px';
+      leftPanel.style.width = '800px';
+      leftPanel.style.minWidth = '800px';
 
       leftPanel.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease';
       if (!state.chatsVisible && !state.feedVisible) {
@@ -213,7 +213,12 @@
         state.feedVisible = true;
       } else {
         state.feedVisible = !state.feedVisible;
-        if (state.feedVisible) state.chatsVisible = false;
+        if (state.feedVisible) {
+            state.chatsVisible = false;
+            if (typeof loadActivityFeed === 'function') {
+                loadActivityFeed();
+            }
+        }
       }
     }
     applyLayout();
@@ -246,6 +251,9 @@
     });
     if (window.app) window.app.activeChatId = null;
     state.feedVisible = showFeed ? true : state.feedWasVisible;
+    if (state.feedVisible && typeof loadActivityFeed === 'function') {
+        loadActivityFeed();
+    }
     applyLayout();
   }
 
@@ -306,10 +314,13 @@
     var origShowChat = app.showChat.bind(app);
     app.showChat = function () {
       origShowChat();
-      // После успешной авторизации на главном экране сразу показываем список чатов
+      // После успешной авторизации на главном экране сразу показываем ленту
       state.chatsVisible = false;
-      state.feedVisible  = false;
+      state.feedVisible  = true;
       state.chatOpen     = false;
+      if (typeof loadActivityFeed === 'function') {
+          loadActivityFeed();
+      }
       applyLayout();
     };
   }
@@ -321,10 +332,13 @@
 
     // Применить layout сразу если уже в чат-режиме
     if (isMainChatVisible()) {
-      // По умолчанию сразу показываем список чатов слева и заглушку "выберите чат"
+      // По умолчанию сразу показываем ленту
       state.chatsVisible = false;
-      state.feedVisible  = false;
+      state.feedVisible  = true;
       state.chatOpen     = false;
+      if (typeof loadActivityFeed === 'function') {
+          loadActivityFeed();
+      }
       applyLayout();
     }
 

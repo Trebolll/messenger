@@ -256,7 +256,7 @@ function renderSinglePostHtml(p, isMe) {
               ${p.content}
            </div>
            ${p.attachments && p.attachments.length > 0 ? `
-              <div class="grid ${p.attachments.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mt-2 post-attachments-grid">
+              <div class="grid ${p.attachments.length === 1 ? 'grid-cols-1' : (p.attachments.length === 2 ? 'grid-cols-2' : 'grid-cols-3')} gap-2 mt-2 post-attachments-grid">
                  ${p.attachments.map(a => renderAttachmentHtml(p.id, a)).join('')}
               </div>
            ` : `<div class="post-attachments-grid grid grid-cols-2 gap-2 mt-2 hidden"></div>`}
@@ -308,7 +308,7 @@ function connectWallPostsWS(userId) {
             const html = renderSinglePostHtml(msg.post, isMe);
             feed.insertAdjacentHTML('afterbegin', html);
         } else if (msg.type === 'delete_post') {
-            const card = document.getElementById(`post-${msg.post_id}`);
+            const card = document.getElementById(`post-${msg.post_id}`) || document.getElementById(`activity-post-${msg.post_id}`);
             if (card) {
                 card.style.opacity = '0';
                 card.style.transform = 'scale(0.95)';
@@ -318,19 +318,33 @@ function connectWallPostsWS(userId) {
             if (String(_wallUserId) === String(userId)) {
                 loadWallPosts(_wallUserId);
             }
+            if (document.getElementById(`activity-post-${msg.post_id}`)) {
+                loadActivityFeed();
+            }
         } else if (msg.type === 'update_post_like') {
-             const card = document.getElementById(`post-${msg.post_id}`);
-             if (card) {
-                 const span = card.querySelector('.like-count');
-                 if (span) span.textContent = msg.likes_count || '';
-             }
+             const syncIds = [`post-${msg.post_id}`, `activity-post-${msg.post_id}`];
+             syncIds.forEach(id => {
+                 const card = document.getElementById(id);
+                 if (card) {
+                     const span = card.querySelector('.like-count, span');
+                     if (span) span.textContent = msg.likes_count || '';
+                 }
+             });
         } else if (msg.type === 'update_post_comment_count') {
-             // Ищем пост по chat_id (нужно добавить data-chat-id в верстку или искать иначе)
-             const card = document.querySelector(`.wall-post-card button[onclick*="${msg.chat_id}"]`)?.closest('.wall-post-card');
-             if (card) {
-                 const span = card.querySelector('.comment-count');
-                 if (span) span.textContent = `${msg.comments_count} комментариев`;
-             }
+             const btns = document.querySelectorAll(`button[onclick*="${msg.chat_id}"]`);
+             btns.forEach(btn => {
+                 const card = btn.closest('.wall-post-card, .activity-post-card');
+                 if (card) {
+                     const span = card.querySelector('.comment-count, span:last-child');
+                     if (span) {
+                         if (card.classList.contains('wall-post-card')) {
+                             span.textContent = `${msg.comments_count} комментариев`;
+                         } else {
+                             span.textContent = msg.comments_count;
+                         }
+                     }
+                 }
+             });
         } else if (msg.type === 'update_wall_info') {
              if (String(_wallUserId) === String(userId)) {
                  renderWallBio(msg.bio, String(userId) === String(window.app.currentUser?.id));
@@ -570,7 +584,7 @@ async function openMediaDetail(postId, url, isVideo) {
         mediaContent.innerHTML = `<img src="${url}" class="max-w-full max-h-full rounded-lg shadow-2xl object-contain">`;
     }
 
-    const postEl = document.getElementById(`post-${postId}`);
+    const postEl = document.getElementById(`post-${postId}`) || document.getElementById(`activity-post-${postId}`);
     let isLiked = false;
     let chatId = null;
 
@@ -666,25 +680,28 @@ async function togglePostLike(postId, btn) {
             }
         }
 
-        const feedPost = document.getElementById(`post-${postId}`);
-        if (feedPost) {
-            const feedBtn = feedPost.querySelector('button[onclick^="togglePostLike"]');
-            if (feedBtn && feedBtn !== btn) {
-                feedBtn.dataset.liked = liked;
-                const feedSvg = feedBtn.querySelector('svg');
-                const feedSpan = feedBtn.querySelector('.like-count');
-                if (liked) {
-                    feedBtn.classList.add('text-red-400');
-                    feedBtn.classList.remove('text-custom-muted');
-                    feedSvg.setAttribute('fill', 'currentColor');
-                } else {
-                    feedBtn.classList.remove('text-red-400');
-                    feedBtn.classList.add('text-custom-muted');
-                    feedSvg.setAttribute('fill', 'none');
+        const syncIds = [`post-${postId}`, `activity-post-${postId}`];
+        syncIds.forEach(id => {
+            const card = document.getElementById(id);
+            if (card) {
+                const feedBtn = card.querySelector('button[onclick^="togglePostLike"]');
+                if (feedBtn && feedBtn !== btn) {
+                    feedBtn.dataset.liked = liked;
+                    const feedSvg = feedBtn.querySelector('svg');
+                    const feedSpan = feedBtn.querySelector('.like-count, span'); // В ленте активности span без класса
+                    if (liked) {
+                        feedBtn.classList.add('text-red-400');
+                        feedBtn.classList.remove('text-custom-muted');
+                        feedSvg.setAttribute('fill', 'currentColor');
+                    } else {
+                        feedBtn.classList.remove('text-red-400');
+                        feedBtn.classList.add('text-custom-muted');
+                        feedSvg.setAttribute('fill', 'none');
+                    }
+                    if (feedSpan) feedSpan.textContent = count || '';
                 }
-                if (feedSpan) feedSpan.textContent = count || '';
             }
-        }
+        });
     } catch {
         window.app.notify('Ошибка', 'error');
     }
@@ -715,7 +732,7 @@ async function deleteWallPost(postId) {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('alpha_token')}` }
         });
         if (!res.ok) throw new Error('Ошибка удаления');
-        const card = document.getElementById(`post-${postId}`);
+        const card = document.getElementById(`post-${postId}`) || document.getElementById(`activity-post-${postId}`);
         if (card) {
             card.style.opacity = '0';
             card.style.transform = 'scale(0.97)';
@@ -1017,4 +1034,91 @@ function escapeHtml(str) {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
+}
+
+async function loadActivityFeed() {
+    const container = document.getElementById('activity-feed-container');
+    if (!container) return;
+
+    try {
+        const response = await fetch('/api/wall/feed', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('alpha_token')}`
+            }
+        });
+        if (!response.ok) throw new Error('Failed to load feed');
+        const posts = await response.json();
+        
+        if (!posts || posts.length === 0) {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full py-20 opacity-40 select-none">
+                    <p class="text-sm font-semibold text-custom-main">В ленте пока пусто...</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = posts.map(p => renderActivityPostHtml(p)).join('');
+    } catch (err) {
+        console.error('Activity feed error:', err);
+        container.innerHTML = `<p class="text-xs text-red-400 p-4">Ошибка загрузки ленты</p>`;
+    }
+}
+
+function renderActivityPostHtml(p) {
+    const isMe = String(p.user_id) === String(window.app.currentUser?.id);
+    const hasAttachments = p.attachments && p.attachments.length > 0;
+    
+    return `
+        <div class="activity-post-card rounded-[24px] flex flex-col group relative overflow-hidden bg-custom-sidebar border border-white/5 hover:border-custom-accent/30 transition-all shadow-sm" id="activity-post-${p.id}">
+           ${hasAttachments ? `
+              <div class="aspect-square w-full overflow-hidden">
+                 ${renderActivityAttachmentHtml(p.id, p.attachments[0])}
+                 ${p.attachments.length > 1 ? `<div class="absolute top-3 right-3 bg-black/50 backdrop-blur-md text-white text-[9px] px-2 py-1 rounded-full z-10">+${p.attachments.length - 1}</div>` : ''}
+              </div>
+           ` : `
+              <div class="aspect-square w-full p-4 flex items-center justify-center text-center bg-custom-sidebar/50">
+                 <div class="text-[11px] text-custom-main leading-relaxed line-clamp-6 font-medium italic">${p.content || 'Запись без текста'}</div>
+              </div>
+           `}
+           
+           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+              <div class="flex items-center gap-2 mb-1">
+                 <div class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center font-bold text-[8px] overflow-hidden border border-white/20">
+                    ${p.author_avatar ? `<img src="${p.author_avatar}" class="w-full h-full object-cover">` : (p.author_name ? p.author_name[0] : '?')}
+                 </div>
+                 <span class="text-[10px] font-bold text-white truncate">${p.author_name}</span>
+              </div>
+              <div class="flex gap-3 text-white/80">
+                 <div class="flex items-center gap-1 text-[9px]">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                    <span>${p.likes_count || 0}</span>
+                 </div>
+                 <div class="flex items-center gap-1 text-[9px]">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                    <span>${p.comments_count || 0}</span>
+                 </div>
+              </div>
+              <button onclick="${hasAttachments ? `openMediaDetail('${p.id}', '${p.attachments[0].url}', ${(p.attachments[0].mime_type || '').startsWith('video/')})` : `openPostChat('${p.id}', '${p.chat_id || ''}')`}" class="absolute inset-0 z-0"></button>
+              <div class="absolute top-3 left-3 opacity-60 pointer-events-none">
+                  <p class="text-[8px] text-white/50">${new Date(p.created_at).toLocaleDateString()}</p>
+              </div>
+           </div>
+        </div>
+    `;
+}
+
+function renderActivityAttachmentHtml(postId, a) {
+    const isVideo = (a.mime_type || '').startsWith('video/');
+    if (isVideo) {
+        return `<div class="relative w-full h-full cursor-pointer bg-black/40 group/media overflow-hidden" onclick="openMediaDetail('${postId}', '${a.url}', true)">
+            <video src="${a.url}" class="w-full h-full object-cover group-hover/media:scale-105 transition-transform"></video>
+            <div class="absolute inset-0 flex items-center justify-center bg-black/10">
+                <svg class="w-7 h-7 text-white opacity-80" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+        </div>`;
+    }
+    return `<div class="w-full h-full cursor-pointer bg-black/40 group/media overflow-hidden" onclick="openMediaDetail('${postId}', '${a.url}', false)">
+       <img src="${a.url}" class="w-full h-full object-cover group-hover/media:scale-105 transition-transform">
+    </div>`;
 }

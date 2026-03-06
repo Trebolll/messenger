@@ -90,20 +90,20 @@
       <div id="left-panel-content" class="flex-grow flex flex-col overflow-hidden">
 
         <!-- Лента активности (по умолчанию скрыта инлайном, чтобы не мигала до init) -->
-        <div id="view-home" class="flex flex-col h-full" style="display:none;">
-          <div class="p-4 flex items-center gap-3" style="border-bottom: 1px solid rgba(0,0,0,0.04);">
-            <span class="font-bold text-custom-main text-base"> </span>
+        <div id="view-home" class="flex flex-col h-full overflow-hidden" style="display:none;">
+          <div class="p-4 flex items-center justify-between border-b border-white/5 bg-custom-sidebar/80 backdrop-blur-md sticky top-0 z-10">
+            <span class="font-bold text-custom-main text-base">Лента активности</span>
+            <button onclick="loadActivityFeed()" class="p-2 rounded-xl hover:bg-custom-main/10 text-custom-muted hover:text-custom-main transition-all" title="Обновить">
+               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            </button>
           </div>
-          <div class="flex-grow flex flex-col items-center justify-center gap-4 select-none px-6">
-            <div style="opacity:0.12;">
-              <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M17 20h5v-2a4 4 0 00-5.356-3.779M9 20H4v-2a4 4 0 015.356-3.779M15 7a4 4 0 11-8 0 4 4 0 018 0zm6 3a3 3 0 11-6 0 3 3 0 016 0zM3 10a3 3 0 116 0 3 3 0 01-6 0z"/>
-              </svg>
-            </div>
-            <div class="text-center" style="opacity:0.4;">
-              <p class="text-sm font-semibold text-custom-main">Лента активности</p>
-              <p class="text-xs text-custom-muted mt-1">Здесь будут события пользователей</p>
-            </div>
+          <div id="activity-feed-container" class="flex-grow overflow-y-auto scrollbar-hide p-4 grid grid-cols-3 gap-3 content-start">
+             <div class="flex flex-col items-center justify-center h-full py-20 opacity-40 select-none">
+                <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                </svg>
+                <p class="text-sm font-semibold text-custom-main">Загрузка ленты...</p>
+             </div>
           </div>
         </div>
 

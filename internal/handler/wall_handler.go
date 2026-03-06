@@ -260,3 +260,16 @@ func (h *WallHandler) UploadAttachment(c *gin.Context) {
 
 	c.JSON(http.StatusOK, att)
 }
+
+func (h *WallHandler) GetGlobalMediaFeed(c *gin.Context) {
+	val, _ := c.Get("userID")
+	viewerID, _ := val.(uuid.UUID)
+
+	posts, err := h.wallService.GetGlobalMediaFeed(viewerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, posts)
+}

@@ -299,3 +299,55 @@ func (r *WallRepository) GetAllMediaByUserID(userID uuid.UUID) ([]model.WallAtta
 	}
 	return media, nil
 }
+
+func (r *WallRepository) GetGlobalMediaFeed(viewerID uuid.UUID) ([]model.WallPost, error) {
+	query := `
+		SELECT p.id, p.user_id, p.content, p.created_at, p.updated_at, u.username, COALESCE(u.avatar_url, ''),
+		       COUNT(DISTINCT l.user_id) as likes_count,
+		       COALESCE(BOOL_OR(l.user_id = $1), false) as is_liked,
+		       p.chat_id,
+		       (SELECT COUNT(*) FROM messages m WHERE m.chat_id = p.chat_id) as comments_count
+		FROM wall_posts p
+		JOIN users u ON p.user_id = u.id
+		LEFT JOIN wall_post_likes l ON l.post_id = p.id
+		WHERE EXISTS (
+			SELECT 1 FROM wall_attachments wa 
+			WHERE wa.post_id = p.id 
+			AND (wa.mime_type LIKE 'image/%' OR wa.mime_type LIKE 'video/%')
+		)
+		GROUP BY p.id, p.user_id, p.content, p.created_at, p.updated_at, p.chat_id, u.username, u.avatar_url
+		ORDER BY p.created_at DESC
+		LIMIT 50`
+
+	rows, err := r.db.Query(query, viewerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []model.WallPost = []model.WallPost{}
+	for rows.Next() {
+		var p model.WallPost
+		var chatID sql.NullString
+		if err := rows.Scan(
+			&p.ID, &p.UserID, &p.Content, &p.CreatedAt, &p.UpdatedAt,
+			&p.AuthorName, &p.AuthorAvatar, &p.LikesCount, &p.IsLiked, &chatID, &p.CommentsCount,
+		); err != nil {
+			return nil, err
+		}
+		if chatID.Valid && chatID.String != "" {
+			uid, err := uuid.Parse(chatID.String)
+			if err == nil {
+				p.ChatID = &uid
+			}
+		}
+		attachments, err := r.GetAttachmentsByPostID(p.ID)
+		if err != nil {
+			log.Printf("Error fetching attachments for post %s: %v", p.ID, err)
+		} else {
+			p.Attachments = attachments
+		}
+		posts = append(posts, p)
+	}
+	return posts, nil
+}

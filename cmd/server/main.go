@@ -120,6 +120,7 @@ func main() {
 
 		wall := api.Group("/wall")
 		{
+			wall.GET("/feed", wallHandler.GetGlobalMediaFeed)
 			wall.POST("/posts", wallHandler.CreatePost)
 			wall.POST("/posts/:post_id/attachments", wallHandler.UploadAttachment)
 			wall.POST("/posts/:post_id/like", wallHandler.ToggleLike)
