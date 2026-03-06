@@ -76,11 +76,24 @@ func (h *WallChatHandler) PostComment(c *gin.Context) {
 		return
 	}
 
-	// Рассылаем всем в комнате
+	// Рассылаем всем в комнате чата
 	h.wallHub.BroadcastToRoom(chatID, map[string]interface{}{
 		"type":    "new_comment",
 		"comment": msg,
 	})
+
+	// Обновляем счетчик на стене в реальном времени
+	if repo, ok := h.messageRepo.GetWallRepo(); ok {
+		if ownerID, err := repo.GetPostOwnerByChatID(chatID); err == nil {
+			var count int
+			h.messageRepo.GetDB().QueryRow(`SELECT COUNT(*) FROM messages WHERE chat_id = $1`, chatID).Scan(&count)
+			h.wallHub.BroadcastToRoom(ownerID, map[string]interface{}{
+				"type":           "update_post_comment_count",
+				"chat_id":        chatID,
+				"comments_count": count,
+			})
+		}
+	}
 
 	c.JSON(http.StatusCreated, msg)
 }
@@ -144,4 +157,30 @@ func (h *WallChatHandler) HandleWallWS(c *gin.Context) {
 			"comment": msg,
 		})
 	})
+}
+
+// GET /ws/wall-posts/:user_id — WebSocket подключение к стене пользователя
+func (h *WallChatHandler) HandleWallPostsWS(c *gin.Context) {
+	targetUserID, err := uuid.Parse(c.Param("user_id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "неверный user_id"})
+		return
+	}
+
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		return
+	}
+
+	client := &ws_hub.WallClient{
+		ID:     uuid.New(),
+		Conn:   conn,
+		Send:   make(chan []byte, 256),
+		ChatID: targetUserID, // Используем UserID как ID комнаты в WallHub
+	}
+
+	h.wallHub.Register() <- client
+
+	go client.WritePump()
+	client.ReadPump(h.wallHub, nil) // Только чтение для стены
 }

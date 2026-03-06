@@ -217,16 +217,16 @@ body.theme-volcano {
 /* ── Стеклянные панели ── */
 .left-panel, #view-chat, #info-panel, #bottom-dock, .modal-content,
 #auth-modal, .new-chat-modal-card, #profile-modal, #wall-modal, .wall-comments-panel {
-  border: 0.5px solid var(--glass-border) !important;
-  border-radius: 28px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 32px !important;
   box-shadow:
       var(--glass-shadow),
-      inset 0 1px 1px rgba(255, 255, 255, 0.4),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.15) !important;
+      inset 0 1px 1px rgba(255, 255, 255, 0.2),
+      0 8px 32px rgba(0, 0, 0, 0.2) !important;
 
-  backdrop-filter: blur(var(--glass-blur, 28px)) saturate(210%) contrast(110%) !important;
-  -webkit-backdrop-filter: blur(var(--glass-blur, 28px)) saturate(210%) contrast(110%) !important;
-  background: rgba(var(--bg-sidebar-rgb), var(--glass-bg-opacity, 0.35)) !important;
+  backdrop-filter: blur(var(--glass-blur, 32px)) saturate(190%) contrast(105%) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur, 32px)) saturate(190%) contrast(105%) !important;
+  background: rgba(var(--bg-sidebar-rgb), var(--glass-bg-opacity, 0.4)) !important;
 }
 
 /* Убираем лишние фоны у вложенных контейнеров */

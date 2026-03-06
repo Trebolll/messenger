@@ -59,7 +59,11 @@ func (s *WallService) ToggleLike(postID uuid.UUID, userID uuid.UUID) (bool, int,
 	return s.repo.ToggleLike(postID, userID)
 }
 
-func (s *WallService) DeletePost(postID uuid.UUID, userID uuid.UUID) error {
+func (s *WallService) GetPostOwner(postID uuid.UUID) (uuid.UUID, error) {
+	return s.repo.GetPostOwner(postID)
+}
+
+func (s *WallService) DeletePost(postID uuid.UUID, userID uuid.UUID) (uuid.UUID, error) {
 	return s.repo.DeletePost(postID, userID)
 }
 

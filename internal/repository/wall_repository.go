@@ -121,9 +121,10 @@ func (r *WallRepository) AddAttachment(att *model.WallAttachment) error {
 func (r *WallRepository) GetPostsByUserID(userID uuid.UUID, viewerID uuid.UUID) ([]model.WallPost, error) {
 	query := `
 		SELECT p.id, p.user_id, p.content, p.created_at, p.updated_at, u.username, COALESCE(u.avatar_url, ''),
-		       COUNT(l.user_id) as likes_count,
+		       COUNT(DISTINCT l.user_id) as likes_count,
 		       COALESCE(BOOL_OR(l.user_id = $2), false) as is_liked,
-		       p.chat_id
+		       p.chat_id,
+		       (SELECT COUNT(*) FROM messages m WHERE m.chat_id = p.chat_id) as comments_count
 		FROM wall_posts p
 		JOIN users u ON p.user_id = u.id
 		LEFT JOIN wall_post_likes l ON l.post_id = p.id
@@ -143,7 +144,7 @@ func (r *WallRepository) GetPostsByUserID(userID uuid.UUID, viewerID uuid.UUID) 
 		var chatID sql.NullString
 		if err := rows.Scan(
 			&p.ID, &p.UserID, &p.Content, &p.CreatedAt, &p.UpdatedAt,
-			&p.AuthorName, &p.AuthorAvatar, &p.LikesCount, &p.IsLiked, &chatID,
+			&p.AuthorName, &p.AuthorAvatar, &p.LikesCount, &p.IsLiked, &chatID, &p.CommentsCount,
 		); err != nil {
 			return nil, err
 		}
@@ -222,17 +223,35 @@ func (r *WallRepository) GetAttachmentsByPostID(postID uuid.UUID) ([]model.WallA
 	return attachments, nil
 }
 
-func (r *WallRepository) DeletePost(postID uuid.UUID, userID uuid.UUID) error {
+func (r *WallRepository) GetPostOwnerByChatID(chatID uuid.UUID) (uuid.UUID, error) {
+	var ownerID uuid.UUID
+	err := r.db.QueryRow(`SELECT user_id FROM wall_posts WHERE chat_id = $1`, chatID).Scan(&ownerID)
+	return ownerID, err
+}
+
+func (r *WallRepository) GetPostOwner(postID uuid.UUID) (uuid.UUID, error) {
+	var ownerID uuid.UUID
+	err := r.db.QueryRow(`SELECT user_id FROM wall_posts WHERE id = $1`, postID).Scan(&ownerID)
+	return ownerID, err
+}
+
+func (r *WallRepository) DeletePost(postID uuid.UUID, userID uuid.UUID) (uuid.UUID, error) {
+	var ownerID uuid.UUID
+	err := r.db.QueryRow(`SELECT user_id FROM wall_posts WHERE id = $1`, postID).Scan(&ownerID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
 	query := `DELETE FROM wall_posts WHERE id = $1 AND user_id = $2`
 	res, err := r.db.Exec(query, postID, userID)
 	if err != nil {
-		return err
+		return uuid.Nil, err
 	}
 	rows, _ := res.RowsAffected()
 	if rows == 0 {
-		return fmt.Errorf("пост не найден или нет прав")
+		return uuid.Nil, fmt.Errorf("пост не найден или нет прав")
 	}
-	return nil
+	return ownerID, nil
 }
 
 func (r *WallRepository) DeleteAttachment(attID uuid.UUID, userID uuid.UUID) error {
@@ -257,7 +276,9 @@ func (r *WallRepository) GetAllMediaByUserID(userID uuid.UUID) ([]model.WallAtta
 		SELECT wa.id, wa.post_id, wa.url, wa.filename, wa.mime_type, wa.size_bytes, wa.created_at
 		FROM wall_attachments wa
 		JOIN wall_posts wp ON wa.post_id = wp.id
-		WHERE wp.user_id = $1 AND (wa.mime_type LIKE 'image/%' OR wa.mime_type LIKE 'video/%')
+		WHERE wp.user_id = $1 
+		  AND (wa.mime_type LIKE 'image/%' OR wa.mime_type LIKE 'video/%')
+		  AND (wp.content IS NULL OR TRIM(wp.content) = '')
 		ORDER BY wa.created_at DESC`
 
 	rows, err := r.db.Query(query, userID)

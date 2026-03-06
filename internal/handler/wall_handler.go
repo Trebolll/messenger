@@ -3,6 +3,7 @@ package handler
 import (
 	"messenger/internal/model"
 	"messenger/internal/service"
+	"messenger/internal/service/websocket"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,12 +13,14 @@ import (
 type WallHandler struct {
 	wallService    *service.WallService
 	storageService *service.StorageService
+	wallHub        *websocket.WallHub
 }
 
-func NewWallHandler(wallService *service.WallService, storageService *service.StorageService) *WallHandler {
+func NewWallHandler(wallService *service.WallService, storageService *service.StorageService, wallHub *websocket.WallHub) *WallHandler {
 	return &WallHandler{
 		wallService:    wallService,
 		storageService: storageService,
+		wallHub:        wallHub,
 	}
 }
 
@@ -42,6 +45,11 @@ func (h *WallHandler) UpdateSettings(c *gin.Context) {
 		return
 	}
 
+	h.wallHub.BroadcastToRoom(userID, map[string]interface{}{
+		"type": "update_wall_info",
+		"bio":  req.Bio,
+	})
+
 	c.JSON(http.StatusOK, gin.H{"message": "настройки обновлены"})
 }
 
@@ -64,6 +72,11 @@ func (h *WallHandler) CreatePost(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	h.wallHub.BroadcastToRoom(p.UserID, map[string]interface{}{
+		"type": "new_post",
+		"post": p,
+	})
 
 	c.JSON(http.StatusCreated, p)
 }
@@ -107,6 +120,16 @@ func (h *WallHandler) ToggleLike(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	ownerID, err := h.wallService.GetPostOwner(postID)
+	if err == nil {
+		h.wallHub.BroadcastToRoom(ownerID, map[string]interface{}{
+			"type":        "update_post_like",
+			"post_id":     postID,
+			"likes_count": count,
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{"liked": liked, "likes_count": count})
 }
 
@@ -146,10 +169,17 @@ func (h *WallHandler) DeletePost(c *gin.Context) {
 	}
 	userID := val.(uuid.UUID)
 
-	if err := h.wallService.DeletePost(postID, userID); err != nil {
+	ownerID, err := h.wallService.DeletePost(postID, userID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	h.wallHub.BroadcastToRoom(ownerID, map[string]interface{}{
+		"type":    "delete_post",
+		"post_id": postID,
+	})
+
 	c.JSON(http.StatusOK, gin.H{"message": "пост удалён"})
 }
 
@@ -216,6 +246,16 @@ func (h *WallHandler) UploadAttachment(c *gin.Context) {
 	if err := h.wallService.AddAttachment(&att); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Broadcast update to wall
+	ownerID, err := h.wallService.GetPostOwner(postID)
+	if err == nil {
+		h.wallHub.BroadcastToRoom(ownerID, map[string]interface{}{
+			"type":       "update_post_attachment",
+			"post_id":    postID,
+			"attachment": att,
+		})
 	}
 
 	c.JSON(http.StatusOK, att)

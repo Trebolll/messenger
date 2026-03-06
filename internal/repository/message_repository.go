@@ -17,6 +17,14 @@ func NewMessageRepository(db *sql.DB) *MessageRepository {
 	return &MessageRepository{db: db}
 }
 
+func (r *MessageRepository) GetDB() *sql.DB {
+	return r.db
+}
+
+func (r *MessageRepository) GetWallRepo() (*WallRepository, bool) {
+	return &WallRepository{db: r.db}, true
+}
+
 func (r *MessageRepository) SendComment(message *model.Message) error {
 	query := `
 		WITH inserted_msg AS (

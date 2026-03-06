@@ -6,10 +6,9 @@
 }
 
 #wall-modal {
-    background: rgba(15, 15, 15, 0.6) !important;
-    backdrop-filter: blur(30px) saturate(150%);
-    -webkit-backdrop-filter: blur(30px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(var(--bg-sidebar-rgb), 0.4) !important;
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
 }
 
 #wall-banner {

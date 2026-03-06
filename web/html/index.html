@@ -645,19 +645,33 @@
     <div class="absolute inset-0 bg-black/40 backdrop-blur-md opacity-0 transition-opacity duration-300 wall-comments-backdrop"></div>
 
     <!-- Panel -->
-    <div class="wall-comments-panel relative w-full max-w-md h-[85vh] sm:h-[80vh] flex flex-col shadow-2xl
-                scale-90 opacity-0 transition-all duration-300 ease-out">
+    <div class="wall-comments-panel relative w-full max-w-4xl h-[85vh] sm:h-[80vh] flex flex-col sm:flex-row shadow-2xl
+                scale-90 opacity-0 transition-all duration-300 ease-out overflow-hidden">
 
-        <!-- Header -->
-        <div class="flex items-center justify-between px-5 py-4 border-b border-white/5 flex-shrink-0">
-            <h3 class="text-sm font-bold text-custom-main">Комментарии</h3>
-            <button onclick="closeWallComments()"
-                class="w-8 h-8 rounded-full flex items-center justify-center text-custom-muted hover:text-custom-main hover:bg-white/10 transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+        <!-- Media Preview Area (Left side on desktop, top on mobile) -->
+        <div id="wall-comments-media-container" class="hidden w-full sm:w-3/5 bg-black/40 flex items-center justify-center relative border-b sm:border-b-0 sm:border-r border-white/5">
+            <div id="wall-comments-media-content" class="w-full h-full flex items-center justify-center p-2">
+                <!-- Media injected here -->
+            </div>
+            <!-- Like button overlay on media -->
+            <button id="wall-comments-media-like" onclick="toggleMediaPostLike(this)" class="absolute bottom-6 right-6 p-3 bg-black/40 backdrop-blur-md rounded-full text-custom-muted hover:text-red-400 transition-all hover:scale-110 border border-white/10 group">
+                <svg class="w-6 h-6 transition-transform group-active:scale-125" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                 </svg>
             </button>
         </div>
+
+        <div class="flex flex-col flex-grow min-w-0">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 py-4 border-b border-white/5 flex-shrink-0">
+                <h3 class="text-sm font-bold text-custom-main">Комментарии</h3>
+                <button onclick="closeWallComments()"
+                    class="w-8 h-8 rounded-full flex items-center justify-center text-custom-muted hover:text-custom-main hover:bg-white/10 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
 
         <!-- Comments feed -->
         <div id="wall-comments-feed"
@@ -691,6 +705,7 @@
             </button>
         </div>
     </div>
+</div>
 </div>
 
 <script src="/web/js/api.js"></script>

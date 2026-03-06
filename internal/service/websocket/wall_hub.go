@@ -108,15 +108,15 @@ func (h *WallHub) Register() chan<- *WallClient {
 	return h.register
 }
 
-// BroadcastToRoom — отправить сообщение всем в комнате
-func (h *WallHub) BroadcastToRoom(chatID uuid.UUID, msg interface{}) {
-	log.Printf("WallHub: Broadcasting to room %s", chatID)
+// BroadcastToRoom — отправить сообщение всем в комнате (чат поста или стена пользователя)
+func (h *WallHub) BroadcastToRoom(roomID uuid.UUID, msg interface{}) {
+	log.Printf("WallHub: Broadcasting to room %s", roomID)
 	data, err := json.Marshal(msg)
 	if err != nil {
 		log.Printf("WallHub marshal error: %v", err)
 		return
 	}
-	h.broadcast <- wallBroadcast{chatID: chatID, payload: data}
+	h.broadcast <- wallBroadcast{chatID: roomID, payload: data}
 }
 
 func (c *WallClient) ReadPump(h *WallHub, onMessage func(c *WallClient, data []byte)) {
