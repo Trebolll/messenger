@@ -76,13 +76,103 @@ func (h *WallHandler) GetWall(c *gin.Context) {
 		return
 	}
 
-	wallRes, err := h.wallService.GetWall(userID)
+	val, _ := c.Get("userID")
+	viewerID, _ := val.(uuid.UUID)
+
+	wallRes, err := h.wallService.GetWall(userID, viewerID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, wallRes)
+}
+
+func (h *WallHandler) ToggleLike(c *gin.Context) {
+	postIDStr := c.Param("post_id")
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "неверный ID поста"})
+		return
+	}
+	val, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "неавторизован"})
+		return
+	}
+	userID := val.(uuid.UUID)
+
+	liked, count, err := h.wallService.ToggleLike(postID, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"liked": liked, "likes_count": count})
+}
+
+func (h *WallHandler) GetPostChat(c *gin.Context) {
+	postIDStr := c.Param("post_id")
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "неверный ID поста"})
+		return
+	}
+	_, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "неавторизован"})
+		return
+	}
+
+	chatID, err := h.wallService.GetPostChat(postID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "чат не найден"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"chat_id": chatID})
+}
+
+func (h *WallHandler) DeletePost(c *gin.Context) {
+	postIDStr := c.Param("post_id")
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "неверный ID поста"})
+		return
+	}
+
+	val, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "неавторизован"})
+		return
+	}
+	userID := val.(uuid.UUID)
+
+	if err := h.wallService.DeletePost(postID, userID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "пост удалён"})
+}
+
+func (h *WallHandler) DeleteAttachment(c *gin.Context) {
+	attIDStr := c.Param("attachment_id")
+	attID, err := uuid.Parse(attIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "неверный ID вложения"})
+		return
+	}
+
+	val, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "неавторизован"})
+		return
+	}
+	userID := val.(uuid.UUID)
+
+	if err := h.wallService.DeleteAttachment(attID, userID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "медиа удалено"})
 }
 
 func (h *WallHandler) UploadAttachment(c *gin.Context) {

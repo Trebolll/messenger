@@ -101,3 +101,53 @@ body.wall-open.profile-open #profile-modal {
 #wall-modal {
     animation: wallFadeUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+
+/* ─── Wall Tab Mode Transitions ─── */
+@keyframes wallTabFadeIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.99); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+#wall-feed, #wall-media-container {
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.wall-tab-enter {
+    animation: wallTabFadeIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.wall-post-card:hover .wall-post-delete-btn {
+    opacity: 1 !important;
+}
+
+/* Кнопка удаления медиа — скрыта, появляется при наведении на ячейку */
+.wall-media-item .wall-media-delete-btn {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.wall-media-item:hover .wall-media-delete-btn {
+    opacity: 1;
+}
+
+/* ─── Bio block ─── */
+#wall-bio-text {
+    transition: color 0.2s ease;
+}
+
+#wall-bio-input:focus {
+    box-shadow: 0 0 0 1px rgba(var(--color-accent-rgb, 99, 102, 241), 0.3);
+}
+#wall-left-sidebar {
+    transition: opacity 0.25s ease, max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                margin 0.3s ease, padding 0.3s ease;
+    overflow: hidden;
+    max-width: 256px;
+}
+
+#wall-left-sidebar.wall-sidebar-hidden {
+    opacity: 0;
+    max-width: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: none;
+}

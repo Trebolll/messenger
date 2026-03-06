@@ -117,6 +117,11 @@ func main() {
 		wall := api.Group("/wall")
 		{
 			wall.POST("/posts", wallHandler.CreatePost)
+			wall.POST("/posts/:post_id/attachments", wallHandler.UploadAttachment)
+			wall.POST("/posts/:post_id/like", wallHandler.ToggleLike)
+			wall.GET("/posts/:post_id/chat", wallHandler.GetPostChat)
+			wall.DELETE("/posts/:post_id", wallHandler.DeletePost)
+			wall.DELETE("/media/:attachment_id", wallHandler.DeleteAttachment)
 			wall.GET("/:user_id", wallHandler.GetWall)
 			wall.PUT("/settings", wallHandler.UpdateSettings)
 		}

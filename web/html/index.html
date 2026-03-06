@@ -513,47 +513,73 @@
     </div>
 
     <!-- Wall Content Area -->
-    <div class="flex-grow flex flex-col sm:flex-row gap-6 p-8 mt-16 overflow-hidden">
+    <div class="flex-grow flex flex-col sm:flex-row gap-6 p-6 mt-16 overflow-hidden">
       <!-- Left: Sidebar Info -->
-      <div id="wall-left-sidebar" class="w-full sm:w-64 flex-shrink-0 space-y-6">
-        <div id="wall-info-sidebar-box" class="p-5 bg-custom-sidebar/30 rounded-3xl border border-white/5 space-y-3 group/info">
+      <div id="wall-left-sidebar" class="w-full sm:w-60 flex-shrink-0 space-y-4">
+        <div id="wall-info-sidebar-box" class="p-4 bg-custom-sidebar/30 rounded-3xl border border-white/5 space-y-3">
+          <!-- Bio блок -->
+          <div id="wall-bio-display" class="hidden">
+            <p id="wall-bio-text" class="text-xs text-custom-muted leading-relaxed italic opacity-70 hidden"></p>
+            <button id="wall-bio-edit-btn" class="hidden w-full text-left group/bio" onclick="startEditBio()">
+              <span class="text-[10px] text-custom-muted/50 italic group-hover/bio:text-custom-accent transition-colors">+ добавить о себе</span>
+            </button>
+          </div>
+          <div id="wall-bio-editor" class="hidden pb-3 border-b border-white/5">
+            <textarea id="wall-bio-input" rows="3" maxlength="300" placeholder="Расскажи о себе..." class="w-full bg-white/5 rounded-2xl px-3 py-2 text-xs text-custom-main placeholder-custom-muted/50 outline-none resize-none border border-white/10 focus:border-custom-accent/40 transition-colors"></textarea>
+            <div class="flex gap-2 mt-2 justify-end">
+              <button onclick="cancelEditBio()" class="text-[10px] px-3 py-1 rounded-full text-custom-muted hover:text-custom-main transition-colors">Отмена</button>
+              <button onclick="saveWallBio()" class="text-[10px] px-3 py-1 rounded-full bg-custom-accent/20 text-custom-accent hover:bg-custom-accent/30 transition-colors font-medium">Сохранить</button>
+            </div>
+          </div>
+          <!-- Info rows — скрыты по умолчанию, показываются из JS -->
           <div class="space-y-2">
-            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70" id="wall-info-age-row">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <span id="wall-info-age">?</span>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70 hidden" id="wall-info-age-row">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span id="wall-info-age"></span>
             </div>
-            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70" id="wall-info-profession-row">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-              <span id="wall-info-profession">...</span>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70 hidden" id="wall-info-profession-row">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <span id="wall-info-profession"></span>
             </div>
-            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70" id="wall-info-location-row">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-              <span id="wall-info-location">...</span>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70 hidden" id="wall-info-location-row">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span id="wall-info-location"></span>
             </div>
-            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
-              <span id="wall-info-created">...</span>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70 hidden" id="wall-info-created-row">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
+              <span id="wall-info-created"></span>
             </div>
-            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-              <span id="wall-info-likes">0</span>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70 hidden" id="wall-info-likes-row">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+              <span id="wall-info-likes"></span>
+            </div>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70 hidden" id="wall-info-votes-row">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/></svg>
+              <span id="wall-info-votes"></span>
             </div>
           </div>
         </div>
 
-        <!-- Media Preview Box (Mini) -->
-        <div id="wall-media-preview-box" class="p-5 bg-custom-sidebar/30 rounded-3xl border border-white/5">
-          <h3 class="text-xs font-bold text-custom-muted uppercase tracking-wider mb-4">Медиа</h3>
-          <div id="wall-media-grid" class="grid grid-cols-3 gap-2">
+        <!-- Кнопка перехода в Медиа -->
+        <button id="wall-media-preview-box" onclick="switchWallTab('media')" class="w-full p-4 bg-custom-sidebar/30 rounded-3xl border border-white/5 hover:border-custom-accent/20 hover:bg-custom-accent/5 transition-all duration-300 group flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-custom-accent/10 flex items-center justify-center group-hover:bg-custom-accent/20 transition-colors">
+              <svg class="w-4 h-4 text-custom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
+            </div>
+            <div class="text-left">
+              <p class="text-xs font-semibold text-custom-main">Медиа</p>
+              <p id="wall-media-count" class="text-[10px] text-custom-muted">фото и видео</p>
+            </div>
           </div>
-        </div>
+          <svg class="w-4 h-4 text-custom-muted group-hover:text-custom-accent group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
       </div>
 
       <!-- Right: Main Feed -->
-      <div class="flex-grow flex flex-col gap-6 overflow-y-auto scrollbar-hide pb-8">
-        
+      <div class="flex-grow flex flex-col min-w-0 overflow-hidden">
+
         <!-- Wall Tabs -->
-        <div class="flex items-center gap-8 border-b border-white/5 pb-1">
+        <div class="flex items-center gap-8 border-b border-white/5 pb-1 flex-shrink-0">
           <button onclick="switchWallTab('posts')" id="wall-tab-posts" class="pb-3 text-custom-main border-b-2 border-custom-accent transition-all" title="Записи">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
           </button>
@@ -562,40 +588,48 @@
           </button>
         </div>
 
-        <!-- New Post Creator -->
-        <div id="wall-post-creator" class="p-6 bg-white/5 rounded-[32px] border border-white/10 shadow-sm">
-          <div class="flex gap-4">
-            <div id="creator-avatar" class="w-10 h-10 rounded-full bg-custom-sidebar flex-shrink-0 overflow-hidden font-bold flex items-center justify-center border border-white/10">?</div>
-            <textarea id="wall-post-input" rows="2" placeholder="Что нового?" class="flex-grow bg-white/5 rounded-2xl p-3 outline-none text-custom-main placeholder-custom-muted resize-none text-sm"></textarea>
-          </div>
-          <div class="mt-4 flex items-center justify-between border-t border-white/5 pt-4">
-            <div class="flex gap-3">
-              <button onclick="document.getElementById('wall-media-upload').click()" class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-white/10" title="Добавить медиа">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
-              </button>
-              <button onclick="document.getElementById('wall-file-upload').click()" class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-white/10" title="Прикрепить файл">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-              </button>
-              <input type="file" id="wall-media-upload" class="hidden" accept="image/*,video/*" multiple onchange="handleWallMediaSelect(event)">
-              <input type="file" id="wall-file-upload" class="hidden" multiple onchange="handleWallMediaSelect(event)">
+        <!-- Scrollable area -->
+        <div class="flex-grow overflow-y-auto scrollbar-hide pb-8 space-y-4 mt-4">
+
+          <!-- New Post Creator -->
+          <div id="wall-post-creator" class="p-4 bg-white/5 rounded-[28px] border border-white/10">
+            <div class="flex gap-3 items-start">
+              <div id="creator-avatar" class="w-9 h-9 rounded-full bg-custom-sidebar flex-shrink-0 overflow-hidden font-bold flex items-center justify-center border border-white/10 text-sm">?</div>
+              <textarea id="wall-post-input" rows="2" placeholder="Что нового?" class="flex-grow bg-white/5 rounded-2xl px-3 py-2 outline-none text-custom-main placeholder-custom-muted resize-none text-sm min-w-0"></textarea>
             </div>
-            <button onclick="publishWallPost()" class="w-10 h-10 bg-custom-accent text-white rounded-full flex items-center justify-center shadow-lg shadow-custom-accent/20 hover:scale-110 transition-all">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </button>
+            <div class="mt-3 flex items-center justify-between border-t border-white/5 pt-3">
+              <div class="flex gap-2">
+                <button onclick="document.getElementById('wall-media-upload').click()" class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-white/10" title="Добавить медиа">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
+                </button>
+                <button onclick="document.getElementById('wall-file-upload').click()" class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-white/10" title="Прикрепить файл">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                </button>
+                <input type="file" id="wall-media-upload" class="hidden" accept="image/*,video/*" multiple onchange="handleWallMediaSelect(event)">
+                <input type="file" id="wall-file-upload" class="hidden" multiple onchange="handleWallMediaSelect(event)">
+              </div>
+              <button onclick="publishWallPost()" class="w-9 h-9 bg-custom-accent text-white rounded-full flex items-center justify-center shadow-lg shadow-custom-accent/20 hover:scale-110 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+            <div id="wall-media-preview" class="flex gap-2 mt-3 overflow-x-auto hidden pb-2"></div>
           </div>
-          <!-- Preview for selected media -->
-          <div id="wall-media-preview" class="flex gap-2 mt-3 overflow-x-auto hidden pb-2"></div>
-        </div>
 
-        <!-- Feed Container -->
-        <div id="wall-feed" class="space-y-6">
-        </div>
+          <!-- Feed Container -->
+          <div id="wall-feed" class="space-y-4">
+          </div>
 
-        <!-- Media Grid Container (Instagram Style) -->
-        <div id="wall-media-container" class="hidden space-y-6">
-           <div id="wall-media-grid-main" class="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <!-- Media items and Add Button will be injected here by renderMediaGrid -->
-           </div>
+          <!-- Media Grid Container -->
+          <div id="wall-media-container" class="hidden space-y-4">
+            <!-- Кнопка назад в медиа режиме -->
+            <button onclick="switchWallTab('posts')" class="flex items-center gap-2 text-xs text-custom-muted hover:text-custom-main transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+              Назад
+            </button>
+            <div id="wall-media-grid-main" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

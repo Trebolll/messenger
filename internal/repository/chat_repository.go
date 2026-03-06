@@ -45,7 +45,7 @@ func (r *ChatRepository) GetUserChats(userID uuid.UUID) ([]model.ChatListItem, e
 			ORDER BY created_at DESC 
 			LIMIT 1
 		) m ON true
-		WHERE cm.user_id = $1
+		WHERE cm.user_id = $1 AND c.type != 'public'
 		ORDER BY last_message_time DESC`
 
 	rows, err := r.db.Query(query, userID)
