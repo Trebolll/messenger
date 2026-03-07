@@ -16,11 +16,17 @@ import (
 type UserHandler struct {
 	userService    *service.UserService
 	hub            *websocket.Hub
+	wallHub        *websocket.WallHub
 	storageService service.Storage
 }
 
-func NewUserHandler(userService *service.UserService, hub *websocket.Hub, storageService service.Storage) *UserHandler {
-	return &UserHandler{userService: userService, hub: hub, storageService: storageService}
+func NewUserHandler(userService *service.UserService, hub *websocket.Hub, wallHub *websocket.WallHub, storageService service.Storage) *UserHandler {
+	return &UserHandler{
+		userService:    userService,
+		hub:            hub,
+		wallHub:        wallHub,
+		storageService: storageService,
+	}
 }
 
 func (h *UserHandler) Register(c *gin.Context) {
@@ -116,6 +122,16 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	// Рассылаем обновление профиля всем онлайн
 	if id, ok := userID.(uuid.UUID); ok {
 		h.hub.BroadcastProfileUpdate(id, user.AvatarUrl, user.Username, user.FullName, user.Status)
+		// Рассылаем на стену
+		h.wallHub.BroadcastToRoom(id, map[string]interface{}{
+			"type":       "update_wall_info_full",
+			"username":   user.Username,
+			"status":     user.Status,
+			"location":   user.Location,
+			"profession": user.Profession,
+			"birth_date": user.BirthDate,
+			"avatar_url": user.AvatarUrl,
+		})
 	}
 
 	c.JSON(http.StatusOK, user)

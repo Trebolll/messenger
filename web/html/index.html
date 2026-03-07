@@ -90,19 +90,19 @@
       <div id="left-panel-content" class="flex-grow flex flex-col overflow-hidden">
 
         <!-- Лента активности (по умолчанию скрыта инлайном, чтобы не мигала до init) -->
-        <div id="view-home" class="flex flex-col h-full" style="display:none;">
-          <div class="p-4 flex items-center gap-3" style="border-bottom: 1px solid rgba(0,0,0,0.04);">
-            <span class="font-bold text-custom-main text-base"> </span>
+        <div id="view-home" class="flex flex-col h-full overflow-hidden" style="display:none;">
+          <div class="p-4 flex items-center justify-between border-b border-white/5 bg-custom-sidebar/80 backdrop-blur-md sticky top-0 z-10">
+            <span class="font-bold text-custom-main text-base">Лента активности</span>
+            <button onclick="loadActivityFeed()" class="p-2 rounded-xl hover:bg-custom-main/10 text-custom-muted hover:text-custom-main transition-all" title="Обновить">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            </button>
           </div>
-          <div class="flex-grow flex flex-col items-center justify-center gap-4 select-none px-6">
-            <div style="opacity:0.12;">
-              <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M17 20h5v-2a4 4 0 00-5.356-3.779M9 20H4v-2a4 4 0 015.356-3.779M15 7a4 4 0 11-8 0 4 4 0 018 0zm6 3a3 3 0 11-6 0 3 3 0 016 0zM3 10a3 3 0 116 0 3 3 0 01-6 0z"/>
+          <div id="activity-feed-container" class="flex-grow overflow-y-auto scrollbar-hide p-4 grid grid-cols-3 gap-3 content-start">
+            <div class="flex flex-col items-center justify-center h-full py-20 opacity-40 select-none">
+              <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
               </svg>
-            </div>
-            <div class="text-center" style="opacity:0.4;">
-              <p class="text-sm font-semibold text-custom-main">Лента активности</p>
-              <p class="text-xs text-custom-muted mt-1">Здесь будут события пользователей</p>
+              <p class="text-sm font-semibold text-custom-main">Загрузка ленты...</p>
             </div>
           </div>
         </div>
@@ -396,18 +396,6 @@
       </svg>
     </button>
 
-    <!-- Avatar -->
-    <div class="flex flex-col items-center mb-6">
-      <div class="relative group cursor-pointer" onclick="triggerAvatarUpload()">
-        <div id="profile-avatar" class="w-24 h-24 rounded-full bg-custom-sidebar flex items-center justify-center text-4xl font-bold text-custom-muted transition group-hover:border-custom-accent overflow-hidden">U</div>
-        <div class="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        </div>
-      </div>
-      <input type="file" id="avatar-upload" class="hidden" accept="image/*">
-      <p class="text-custom-muted text-xs mt-2">Нажмите чтобы сменить фото</p>
-    </div>
-
     <!-- Fields -->
     <div class="space-y-3">
       <div class="profile-field">
@@ -430,15 +418,6 @@
         <input type="email" id="profile-email" class="profile-input" placeholder="you@example.com" disabled>
         <p class="text-custom-muted text-xs mt-1 pl-1">Изменение email недоступно</p>
       </div>
-      <div class="profile-field">
-        <label class="profile-label">
-          <svg class="w-3.5 h-3.5 inline mr-1 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
-          Статус
-        </label>
-        <input type="text" id="profile-status-text" class="profile-input" placeholder="Настроение, цитата..." maxlength="100">
-        <p class="text-custom-muted text-xs mt-1 pl-1">Виден собеседникам в правой панели</p>
-      </div>
-
       <!-- Верификация -->
       <div class="profile-verify-block">
         <div class="flex items-center gap-2 mb-2">
@@ -478,7 +457,7 @@
 
 <!-- Wall Modal (iOS-style Profile Wall) -->
 <div id="wall-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[150] hidden opacity-0 transition-opacity duration-400 flex items-center justify-center p-0 sm:p-4">
-  <div id="wall-modal" class="w-full h-full sm:h-[90vh] max-w-4xl rounded-none sm:rounded-[32px] relative overflow-hidden transform scale-95 transition-all duration-500 flex flex-col bg-custom-main border border-white/10 shadow-2xl">
+  <div id="wall-modal" class="w-full h-full sm:h-[92vh] max-w-5xl relative overflow-hidden transform scale-95 transition-all duration-500 flex flex-col shadow-2xl">
 
     <!-- Top Banner & Header -->
     <div class="wall-header-section relative flex-shrink-0 h-48 sm:h-64">
@@ -494,13 +473,21 @@
       <div class="absolute -bottom-12 left-8 flex items-end gap-6 z-10">
         <div id="wall-avatar-container" class="relative group">
           <div id="wall-avatar" class="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-custom-sidebar border-4 border-custom-main flex items-center justify-center text-4xl font-bold shadow-xl overflow-hidden">?</div>
-          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition rounded-full cursor-pointer" onclick="triggerAvatarUpload()">
+          <div id="wall-avatar-edit-overlay" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition rounded-full cursor-pointer hidden" onclick="triggerAvatarUpload()">
             <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           </div>
+          <input type="file" id="avatar-upload" class="hidden" accept="image/*">
         </div>
         <div class="mb-4">
           <h2 id="wall-username" class="text-2xl sm:text-3xl font-extrabold text-custom-main tracking-tight drop-shadow-md">User Name</h2>
-          <p id="wall-status" class="text-sm text-custom-muted font-medium bg-custom-main/80 backdrop-blur px-2 py-0.5 rounded-lg inline-block mt-1">Status goes here...</p>
+          <div id="wall-status-wrap" class="mt-1">
+            <p id="wall-status" class="text-sm text-custom-muted font-medium bg-custom-main/80 backdrop-blur px-2 py-0.5 rounded-lg inline-block cursor-pointer hover:bg-custom-accent/20 hover:text-custom-accent transition-colors" title="Нажмите чтобы изменить статус">Status goes here...</p>
+            <div id="wall-status-editor" class="hidden flex items-center gap-2 mt-1">
+              <input id="wall-status-input" type="text" maxlength="100" class="bg-black/30 backdrop-blur border border-white/20 focus:border-custom-accent/60 rounded-lg px-3 py-1 text-sm text-white outline-none transition-colors" placeholder="Введи статус...">
+              <button onclick="saveWallStatus()" class="px-3 py-1 rounded-lg bg-custom-accent/80 hover:bg-custom-accent text-white text-xs font-semibold transition-colors">✓</button>
+              <button onclick="cancelWallStatus()" class="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 text-xs transition-colors">✕</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -513,47 +500,73 @@
     </div>
 
     <!-- Wall Content Area -->
-    <div class="flex-grow flex flex-col sm:flex-row gap-6 p-8 mt-16 overflow-hidden">
+    <div class="flex-grow flex flex-col sm:flex-row gap-6 p-6 mt-16 overflow-hidden">
       <!-- Left: Sidebar Info -->
-      <div id="wall-left-sidebar" class="w-full sm:w-64 flex-shrink-0 space-y-6">
-        <div id="wall-info-sidebar-box" class="p-5 bg-custom-sidebar/30 rounded-3xl border border-white/5 space-y-3 group/info">
+      <div id="wall-left-sidebar" class="w-full sm:w-64 flex-shrink-0 space-y-4">
+        <div id="wall-info-sidebar-box" class="p-5 wall-glass-box space-y-3">
+          <!-- Bio блок -->
+          <div id="wall-bio-display" class="hidden">
+            <p id="wall-bio-text" class="text-xs text-custom-muted leading-relaxed italic opacity-70 hidden"></p>
+            <button id="wall-bio-edit-btn" class="hidden w-full text-left group/bio" onclick="startEditBio()">
+              <span class="text-[10px] text-custom-muted/50 italic group-hover/bio:text-custom-accent transition-colors">+ добавить о себе</span>
+            </button>
+          </div>
+          <div id="wall-bio-editor" class="hidden pb-3 border-b border-white/5">
+            <textarea id="wall-bio-input" rows="3" maxlength="300" placeholder="Расскажи о себе..." class="w-full bg-white/5 rounded-2xl px-3 py-2 text-xs text-custom-main placeholder-custom-muted/50 outline-none resize-none border border-white/10 focus:border-custom-accent/40 transition-colors"></textarea>
+            <div class="flex gap-2 mt-2 justify-end">
+              <button onclick="cancelEditBio()" class="text-[10px] px-3 py-1 rounded-full text-custom-muted hover:text-custom-main transition-colors">Отмена</button>
+              <button onclick="saveWallBio()" class="text-[10px] px-3 py-1 rounded-full bg-custom-accent/20 text-custom-accent hover:bg-custom-accent/30 transition-colors font-medium">Сохранить</button>
+            </div>
+          </div>
+          <!-- Info rows — скрыты по умолчанию, показываются из JS -->
           <div class="space-y-2">
-            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70" id="wall-info-age-row">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <span id="wall-info-age">?</span>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70 hidden" id="wall-info-age-row">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span id="wall-info-age"></span>
             </div>
-            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70" id="wall-info-profession-row">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-              <span id="wall-info-profession">...</span>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70 hidden" id="wall-info-profession-row">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <span id="wall-info-profession"></span>
             </div>
-            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70" id="wall-info-location-row">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-              <span id="wall-info-location">...</span>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70 hidden" id="wall-info-location-row">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span id="wall-info-location"></span>
             </div>
-            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
-              <span id="wall-info-created">...</span>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70 hidden" id="wall-info-created-row">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
+              <span id="wall-info-created"></span>
             </div>
-            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-              <span id="wall-info-likes">0</span>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70 hidden" id="wall-info-likes-row">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+              <span id="wall-info-likes"></span>
+            </div>
+            <div class="flex items-center gap-3 text-[10px] text-custom-muted italic opacity-70 hidden" id="wall-info-votes-row">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/></svg>
+              <span id="wall-info-votes"></span>
             </div>
           </div>
         </div>
 
-        <!-- Media Preview Box (Mini) -->
-        <div id="wall-media-preview-box" class="p-5 bg-custom-sidebar/30 rounded-3xl border border-white/5">
-          <h3 class="text-xs font-bold text-custom-muted uppercase tracking-wider mb-4">Медиа</h3>
-          <div id="wall-media-grid" class="grid grid-cols-3 gap-2">
+        <!-- Кнопка перехода в Медиа -->
+        <button id="wall-media-preview-box" onclick="switchWallTab('media')" class="w-full p-5 wall-glass-box hover:border-custom-accent/30 hover:bg-custom-accent/5 transition-all duration-300 group flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-custom-accent/10 flex items-center justify-center group-hover:bg-custom-accent/20 transition-colors">
+              <svg class="w-4 h-4 text-custom-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
+            </div>
+            <div class="text-left">
+              <p class="text-xs font-semibold text-custom-main">Медиа</p>
+              <p id="wall-media-count" class="text-[10px] text-custom-muted">фото и видео</p>
+            </div>
           </div>
-        </div>
+          <svg class="w-4 h-4 text-custom-muted group-hover:text-custom-accent group-hover:translate-x-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
       </div>
 
       <!-- Right: Main Feed -->
-      <div class="flex-grow flex flex-col gap-6 overflow-y-auto scrollbar-hide pb-8">
-        
+      <div class="flex-grow flex flex-col min-w-0 overflow-hidden">
+
         <!-- Wall Tabs -->
-        <div class="flex items-center gap-8 border-b border-white/5 pb-1">
+        <div class="flex items-center gap-8 border-b border-white/5 pb-1 flex-shrink-0">
           <button onclick="switchWallTab('posts')" id="wall-tab-posts" class="pb-3 text-custom-main border-b-2 border-custom-accent transition-all" title="Записи">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
           </button>
@@ -562,41 +575,121 @@
           </button>
         </div>
 
-        <!-- New Post Creator -->
-        <div id="wall-post-creator" class="p-6 bg-white/5 rounded-[32px] border border-white/10 shadow-sm">
-          <div class="flex gap-4">
-            <div id="creator-avatar" class="w-10 h-10 rounded-full bg-custom-sidebar flex-shrink-0 overflow-hidden font-bold flex items-center justify-center border border-white/10">?</div>
-            <textarea id="wall-post-input" rows="2" placeholder="Что нового?" class="flex-grow bg-white/5 rounded-2xl p-3 outline-none text-custom-main placeholder-custom-muted resize-none text-sm"></textarea>
-          </div>
-          <div class="mt-4 flex items-center justify-between border-t border-white/5 pt-4">
-            <div class="flex gap-3">
-              <button onclick="document.getElementById('wall-media-upload').click()" class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-white/10" title="Добавить медиа">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
-              </button>
-              <button onclick="document.getElementById('wall-file-upload').click()" class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-white/10" title="Прикрепить файл">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-              </button>
-              <input type="file" id="wall-media-upload" class="hidden" accept="image/*,video/*" multiple onchange="handleWallMediaSelect(event)">
-              <input type="file" id="wall-file-upload" class="hidden" multiple onchange="handleWallMediaSelect(event)">
+        <!-- Scrollable area -->
+        <div class="flex-grow overflow-y-auto scrollbar-hide pb-8 space-y-4 mt-4">
+
+          <!-- New Post Creator -->
+          <div id="wall-post-creator" class="p-5 wall-glass-box mb-6">
+            <div class="flex gap-3 items-start">
+              <div id="creator-avatar" class="w-9 h-9 rounded-full bg-custom-sidebar flex-shrink-0 overflow-hidden font-bold flex items-center justify-center border border-white/10 text-sm">?</div>
+              <textarea id="wall-post-input" rows="2" placeholder="Что нового?" class="flex-grow bg-white/5 rounded-2xl px-3 py-2 outline-none text-custom-main placeholder-custom-muted resize-none text-sm min-w-0"></textarea>
             </div>
-            <button onclick="publishWallPost()" class="w-10 h-10 bg-custom-accent text-white rounded-full flex items-center justify-center shadow-lg shadow-custom-accent/20 hover:scale-110 transition-all">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </button>
+            <div class="mt-3 flex items-center justify-between border-t border-white/5 pt-3">
+              <div class="flex gap-2">
+                <button onclick="document.getElementById('wall-media-upload').click()" class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-white/10" title="Добавить медиа">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 00-2 2z"/></svg>
+                </button>
+                <button onclick="document.getElementById('wall-file-upload').click()" class="p-2 text-custom-muted hover:text-custom-accent transition rounded-xl hover:bg-white/10" title="Прикрепить файл">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                </button>
+                <input type="file" id="wall-media-upload" class="hidden" accept="image/*,video/*" multiple onchange="handleWallMediaSelect(event)">
+                <input type="file" id="wall-file-upload" class="hidden" multiple onchange="handleWallMediaSelect(event)">
+              </div>
+              <button onclick="publishWallPost()" class="w-9 h-9 bg-custom-accent text-white rounded-full flex items-center justify-center shadow-lg shadow-custom-accent/20 hover:scale-110 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+            <div id="wall-media-preview" class="flex gap-2 mt-3 overflow-x-auto hidden pb-2"></div>
           </div>
-          <!-- Preview for selected media -->
-          <div id="wall-media-preview" class="flex gap-2 mt-3 overflow-x-auto hidden pb-2"></div>
-        </div>
 
-        <!-- Feed Container -->
-        <div id="wall-feed" class="space-y-6">
-        </div>
+          <!-- Feed Container -->
+          <div id="wall-feed" class="space-y-4">
+          </div>
 
-        <!-- Media Grid Container (Instagram Style) -->
-        <div id="wall-media-container" class="hidden space-y-6">
-           <div id="wall-media-grid-main" class="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <!-- Media items and Add Button will be injected here by renderMediaGrid -->
-           </div>
+          <!-- Media Grid Container -->
+          <div id="wall-media-container" class="hidden space-y-4">
+            <!-- Кнопка назад в медиа режиме -->
+            <button onclick="switchWallTab('posts')" class="flex items-center gap-2 text-xs text-custom-muted hover:text-custom-main transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+              Назад
+            </button>
+            <div id="wall-media-grid-main" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            </div>
+          </div>
+
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Wall Comments Modal -->
+<div id="wall-comments-overlay"
+     class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4"
+     onclick="if(event.target===this) closeWallComments()">
+
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-md opacity-0 transition-opacity duration-300 wall-comments-backdrop"></div>
+
+  <!-- Panel -->
+  <div class="wall-comments-panel relative w-full max-w-4xl h-[85vh] sm:h-[80vh] flex flex-col sm:flex-row shadow-2xl
+                scale-90 opacity-0 transition-all duration-300 ease-out overflow-hidden">
+
+    <!-- Media Preview Area (Left side on desktop, top on mobile) -->
+    <div id="wall-comments-media-container" class="hidden w-full sm:w-3/5 bg-black/40 flex items-center justify-center relative border-b sm:border-b-0 sm:border-r border-white/5">
+      <div id="wall-comments-media-content" class="w-full h-full flex items-center justify-center p-2">
+        <!-- Media injected here -->
+      </div>
+      <!-- Like button overlay on media -->
+      <button id="wall-comments-media-like" onclick="toggleMediaPostLike(this)" class="absolute bottom-6 right-6 p-3 bg-black/40 backdrop-blur-md rounded-full text-custom-muted hover:text-red-400 transition-all hover:scale-110 border border-white/10 group">
+        <svg class="w-6 h-6 transition-transform group-active:scale-125" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="flex flex-col flex-grow min-w-0">
+      <!-- Header -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-white/5 flex-shrink-0">
+        <h3 class="text-sm font-bold text-custom-main">Комментарии</h3>
+        <button onclick="closeWallComments()"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-custom-muted hover:text-custom-main hover:bg-white/10 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Comments feed -->
+      <div id="wall-comments-feed"
+           class="flex-grow overflow-y-auto scrollbar-hide px-4 py-3 space-y-4">
+      </div>
+
+      <!-- Reply badge -->
+      <div id="wall-comments-reply-to"
+           class="hidden flex items-center gap-2 px-4 py-1.5 bg-custom-accent/10 border-t border-custom-accent/20 text-[11px] text-custom-accent">
+        <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+        </svg>
+        <span>Ответ для <b id="wall-comments-reply-name"></b></span>
+        <button onclick="clearCommentReply()" class="ml-auto hover:text-custom-main transition">✕</button>
+      </div>
+
+      <!-- Input -->
+      <div class="flex-shrink-0 px-4 py-3 border-t border-white/5 flex gap-2 items-end">
+            <textarea id="wall-comments-input"
+                      rows="1"
+                      placeholder="Написать комментарий..."
+                      class="flex-grow bg-custom-main/10 backdrop-blur-md rounded-2xl px-4 py-2.5 text-sm text-custom-main placeholder-custom-muted/50 outline-none resize-none border border-white/10 focus:border-custom-accent/40 transition-all max-h-32 scrollbar-hide"
+                      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+                      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendWallComment()}"
+            ></textarea>
+        <button onclick="sendWallComment()"
+                class="w-9 h-9 flex-shrink-0 bg-custom-accent rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-lg shadow-custom-accent/20">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </button>
       </div>
     </div>
   </div>
@@ -608,6 +701,7 @@
 <script src="/web/js/app.js"></script>
 <script src="/web/js/ui.js"></script>
 <script src="/web/js/wall.js"></script>
+<script src="/web/js/feed.js"></script>
 <script src="/web/js/news.js"></script>
 <script src="/web/js/ai.js"></script>
 <canvas id="neural-canvas"></canvas>

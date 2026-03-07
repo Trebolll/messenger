@@ -6,10 +6,9 @@
 }
 
 #wall-modal {
-    background: rgba(15, 15, 15, 0.6) !important;
-    backdrop-filter: blur(30px) saturate(150%);
-    -webkit-backdrop-filter: blur(30px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(var(--bg-sidebar-rgb), 0.4) !important;
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
 }
 
 #wall-banner {
@@ -31,12 +30,20 @@
 
 /* Glassy containers for posts */
 .wall-post-card {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(var(--bg-sidebar-rgb), 0.2);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 0.5px solid var(--glass-border);
     border-radius: 28px;
     padding: 24px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.wall-post-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+    background: rgba(var(--bg-sidebar-rgb), 0.3);
 }
 
 /* Анимации и плавные переходы для всех модалок */
@@ -100,4 +107,87 @@ body.wall-open.profile-open #profile-modal {
 
 #wall-modal {
     animation: wallFadeUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ─── Wall Tab Mode Transitions ─── */
+@keyframes wallTabFadeIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.99); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+#wall-feed, #wall-media-container {
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.wall-tab-enter {
+    animation: wallTabFadeIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.wall-post-card:hover .wall-post-delete-btn {
+    opacity: 1 !important;
+}
+
+/* Кнопка удаления медиа — скрыта, появляется при наведении на ячейку */
+.wall-media-item .wall-media-delete-btn {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.wall-media-item:hover .wall-media-delete-btn {
+    opacity: 1;
+}
+
+/* ─── Bio block ─── */
+.wall-glass-box {
+    background: rgba(var(--bg-sidebar-rgb), 0.15);
+    backdrop-filter: blur(10px);
+    border: 0.5px solid var(--glass-border);
+    border-radius: 24px;
+}
+
+#wall-bio-text {
+    transition: color 0.2s ease;
+}
+
+#wall-bio-input:focus {
+    box-shadow: 0 0 0 1px rgba(var(--color-accent-rgb, 99, 102, 241), 0.3);
+}
+#wall-left-sidebar {
+    transition: opacity 0.25s ease, max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                margin 0.3s ease, padding 0.3s ease;
+    overflow: hidden;
+    max-width: 256px;
+}
+
+#wall-left-sidebar.wall-sidebar-hidden {
+    opacity: 0;
+    max-width: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: none;
+}
+
+/* ── Wall Comments Panel ── */
+#wall-comments-overlay.comments-open .wall-comments-backdrop {
+    opacity: 1;
+}
+#wall-comments-overlay.comments-open .wall-comments-panel {
+    transform: scale(1);
+    opacity: 1;
+}
+.wall-comment-node + .wall-comment-node {
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+/* ── Activity Feed ── */
+.activity-post-card {
+    background: rgba(var(--bg-sidebar-rgb), 0.2);
+    backdrop-filter: blur(10px);
+    border: 0.5px solid var(--glass-border);
+    transition: all 0.2s ease;
+}
+.activity-post-card:hover {
+    background: rgba(var(--bg-sidebar-rgb), 0.3);
+    border-color: rgba(var(--color-accent-rgb), 0.3);
+    transform: translateY(-1px);
 }

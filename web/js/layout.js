@@ -46,12 +46,13 @@
       leftPanel.style.marginTop = '12px';
       leftPanel.style.height = 'calc(100% - 12px)';
 
-      // Фиксированная ширина левой панели
-      leftPanel.style.flex = '0 0 320px';
-      leftPanel.style.width = '320px';
-      leftPanel.style.minWidth = '320px';
+      // Ширина левой панели зависит от режима: чаты уже, лента шире
+      var panelWidth = state.chatsVisible ? '533px' : '800px';
+      leftPanel.style.flex = '0 0 ' + panelWidth;
+      leftPanel.style.width = panelWidth;
+      leftPanel.style.minWidth = panelWidth;
 
-      leftPanel.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease';
+      leftPanel.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease, width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), flex-basis 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), min-width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
       if (!state.chatsVisible && !state.feedVisible) {
         leftPanel.style.transform = 'translateY(30px)';
         leftPanel.style.opacity   = '0';
@@ -69,7 +70,7 @@
       viewChat.style.width = '59%';
       viewChat.style.maxWidth = '59%';
 
-      viewChat.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s ease';
+      viewChat.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease';
 
       if (!state.chatOpen) {
         viewChat.style.transform = 'translateX(-40px)';
@@ -94,11 +95,13 @@
     if (state.chatOpen) {
       document.body.classList.add('chat-open');
       if (viewChat) {
+        viewChat.style.transform = 'translateX(-40px)';
+        viewChat.style.opacity   = '0';
         show(viewChat, 'flex');
-        requestAnimationFrame(() => {
+        requestAnimationFrame(() => requestAnimationFrame(() => {
           viewChat.style.transform = 'translateX(0)';
           viewChat.style.opacity   = '1';
-        });
+        }));
       }
       if (inputArea) show(inputArea, 'flex');
       if (noChat)    hide(noChat);
@@ -142,11 +145,39 @@
       });
 
       if (state.chatsVisible) {
-        if (chatsSidebar) show(chatsSidebar, 'flex');
-        if (viewHome)     hide(viewHome);
+        if (viewHome) {
+          viewHome.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+          viewHome.style.opacity = '0';
+          viewHome.style.transform = 'translateX(-16px)';
+          setTimeout(() => { hide(viewHome); viewHome.style.transform = ''; }, 250);
+        }
+        if (chatsSidebar) {
+          chatsSidebar.style.opacity = '0';
+          chatsSidebar.style.transform = 'translateX(16px)';
+          show(chatsSidebar, 'flex');
+          requestAnimationFrame(() => {
+            chatsSidebar.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            chatsSidebar.style.opacity = '1';
+            chatsSidebar.style.transform = 'translateX(0)';
+          });
+        }
       } else {
-        if (chatsSidebar) hide(chatsSidebar);
-        if (viewHome)     show(viewHome, 'flex');
+        if (chatsSidebar) {
+          chatsSidebar.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+          chatsSidebar.style.opacity = '0';
+          chatsSidebar.style.transform = 'translateX(16px)';
+          setTimeout(() => { hide(chatsSidebar); chatsSidebar.style.transform = ''; }, 250);
+        }
+        if (viewHome) {
+          viewHome.style.opacity = '0';
+          viewHome.style.transform = 'translateX(-16px)';
+          show(viewHome, 'flex');
+          requestAnimationFrame(() => {
+            viewHome.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            viewHome.style.opacity = '1';
+            viewHome.style.transform = 'translateX(0)';
+          });
+        }
       }
     } else {
       leftPanel.style.transform = 'translateY(30px)';
@@ -198,30 +229,51 @@
   };
 
   window.switchLeftTab = function (tab) {
-    if (tab === 'chats') {
-      state.chatsVisible = !state.chatsVisible;
-      if (state.chatsVisible) {
-        state.feedVisible = false;
-        // Перерисовываем список — данные уже загружены, DOM мог не обновиться
-        if (typeof renderChats === 'function' && window.app && window.app.chats) {
-          renderChats();
+    var wallOverlay = document.getElementById('wall-overlay');
+    var wallIsOpen  = wallOverlay && !wallOverlay.classList.contains('hidden');
+
+    function doSwitch() {
+      if (tab === 'chats') {
+        state.chatsVisible = !state.chatsVisible;
+        if (state.chatsVisible) {
+          state.feedVisible = false;
+          if (typeof renderChats === 'function' && window.app && window.app.chats) {
+            renderChats();
+          }
+        }
+      } else if (tab === 'home') {
+        if (state.chatOpen) {
+          closeChat(true);
+          state.feedVisible = true;
+        } else {
+          state.feedVisible = !state.feedVisible;
+          if (state.feedVisible) {
+            state.chatsVisible = false;
+            if (typeof loadActivityFeed === 'function') {
+              loadActivityFeed();
+            }
+          }
         }
       }
-    } else if (tab === 'home') {
-      if (state.chatOpen) {
-        closeChat(true);
-        state.feedVisible = true;
-      } else {
-        state.feedVisible = !state.feedVisible;
-        if (state.feedVisible) state.chatsVisible = false;
-      }
+      applyLayout();
     }
-    applyLayout();
+
+    if (wallIsOpen) {
+      if (typeof closeWall === 'function') closeWall();
+      setTimeout(doSwitch, 220);
+    } else {
+      doSwitch();
+    }
   };
 
   // switchView — совместимость с api.js
   window.switchView = function (view) {
     if (view === 'chat') {
+      // Закрываем стену плавно, не мешая открытию чата
+      var wallOverlay = document.getElementById('wall-overlay');
+      if (wallOverlay && !wallOverlay.classList.contains('hidden')) {
+        if (typeof closeWall === 'function') closeWall();
+      }
       state.feedWasVisible = state.feedVisible;
       state.chatOpen = true;
       applyLayout();
@@ -246,6 +298,9 @@
     });
     if (window.app) window.app.activeChatId = null;
     state.feedVisible = showFeed ? true : state.feedWasVisible;
+    if (state.feedVisible && typeof loadActivityFeed === 'function') {
+      loadActivityFeed();
+    }
     applyLayout();
   }
 
@@ -306,10 +361,13 @@
     var origShowChat = app.showChat.bind(app);
     app.showChat = function () {
       origShowChat();
-      // После успешной авторизации на главном экране сразу показываем список чатов
+      // После успешной авторизации на главном экране сразу показываем ленту
       state.chatsVisible = false;
-      state.feedVisible  = false;
+      state.feedVisible  = true;
       state.chatOpen     = false;
+      if (typeof loadActivityFeed === 'function') {
+        loadActivityFeed();
+      }
       applyLayout();
     };
   }
@@ -321,10 +379,13 @@
 
     // Применить layout сразу если уже в чат-режиме
     if (isMainChatVisible()) {
-      // По умолчанию сразу показываем список чатов слева и заглушку "выберите чат"
+      // По умолчанию сразу показываем ленту
       state.chatsVisible = false;
-      state.feedVisible  = false;
+      state.feedVisible  = true;
       state.chatOpen     = false;
+      if (typeof loadActivityFeed === 'function') {
+        loadActivityFeed();
+      }
       applyLayout();
     }
 

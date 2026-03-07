@@ -19,6 +19,7 @@ type Wall struct {
 	UserProfession string     `json:"user_profession,omitempty"`
 	UserBirthDate  *time.Time `json:"user_birth_date,omitempty"`
 	UserCreatedAt  time.Time  `json:"user_created_at,omitempty"`
+	TotalWallLikes int        `json:"total_wall_likes"`
 }
 
 type WallResponse struct {
@@ -28,14 +29,18 @@ type WallResponse struct {
 }
 
 type WallPost struct {
-	ID           uuid.UUID        `json:"id"`
-	UserID       uuid.UUID        `json:"user_id"`
-	Content      string           `json:"content"`
-	CreatedAt    time.Time        `json:"created_at"`
-	UpdatedAt    *time.Time       `json:"updated_at,omitempty"`
-	AuthorName   string           `json:"author_name"`
-	AuthorAvatar string           `json:"author_avatar"`
-	Attachments  []WallAttachment `json:"attachments"`
+	ID            uuid.UUID        `json:"id"`
+	UserID        uuid.UUID        `json:"user_id"`
+	Content       string           `json:"content"`
+	CreatedAt     time.Time        `json:"created_at"`
+	UpdatedAt     *time.Time       `json:"updated_at,omitempty"`
+	AuthorName    string           `json:"author_name"`
+	AuthorAvatar  string           `json:"author_avatar"`
+	Attachments   []WallAttachment `json:"attachments"`
+	LikesCount    int              `json:"likes_count"`
+	IsLiked       bool             `json:"is_liked"`
+	CommentsCount int              `json:"comments_count"`
+	ChatID        *uuid.UUID       `json:"chat_id,omitempty"`
 }
 
 type WallAttachment struct {

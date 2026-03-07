@@ -39,6 +39,9 @@ func main() {
 	hub := websocket.NewHub()
 	go hub.Run()
 
+	wallHub := websocket.NewWallHub()
+	go wallHub.Run()
+
 	storageService, err := service.NewStorageService(
 		os.Getenv("MINIO_ENDPOINT"),
 		os.Getenv("MINIO_ACCESS_KEY"),
@@ -51,11 +54,11 @@ func main() {
 
 	wallRepository := repository.NewWallRepository(database)
 	wallService := service.NewWallService(wallRepository)
-	wallHandler := handler.NewWallHandler(wallService, storageService)
+	wallHandler := handler.NewWallHandler(wallService, storageService, wallHub)
 
 	userRepository := repository.NewUserRepository(database)
 	userService := service.NewUserService(userRepository, wallService)
-	userHandler := handler.NewUserHandler(userService, hub, storageService)
+	userHandler := handler.NewUserHandler(userService, hub, wallHub, storageService)
 
 	chatRepository := repository.NewChatRepository(database)
 	chatService := service.NewChatService(chatRepository, userRepository, hub)
@@ -78,6 +81,7 @@ func main() {
 	attachmentHandler := handler.NewAttachmentHandler(attachmentService)
 
 	wsHandler := handler.NewWebSocketHandler(hub, "your_secret_key")
+	wallChatHandler := handler.NewWallChatHandler(wallHub, messageRepository, "your_secret_key")
 
 	r := gin.Default()
 	r.LoadHTMLGlob("web/html/*.html")
@@ -116,14 +120,25 @@ func main() {
 
 		wall := api.Group("/wall")
 		{
+			wall.GET("/feed", wallHandler.GetGlobalMediaFeed)
 			wall.POST("/posts", wallHandler.CreatePost)
+			wall.POST("/posts/:post_id/attachments", wallHandler.UploadAttachment)
+			wall.POST("/posts/:post_id/like", wallHandler.ToggleLike)
+			wall.GET("/posts/:post_id/chat", wallHandler.GetPostChat)
+			wall.DELETE("/posts/:post_id", wallHandler.DeletePost)
+			wall.DELETE("/media/:attachment_id", wallHandler.DeleteAttachment)
 			wall.GET("/:user_id", wallHandler.GetWall)
 			wall.PUT("/settings", wallHandler.UpdateSettings)
+
+			// Комментарии к постам
+			wall.GET("/chat/:chat_id/comments", wallChatHandler.GetComments)
+			wall.POST("/chat/:chat_id/comments", wallChatHandler.PostComment)
 		}
 	}
 
 	r.GET("/api/ws", wsHandler.HandleWebSocket)
-
+	r.GET("/ws/wall/:chat_id", wallChatHandler.HandleWallWS)
+	r.GET("/ws/wall-posts/:user_id", wallChatHandler.HandleWallPostsWS)
 	log.Printf("Server started at port 8080")
 	if err := r.Run(":8080"); err != nil {
 		panic(err)
