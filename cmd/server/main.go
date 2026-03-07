@@ -56,6 +56,10 @@ func main() {
 	wallService := service.NewWallService(wallRepository)
 	wallHandler := handler.NewWallHandler(wallService, storageService, wallHub)
 
+	feedRepository := repository.NewFeedRepository(database)
+	feedService := service.NewFeedService(feedRepository, wallRepository)
+	feedHandler := handler.NewFeedHandler(feedService)
+
 	userRepository := repository.NewUserRepository(database)
 	userService := service.NewUserService(userRepository, wallService)
 	userHandler := handler.NewUserHandler(userService, hub, wallHub, storageService)
@@ -120,7 +124,6 @@ func main() {
 
 		wall := api.Group("/wall")
 		{
-			wall.GET("/feed", wallHandler.GetGlobalMediaFeed)
 			wall.POST("/posts", wallHandler.CreatePost)
 			wall.POST("/posts/:post_id/attachments", wallHandler.UploadAttachment)
 			wall.POST("/posts/:post_id/like", wallHandler.ToggleLike)
@@ -133,6 +136,13 @@ func main() {
 			// Комментарии к постам
 			wall.GET("/chat/:chat_id/comments", wallChatHandler.GetComments)
 			wall.POST("/chat/:chat_id/comments", wallChatHandler.PostComment)
+		}
+
+		wall.GET("/feed", wallHandler.GetGlobalMediaFeed)
+		feed := api.Group("/feed")
+		{
+			feed.GET("", feedHandler.GetFeed)           // персональная лента
+			feed.POST("/track", feedHandler.TrackEvent) // запись события
 		}
 	}
 
