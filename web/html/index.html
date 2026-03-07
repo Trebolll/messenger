@@ -97,7 +97,7 @@
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
             </button>
           </div>
-          <div id="activity-feed-container" class="flex-grow overflow-y-auto scrollbar-hide flex flex-col" style="scroll-snap-type: y mandatory; scroll-behavior: smooth;">
+          <div id="activity-feed-container" class="flex-grow overflow-y-auto scrollbar-hide p-4 grid grid-cols-3 gap-3 content-start">
             <div class="flex flex-col items-center justify-center h-full py-20 opacity-40 select-none">
               <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
@@ -396,18 +396,6 @@
       </svg>
     </button>
 
-    <!-- Avatar -->
-    <div class="flex flex-col items-center mb-6">
-      <div class="relative group cursor-pointer" onclick="triggerAvatarUpload()">
-        <div id="profile-avatar" class="w-24 h-24 rounded-full bg-custom-sidebar flex items-center justify-center text-4xl font-bold text-custom-muted transition group-hover:border-custom-accent overflow-hidden">U</div>
-        <div class="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-          <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        </div>
-      </div>
-      <input type="file" id="avatar-upload" class="hidden" accept="image/*">
-      <p class="text-custom-muted text-xs mt-2">Нажмите чтобы сменить фото</p>
-    </div>
-
     <!-- Fields -->
     <div class="space-y-3">
       <div class="profile-field">
@@ -430,15 +418,6 @@
         <input type="email" id="profile-email" class="profile-input" placeholder="you@example.com" disabled>
         <p class="text-custom-muted text-xs mt-1 pl-1">Изменение email недоступно</p>
       </div>
-      <div class="profile-field">
-        <label class="profile-label">
-          <svg class="w-3.5 h-3.5 inline mr-1 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
-          Статус
-        </label>
-        <input type="text" id="profile-status-text" class="profile-input" placeholder="Настроение, цитата..." maxlength="100">
-        <p class="text-custom-muted text-xs mt-1 pl-1">Виден собеседникам в правой панели</p>
-      </div>
-
       <!-- Верификация -->
       <div class="profile-verify-block">
         <div class="flex items-center gap-2 mb-2">
@@ -494,13 +473,21 @@
       <div class="absolute -bottom-12 left-8 flex items-end gap-6 z-10">
         <div id="wall-avatar-container" class="relative group">
           <div id="wall-avatar" class="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-custom-sidebar border-4 border-custom-main flex items-center justify-center text-4xl font-bold shadow-xl overflow-hidden">?</div>
-          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition rounded-full cursor-pointer" onclick="triggerAvatarUpload()">
+          <div id="wall-avatar-edit-overlay" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition rounded-full cursor-pointer hidden" onclick="triggerAvatarUpload()">
             <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           </div>
+          <input type="file" id="avatar-upload" class="hidden" accept="image/*">
         </div>
         <div class="mb-4">
           <h2 id="wall-username" class="text-2xl sm:text-3xl font-extrabold text-custom-main tracking-tight drop-shadow-md">User Name</h2>
-          <p id="wall-status" class="text-sm text-custom-muted font-medium bg-custom-main/80 backdrop-blur px-2 py-0.5 rounded-lg inline-block mt-1">Status goes here...</p>
+          <div id="wall-status-wrap" class="mt-1">
+            <p id="wall-status" class="text-sm text-custom-muted font-medium bg-custom-main/80 backdrop-blur px-2 py-0.5 rounded-lg inline-block cursor-pointer hover:bg-custom-accent/20 hover:text-custom-accent transition-colors" title="Нажмите чтобы изменить статус">Status goes here...</p>
+            <div id="wall-status-editor" class="hidden flex items-center gap-2 mt-1">
+              <input id="wall-status-input" type="text" maxlength="100" class="bg-black/30 backdrop-blur border border-white/20 focus:border-custom-accent/60 rounded-lg px-3 py-1 text-sm text-white outline-none transition-colors" placeholder="Введи статус...">
+              <button onclick="saveWallStatus()" class="px-3 py-1 rounded-lg bg-custom-accent/80 hover:bg-custom-accent text-white text-xs font-semibold transition-colors">✓</button>
+              <button onclick="cancelWallStatus()" class="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 text-xs transition-colors">✕</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -714,6 +701,7 @@
 <script src="/web/js/app.js"></script>
 <script src="/web/js/ui.js"></script>
 <script src="/web/js/wall.js"></script>
+<script src="/web/js/feed.js"></script>
 <script src="/web/js/news.js"></script>
 <script src="/web/js/ai.js"></script>
 <canvas id="neural-canvas"></canvas>

@@ -269,8 +269,6 @@ function openProfileModal() {
     document.getElementById('profile-email').value       = user.email     || '';
     document.getElementById('profile-fullname').value    = user.full_name || '';
     document.getElementById('profile-phone').value       = user.phone     || '';
-    document.getElementById('profile-status-text').value = user.status    || '';
-    setAvatarEl(document.getElementById('profile-avatar'), user);
   }
 
   overlay.classList.remove('hidden');
@@ -305,43 +303,27 @@ async function handleAvatarSelected(e) {
   const file = e.target.files[0];
   if (!file) return;
 
-  // Показываем превью мгновенно
-  const avatarEl = document.getElementById('profile-avatar');
   const previewUrl = URL.createObjectURL(file);
-  avatarEl.innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
 
-  // Показываем спиннер поверх
-  avatarEl.style.position = 'relative';
-  const spinner = document.createElement('div');
-  spinner.id = 'avatar-spinner';
-  spinner.innerHTML = `<div style="position:absolute;inset:0;background:rgba(0,0,0,0.4);border-radius:50%;
-        display:flex;align-items:center;justify-content:center;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
-            style="animation:spin 0.8s linear infinite">
-            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-        </svg>
-    </div>`;
-  avatarEl.appendChild(spinner);
+  // Показываем превью на стене
+  const wallAvatarEl = document.getElementById('wall-avatar');
+  if (wallAvatarEl) {
+    wallAvatarEl.innerHTML = `<img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+  }
 
   try {
     const result = await apiUploadAvatar(file);
-    // Сохраняем в currentUser и localStorage
     window.app.currentUser.avatar_url = result.avatar_url;
     const stored = JSON.parse(localStorage.getItem('alpha_user') || '{}');
     stored.avatar_url = result.avatar_url;
     localStorage.setItem('alpha_user', JSON.stringify(stored));
-
-    // Обновляем все аватары на странице
     loadUserData();
-    setAvatarEl(avatarEl, window.app.currentUser);
+    if (wallAvatarEl) setAvatarEl(wallAvatarEl, window.app.currentUser);
     window.app.notify('Фото обновлено ✓', 'success');
   } catch (err) {
     window.app.notify('Ошибка: ' + err.message, 'error');
-    // Откатываем превью
-    setAvatarEl(avatarEl, window.app.currentUser);
+    if (wallAvatarEl) setAvatarEl(wallAvatarEl, window.app.currentUser);
   } finally {
-    const sp = document.getElementById('avatar-spinner');
-    if (sp) sp.remove();
     URL.revokeObjectURL(previewUrl);
   }
 }
@@ -350,9 +332,8 @@ async function saveProfile() {
   const fullname   = document.getElementById('profile-fullname').value.trim();
   const phone      = document.getElementById('profile-phone').value.trim();
   const username   = document.getElementById('profile-username').value.trim();
-  const statusText = document.getElementById('profile-status-text').value.trim();
   try {
-    await apiSaveProfile({ fullname, phone, username, statusText });
+    await apiSaveProfile({ fullname, phone, username });
     window.app.notify('Профиль обновлён ✓', 'success');
     closeProfileModal();
   } catch (err) {

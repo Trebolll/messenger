@@ -33,12 +33,26 @@ async function openWall(userId = null) {
     const editProfileBtn = document.getElementById('wall-settings-btn');
     const editBioBtn     = document.getElementById('edit-bio-btn');
     const postInputContainer = document.getElementById('wall-post-creator');
+    const avatarEditOverlay  = document.getElementById('wall-avatar-edit-overlay');
+    const wallStatusEl       = document.getElementById('wall-status');
 
     if (editProfileBtn) editProfileBtn.style.display = isMe ? 'flex' : 'none';
     if (editBioBtn)     editBioBtn.style.display     = isMe ? 'block' : 'none';
     if (postInputContainer) {
         postInputContainer.style.display = isMe ? 'block' : 'none';
         postInputContainer.dataset.visible = isMe ? 'true' : 'false';
+    }
+    // Показываем кнопку смены аватара только на своей стене
+    if (avatarEditOverlay) avatarEditOverlay.classList.toggle('hidden', !isMe);
+    // Статус кликабельный только на своей стене
+    if (wallStatusEl) {
+        if (isMe) {
+            wallStatusEl.onclick = startWallStatusEdit;
+            wallStatusEl.style.cursor = 'pointer';
+        } else {
+            wallStatusEl.onclick = null;
+            wallStatusEl.style.cursor = 'default';
+        }
     }
 
     // Очищаем начальные данные
@@ -277,14 +291,14 @@ function renderSinglePostHtml(p, isMe) {
 function renderAttachmentHtml(postId, a) {
     const isVideo = (a.mime_type || '').startsWith('video/');
     if (isVideo) {
-        return `<div class="rounded-lg overflow-hidden border border-white/5 bg-black/20 relative aspect-video cursor-pointer" onclick="openMediaDetail('${postId}', '${a.url}', true)">
+        return `<div class="rounded-lg overflow-hidden border border-white/5 bg-black/20 relative aspect-video cursor-pointer" onclick="Feed.openMedia('${postId}', '${a.url}', true)">
             <video src="${a.url}" class="w-full h-full object-cover" preload="metadata"></video>
             <div class="absolute inset-0 flex items-center justify-center bg-black/20">
                 <svg class="w-10 h-10 text-white opacity-80" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </div>
         </div>`;
     }
-    return `<div class="rounded-lg overflow-hidden border border-white/5 bg-black/20 aspect-video cursor-pointer" onclick="openMediaDetail('${postId}', '${a.url}', false)">
+    return `<div class="rounded-lg overflow-hidden border border-white/5 bg-black/20 aspect-video cursor-pointer" onclick="Feed.openMedia('${postId}', '${a.url}', false)">
        <img src="${a.url}" class="w-full h-full object-cover">
     </div>`;
 }
@@ -554,7 +568,7 @@ function renderMediaGrid(media, isMe = false) {
             </button>` : '';
         if (isVideo) {
             return `
-                <div id="media-item-${m.id}" class="aspect-square rounded-xl overflow-hidden bg-black/20 border border-white/5 relative group cursor-pointer wall-media-item" onclick="openMediaDetail('${m.post_id}', '${m.url}', true)">
+                <div id="media-item-${m.id}" class="aspect-square rounded-xl overflow-hidden bg-black/20 border border-white/5 relative group cursor-pointer wall-media-item" onclick="Feed.openMedia('${m.post_id}', '${m.url}', true)">
                     <video src="${m.url}" class="w-full h-full object-cover" muted preload="metadata"></video>
                     <div class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
                         <svg class="w-8 h-8 text-white drop-shadow" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -564,7 +578,7 @@ function renderMediaGrid(media, isMe = false) {
             `;
         }
         return `
-            <div id="media-item-${m.id}" class="aspect-square rounded-xl overflow-hidden bg-black/20 border border-white/5 cursor-pointer hover:scale-[1.02] transition-transform wall-media-item relative group" onclick="openMediaDetail('${m.post_id}', '${m.url}', false)">
+            <div id="media-item-${m.id}" class="aspect-square rounded-xl overflow-hidden bg-black/20 border border-white/5 cursor-pointer hover:scale-[1.02] transition-transform wall-media-item relative group" onclick="Feed.openMedia('${m.post_id}', '${m.url}', false)">
                 <img src="${m.url}" class="w-full h-full object-cover" loading="lazy">
                 ${deleteBtn}
             </div>
@@ -572,58 +586,7 @@ function renderMediaGrid(media, isMe = false) {
     }).join('');
 }
 
-async function openMediaDetail(postId, url, isVideo) {
-    const mediaContainer = document.getElementById('wall-comments-media-container');
-    const mediaContent = document.getElementById('wall-comments-media-content');
-    const likeBtn = document.getElementById('wall-comments-media-like');
-
-    mediaContainer.classList.remove('hidden');
-    if (isVideo) {
-        mediaContent.innerHTML = `<video src="${url}" class="max-w-full max-h-full rounded-lg shadow-2xl" controls autoplay></video>`;
-    } else {
-        mediaContent.innerHTML = `<img src="${url}" class="max-w-full max-h-full rounded-lg shadow-2xl object-contain">`;
-    }
-
-    const postEl = document.getElementById(`post-${postId}`) || document.getElementById(`activity-post-${postId}`);
-    let isLiked = false;
-    let chatId = null;
-
-    if (postEl) {
-        const likeBtnInFeed = postEl.querySelector('button[onclick^="togglePostLike"]');
-        if (likeBtnInFeed) isLiked = likeBtnInFeed.dataset.liked === 'true';
-        const chatBtnInFeed = postEl.querySelector('button[onclick^="openPostChat"]');
-        if (chatBtnInFeed) {
-            const match = chatBtnInFeed.getAttribute('onclick').match(/'([^']+)',\s*'([^']*)'/);
-            if (match) chatId = match[2];
-        }
-    }
-
-    likeBtn.dataset.postId = postId;
-    likeBtn.dataset.liked = isLiked;
-    const svg = likeBtn.querySelector('svg');
-    if (isLiked) {
-        likeBtn.classList.add('text-red-400');
-        svg.setAttribute('fill', 'currentColor');
-    } else {
-        likeBtn.classList.remove('text-red-400');
-        svg.setAttribute('fill', 'none');
-    }
-
-    if (!chatId) {
-        try {
-            const res = await fetch(`/api/wall/posts/${postId}/chat`, {
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('alpha_token')}` }
-            }).then(r => r.json());
-            chatId = res.chat_id;
-        } catch (e) {
-            console.error(e);
-        }
-    }
-
-    if (chatId) {
-        openWallComments(postId, chatId, true);
-    }
-}
+// Медиа-навигация перенесена в feed.js — используй Feed.openMedia()
 
 async function toggleMediaPostLike(btn) {
     const postId = btn.dataset.postId;
@@ -1036,123 +999,44 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;');
 }
 
-async function loadActivityFeed() {
-    const container = document.getElementById('activity-feed-container');
-    if (!container) return;
+// Лента перенесена в feed.js — используй Feed.load()
 
-    // Snap-скролл колёсиком — по одному посту
-    if (!container._wheelListenerAdded) {
-        container._wheelListenerAdded = true;
-        let isScrolling = false;
-        container.addEventListener('wheel', function(e) {
-            e.preventDefault();
-            if (isScrolling) return;
-            isScrolling = true;
-            const posts = container.querySelectorAll('.activity-post-card');
-            if (!posts.length) { isScrolling = false; return; }
-            const postHeight = container.clientHeight;
-            const currentIndex = Math.round(container.scrollTop / postHeight);
-            const nextIndex = e.deltaY > 0
-                ? Math.min(currentIndex + 1, posts.length - 1)
-                : Math.max(currentIndex - 1, 0);
-            container.scrollTo({ top: nextIndex * postHeight, behavior: 'smooth' });
-            setTimeout(() => { isScrolling = false; }, 500);
-        }, { passive: false });
-    }
+// ── Inline статус на стене ────────────────────────────────────────────────
+function startWallStatusEdit() {
+    const statusEl = document.getElementById('wall-status');
+    const editor   = document.getElementById('wall-status-editor');
+    const input    = document.getElementById('wall-status-input');
+    if (!statusEl || !editor || !input) return;
+    input.value = statusEl.textContent.trim();
+    statusEl.classList.add('hidden');
+    editor.classList.remove('hidden');
+    input.focus();
+    input.select();
+    input.onkeydown = function(e) {
+        if (e.key === 'Enter') saveWallStatus();
+        if (e.key === 'Escape') cancelWallStatus();
+    };
+}
 
+function cancelWallStatus() {
+    document.getElementById('wall-status').classList.remove('hidden');
+    document.getElementById('wall-status-editor').classList.add('hidden');
+}
+
+async function saveWallStatus() {
+    const input    = document.getElementById('wall-status-input');
+    const statusEl = document.getElementById('wall-status');
+    const newStatus = input ? input.value.trim() : '';
     try {
-        const response = await fetch('/api/wall/feed', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('alpha_token')}`
-            }
-        });
-        if (!response.ok) throw new Error('Failed to load feed');
-        const posts = await response.json();
-
-        if (!posts || posts.length === 0) {
-            container.innerHTML = `
-                <div class="flex flex-col items-center justify-center h-full py-20 opacity-40 select-none">
-                    <p class="text-sm font-semibold text-custom-main">В ленте пока пусто...</p>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = posts.map(p => renderActivityPostHtml(p)).join('');
+        await apiSaveProfile({ statusText: newStatus });
+        if (statusEl) statusEl.textContent = newStatus;
+        if (window.app?.currentUser) window.app.currentUser.status = newStatus;
+        const stored = JSON.parse(localStorage.getItem('alpha_user') || '{}');
+        stored.status = newStatus;
+        localStorage.setItem('alpha_user', JSON.stringify(stored));
+        window.app?.notify?.('Статус обновлён ✓', 'success');
     } catch (err) {
-        console.error('Activity feed error:', err);
-        container.innerHTML = `<p class="text-xs text-red-400 p-4">Ошибка загрузки ленты</p>`;
+        window.app?.notify?.('Ошибка: ' + err.message, 'error');
     }
-}
-
-function renderActivityPostHtml(p) {
-    const isMe = String(p.user_id) === String(window.app.currentUser?.id);
-    const hasAttachments = p.attachments && p.attachments.length > 0;
-    const openAction = hasAttachments
-        ? `openMediaDetail('${p.id}', '${p.attachments[0].url}', ${(p.attachments[0].mime_type || '').startsWith('video/')})`
-        : `openPostChat('${p.id}', '${p.chat_id || ''}')`;
-
-    return `
-        <div class="activity-post-card group relative overflow-hidden bg-black" 
-             id="activity-post-${p.id}"
-             style="scroll-snap-align: start; flex-shrink: 0; width: 100%; height: 100%;">
-           ${hasAttachments ? `
-              <div class="w-full h-full overflow-hidden">
-                 ${renderActivityAttachmentHtml(p.id, p.attachments[0])}
-                 ${p.attachments.length > 1 ? `<div class="absolute top-4 right-4 bg-black/50 backdrop-blur-md text-white text-[10px] px-2 py-1 rounded-full z-10">+${p.attachments.length - 1}</div>` : ''}
-              </div>
-           ` : `
-              <div class="w-full h-full p-10 flex items-center justify-center text-center bg-custom-sidebar">
-                 <div class="text-lg text-custom-main leading-relaxed font-medium">${p.content || 'Запись без текста'}</div>
-              </div>
-           `}
-           
-           <!-- Gradient overlay -->
-           <div class="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/85 to-transparent pointer-events-none"></div>
-
-           <!-- Author + actions -->
-           <div class="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between z-10">
-              <div class="flex-1 min-w-0 pr-4">
-                 <div class="flex items-center gap-2 mb-2">
-                    <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-xs overflow-hidden border-2 border-white/30 flex-shrink-0">
-                       ${p.author_avatar ? `<img src="${p.author_avatar}" class="w-full h-full object-cover">` : (p.author_name ? p.author_name[0] : '?')}
-                    </div>
-                    <span class="text-sm font-bold text-white drop-shadow truncate">${p.author_name}</span>
-                 </div>
-                 ${p.content && hasAttachments ? `<p class="text-xs text-white/80 line-clamp-2 drop-shadow">${p.content}</p>` : ''}
-                 <p class="text-[10px] text-white/40 mt-1">${new Date(p.created_at).toLocaleDateString()}</p>
-              </div>
-              <div class="flex flex-col items-center gap-5 flex-shrink-0">
-                 <div class="flex flex-col items-center gap-1 cursor-pointer">
-                    <div class="w-11 h-11 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors">
-                       <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-                    </div>
-                    <span class="text-[11px] text-white/70 font-medium">${p.likes_count || 0}</span>
-                 </div>
-                 <div class="flex flex-col items-center gap-1 cursor-pointer" onclick="${openAction}">
-                    <div class="w-11 h-11 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors">
-                       <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                    </div>
-                    <span class="text-[11px] text-white/70 font-medium">${p.comments_count || 0}</span>
-                 </div>
-              </div>
-           </div>
-           <button onclick="${openAction}" class="absolute inset-0 z-0"></button>
-        </div>
-    `;
-}
-
-function renderActivityAttachmentHtml(postId, a) {
-    const isVideo = (a.mime_type || '').startsWith('video/');
-    if (isVideo) {
-        return `<div class="relative w-full h-full cursor-pointer bg-black/40 group/media overflow-hidden" onclick="openMediaDetail('${postId}', '${a.url}', true)">
-            <video src="${a.url}" class="w-full h-full object-cover group-hover/media:scale-105 transition-transform"></video>
-            <div class="absolute inset-0 flex items-center justify-center bg-black/10">
-                <svg class="w-7 h-7 text-white opacity-80" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            </div>
-        </div>`;
-    }
-    return `<div class="w-full h-full cursor-pointer bg-black/40 group/media overflow-hidden" onclick="openMediaDetail('${postId}', '${a.url}', false)">
-       <img src="${a.url}" class="w-full h-full object-cover group-hover/media:scale-105 transition-transform">
-    </div>`;
+    cancelWallStatus();
 }
