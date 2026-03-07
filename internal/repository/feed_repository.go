@@ -2,8 +2,10 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"messenger/internal/model"
 	"strings"
+	"sync"
 
 	"github.com/google/uuid"
 )
@@ -95,16 +97,15 @@ func (r *FeedRepository) UpdatePreferences(userID uuid.UUID, mimeType string) er
 //   4. Вложения грузятся одним батч-запросом после основного (нет N+1)
 
 func (r *FeedRepository) GetPersonalFeed(userID uuid.UUID, limit, offset int) ([]model.WallPost, error) {
+	return r.GetPersonalFeedWithPrefs(userID, limit, offset, 0.33, 0.33, 0.34)
+}
+
+// GetPersonalFeedWithPrefs — версия с уже известными весами (из кеша сервиса).
+// Позволяет сервису передать preferences без лишнего SELECT.
+func (r *FeedRepository) GetPersonalFeedWithPrefs(userID uuid.UUID, limit, offset int, wi, wv, wt float64) ([]model.WallPost, error) {
 	if limit <= 0 {
 		limit = 30
 	}
-
-	// 1. Preferences — точечный SELECT по PK
-	var wi, wv, wt float64 = 0.33, 0.33, 0.34
-	r.db.QueryRow(
-		`SELECT weight_image, weight_video, weight_text FROM feed_preferences WHERE user_id = $1`,
-		userID,
-	).Scan(&wi, &wv, &wt)
 
 	// 2. Основной запрос — только JOIN, никаких коррелированных подзапросов
 	const query = `
@@ -196,7 +197,7 @@ func (r *FeedRepository) GetPersonalFeed(userID uuid.UUID, limit, offset int) ([
 		return []model.WallPost{}, nil
 	}
 
-	// 3. Вложения — один батч-запрос вместо N
+	// 3. Вложения — батч-запрос, запускаем как только есть postIDs
 	attMap, err := r.getAttachmentsBatch(postIDs)
 	if err == nil {
 		for i := range posts {
@@ -208,6 +209,99 @@ func (r *FeedRepository) GetPersonalFeed(userID uuid.UUID, limit, offset int) ([
 		}
 	}
 
+	return posts, nil
+}
+
+// GetPersonalFeedAndGlobal — запускает персональную и глобальную ленты параллельно.
+// Используется в сервисе для cold start без двух последовательных запросов.
+func (r *FeedRepository) GetPersonalFeedAndGlobal(
+	userID uuid.UUID, limit, offset int, wi, wv, wt float64,
+) (personal []model.WallPost, global []model.WallPost, err error) {
+	var wg sync.WaitGroup
+	var personalErr, globalErr error
+
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		personal, personalErr = r.GetPersonalFeedWithPrefs(userID, limit, offset, wi, wv, wt)
+	}()
+
+	go func() {
+		defer wg.Done()
+		// Глобальная лента — только если offset=0 (нужна для cold start)
+		if offset == 0 {
+			global, globalErr = r.getGlobalFeedLite(userID, limit)
+		}
+	}()
+
+	wg.Wait()
+
+	if personalErr != nil {
+		return nil, nil, personalErr
+	}
+	_ = globalErr // глобальная лента — fallback, ошибка не критична
+	return personal, global, nil
+}
+
+// getGlobalFeedLite — облегчённая глобальная лента без тяжёлого скоринга.
+// Используется только как fallback при cold start.
+func (r *FeedRepository) getGlobalFeedLite(userID uuid.UUID, limit int) ([]model.WallPost, error) {
+	const query = `
+		SELECT p.id, p.user_id, p.content, p.created_at, p.updated_at, p.chat_id,
+		       u.username, COALESCE(u.avatar_url, ''),
+		       COUNT(DISTINCT l.user_id) AS likes_count,
+		       COALESCE(BOOL_OR(l.user_id = $1), false) AS is_liked,
+		       (SELECT COUNT(*) FROM messages m WHERE m.chat_id = p.chat_id) AS comments_count
+		FROM wall_posts p
+		JOIN users u ON u.id = p.user_id
+		LEFT JOIN wall_post_likes l ON l.post_id = p.id
+		WHERE EXISTS (
+			SELECT 1 FROM wall_attachments wa
+			WHERE wa.post_id = p.id
+			AND (wa.mime_type LIKE 'image/%' OR wa.mime_type LIKE 'video/%')
+		)
+		GROUP BY p.id, p.user_id, p.content, p.created_at, p.updated_at, p.chat_id, u.username, u.avatar_url
+		ORDER BY p.created_at DESC
+		LIMIT $2`
+
+	rows, err := r.db.Query(query, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []model.WallPost
+	var postIDs []uuid.UUID
+	for rows.Next() {
+		var p model.WallPost
+		var chatID sql.NullString
+		if err := rows.Scan(
+			&p.ID, &p.UserID, &p.Content, &p.CreatedAt, &p.UpdatedAt,
+			&chatID, &p.AuthorName, &p.AuthorAvatar,
+			&p.LikesCount, &p.IsLiked, &p.CommentsCount,
+		); err != nil {
+			return nil, err
+		}
+		if chatID.Valid && chatID.String != "" {
+			if uid, err := uuid.Parse(chatID.String); err == nil {
+				p.ChatID = &uid
+			}
+		}
+		posts = append(posts, p)
+		postIDs = append(postIDs, p.ID)
+	}
+	if len(posts) == 0 {
+		return []model.WallPost{}, nil
+	}
+	attMap, _ := r.getAttachmentsBatch(postIDs)
+	for i := range posts {
+		if atts := attMap[posts[i].ID]; atts != nil {
+			posts[i].Attachments = atts
+		} else {
+			posts[i].Attachments = []model.WallAttachment{}
+		}
+	}
 	return posts, nil
 }
 
@@ -249,4 +343,32 @@ func (r *FeedRepository) getAttachmentsBatch(postIDs []uuid.UUID) (map[uuid.UUID
 		result[a.PostID] = append(result[a.PostID], a)
 	}
 	return result, rows.Err()
+}
+
+// DB возвращает *sql.DB для использования в сервисе (кеш preferences)
+func (r *FeedRepository) DB() *sql.DB {
+	return r.db
+}
+
+// TrackEventBatch — вставляет пачку событий одним запросом.
+func (r *FeedRepository) TrackEventBatch(events []*model.FeedEvent) error {
+	if len(events) == 0 {
+		return nil
+	}
+
+	args := make([]interface{}, 0, len(events)*4)
+	var sb strings.Builder
+	sb.WriteString("INSERT INTO feed_events (user_id, post_id, event_type, watch_seconds) VALUES ")
+
+	for i, e := range events {
+		if i > 0 {
+			sb.WriteByte(',')
+		}
+		base := i * 4
+		fmt.Fprintf(&sb, "($%d,$%d,$%d,$%d)", base+1, base+2, base+3, base+4)
+		args = append(args, e.UserID, e.PostID, e.EventType, e.WatchSeconds)
+	}
+
+	_, err := r.db.Exec(sb.String(), args...)
+	return err
 }

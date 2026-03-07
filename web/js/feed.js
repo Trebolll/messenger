@@ -162,50 +162,55 @@ const Feed = (() => {
         </div>`;
     }
 
-    // Рисуем превью только для видимых карточек — по одному через очередь
-    const _thumbQueue = [];
-    let _thumbBusy = false;
+    // Превью видео — параллельно до 3 штук одновременно
+    const _thumbQueue   = [];
+    const THUMB_PARALLEL = 3;
+    let   _thumbActive  = 0;
 
     function _initThumbObserver(container) {
         const obs = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (!entry.isIntersecting) return;
-                const el = entry.target;
+                const el  = entry.target;
                 const src = el.dataset.videoSrc;
                 const cid = el.dataset.canvasId;
-                if (src && cid) {
-                    _thumbQueue.push({ src, cid });
-                    _processThumbQueue();
-                }
+                if (src && cid) { _thumbQueue.push({ src, cid }); _processThumbQueue(); }
                 obs.unobserve(el);
             });
-        }, { rootMargin: '100px' });
+        }, { rootMargin: '150px' });
         container.querySelectorAll('.feed-video-thumb').forEach(el => obs.observe(el));
     }
 
     function _processThumbQueue() {
-        if (_thumbBusy || _thumbQueue.length === 0) return;
-        _thumbBusy = true;
-        const { src, cid } = _thumbQueue.shift();
-        const v = document.createElement('video');
-        v.muted = true;
-        v.preload = 'metadata';
-        v.style.display = 'none';
-        document.body.appendChild(v);
-        v.onloadedmetadata = () => { v.currentTime = 1; };
-        v.onseeked = () => {
-            const c = document.getElementById(cid);
-            if (c) {
-                c.width  = v.videoWidth  || 320;
-                c.height = v.videoHeight || 180;
-                c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
-            }
-            v.pause(); v.src = ''; v.load(); v.remove();
-            _thumbBusy = false;
-            _processThumbQueue(); // следующий
-        };
-        v.onerror = () => { v.remove(); _thumbBusy = false; _processThumbQueue(); };
-        v.src = src;
+        while (_thumbActive < THUMB_PARALLEL && _thumbQueue.length > 0) {
+            _thumbActive++;
+            const { src, cid } = _thumbQueue.shift();
+            _loadThumb(src, cid).finally(() => {
+                _thumbActive--;
+                _processThumbQueue();
+            });
+        }
+    }
+
+    function _loadThumb(src, cid) {
+        return new Promise(resolve => {
+            const v = document.createElement('video');
+            v.muted = true; v.preload = 'metadata'; v.style.display = 'none';
+            document.body.appendChild(v);
+            v.onloadedmetadata = () => { v.currentTime = 1; };
+            v.onseeked = () => {
+                const c = document.getElementById(cid);
+                if (c) {
+                    c.width  = v.videoWidth  || 320;
+                    c.height = v.videoHeight || 180;
+                    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+                }
+                v.pause(); v.src = ''; v.load(); v.remove();
+                resolve();
+            };
+            v.onerror = () => { v.remove(); resolve(); };
+            v.src = src;
+        });
     }
 
     // ── Открытие медиа ────────────────────────────────────────────────────
