@@ -110,7 +110,8 @@ const Feed = (() => {
             : `openPostChat('${p.id}', '${p.chat_id || ''}')`;
 
         return `
-        <div class="activity-post-card rounded-[24px] group relative overflow-hidden bg-custom-sidebar border border-white/5 hover:border-custom-accent/30 transition-all shadow-sm aspect-square" id="activity-post-${p.id}">
+        <div class="activity-post-card rounded-[24px] group relative overflow-hidden bg-custom-sidebar border border-white/5 hover:border-custom-accent/30 transition-all shadow-sm aspect-square" id="activity-post-${p.id}"
+             data-post-id="${p.id}" data-media-url="${hasAtt ? p.attachments[0].url : ''}" data-media-video="${hasAtt && (p.attachments[0].mime_type||'').startsWith('video/')}">
            ${hasAtt
             ? `<div class="w-full h-full overflow-hidden">
                     ${_renderThumb(p.id, p.attachments[0])}
@@ -228,12 +229,15 @@ const Feed = (() => {
                 if (m) _mediaList.push({ postId: m[1], url: m[2], isVideo: m[3] === 'true' });
             });
         } else {
-            // Из ленты — только посты у которых есть медиа-кнопка
-            document.querySelectorAll('#activity-feed-container .activity-post-card').forEach(card => {
-                const btn = card.querySelector('button[onclick*="Feed.openMedia"]');
-                if (!btn) return;
-                const m = (btn.getAttribute('onclick') || '').match(/Feed\.openMedia\('([^']+)',\s*'([^']+)',\s*(true|false)\)/);
-                if (m) _mediaList.push({ postId: m[1], url: m[2], isVideo: m[3] === 'true' });
+            // Из ленты — читаем data-атрибуты карточек, без парсинга onclick
+            document.querySelectorAll('#activity-feed-container .activity-post-card[data-media-url]').forEach(card => {
+                const url = card.dataset.mediaUrl;
+                if (!url) return;
+                _mediaList.push({
+                    postId:  card.dataset.postId,
+                    url:     url,
+                    isVideo: card.dataset.mediaVideo === 'true'
+                });
             });
         }
 

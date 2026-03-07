@@ -4,6 +4,7 @@ import (
 	"errors"
 	"messenger/internal/model"
 	"messenger/internal/service/websocket"
+	"sync"
 
 	"github.com/google/uuid"
 )
@@ -54,39 +55,68 @@ func (s *MessageService) SendMessage(message *model.Message) error {
 		return errors.New("доступ запрещен: вы не являетесь участником этого чата")
 	}
 
-	if err = s.repo.SendMessage(message); err != nil {
-		return err
+	// Сохранение и получение участников — параллельно
+	var members []uuid.UUID
+	var sendErr, membersErr error
+	var wg sync.WaitGroup
+
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		sendErr = s.repo.SendMessage(message)
+	}()
+	go func() {
+		defer wg.Done()
+		members, membersErr = s.chatRepo.GetChatMembers(message.ChatID)
+	}()
+	wg.Wait()
+
+	if sendErr != nil {
+		return sendErr
+	}
+	if membersErr != nil {
+		return membersErr
 	}
 
-	members, err := s.chatRepo.GetChatMembers(message.ChatID)
-	if err != nil {
-		return err
-	}
-	for _, userID := range members {
-		s.hub.SendToUser(userID, websocket.Message{
-			Type:    "new_message",
-			Content: message,
-		})
-	}
+	s.broadcastToMembers(members, websocket.Message{
+		Type:    "new_message",
+		Content: message,
+	})
 	return nil
 }
 
 func (s *MessageService) GetMessagesByChatID(chatID, viewerID uuid.UUID) ([]model.Message, error) {
-	exists, err := s.chatRepo.Exists(chatID)
-	if err != nil {
-		return nil, err
+	// Проверка существования и загрузка сообщений — параллельно
+	var msgs []model.Message
+	var exists bool
+	var msgsErr, existsErr error
+	var wg sync.WaitGroup
+
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		exists, existsErr = s.chatRepo.Exists(chatID)
+	}()
+	go func() {
+		defer wg.Done()
+		msgs, msgsErr = s.repo.GetMessagesByChatID(chatID)
+	}()
+	wg.Wait()
+
+	if existsErr != nil {
+		return nil, existsErr
 	}
 	if !exists {
 		return nil, errors.New("чат не существует")
 	}
-	msgs, err := s.repo.GetMessagesByChatID(chatID)
-	if err != nil {
-		return nil, err
+	if msgsErr != nil {
+		return nil, msgsErr
 	}
-	// Проставляем my_vote для текущего пользователя
+
+	// Голоса — параллельно с ничем (уже есть msgs)
 	if s.voteEnricher != nil && len(msgs) > 0 {
-		votes, err2 := s.voteEnricher.GetVotesForMessagesFixed(msgs, viewerID)
-		if err2 == nil {
+		votes, err := s.voteEnricher.GetVotesForMessagesFixed(msgs, viewerID)
+		if err == nil {
 			for i := range msgs {
 				if v, ok := votes[msgs[i].ID]; ok {
 					msgs[i].MyVote = v
@@ -107,17 +137,18 @@ func (s *MessageService) EditMessage(messageID, senderID uuid.UUID, content stri
 		return nil, err
 	}
 
-	// Уведомляем всех участников чата об изменении через WebSocket
-	members, err := s.chatRepo.GetChatMembers(msg.ChatID)
-	if err != nil {
-		return nil, err
-	}
-	for _, userID := range members {
-		s.hub.SendToUser(userID, websocket.Message{
+	// Получаем участников и рассылаем WS асинхронно — не блокируем ответ
+	go func() {
+		members, err := s.chatRepo.GetChatMembers(msg.ChatID)
+		if err != nil {
+			return
+		}
+		s.broadcastToMembers(members, websocket.Message{
 			Type:    "message_edited",
 			Content: msg,
 		})
-	}
+	}()
+
 	return msg, nil
 }
 
@@ -126,18 +157,22 @@ func (s *MessageService) MarkChatAsRead(chatID, userID uuid.UUID) error {
 		return err
 	}
 
-	members, _ := s.chatRepo.GetChatMembers(chatID)
-	for _, memberID := range members {
-		if memberID != userID {
-			s.hub.SendToUser(memberID, websocket.Message{
-				Type: "messages_read",
-				Content: map[string]interface{}{
-					"chat_id":   chatID,
-					"reader_id": userID,
-				},
-			})
+	// Рассылка — асинхронно, не блокируем ответ клиенту
+	go func() {
+		members, _ := s.chatRepo.GetChatMembers(chatID)
+		for _, memberID := range members {
+			if memberID != userID {
+				s.hub.SendToUser(memberID, websocket.Message{
+					Type: "messages_read",
+					Content: map[string]interface{}{
+						"chat_id":   chatID,
+						"reader_id": userID,
+					},
+				})
+			}
 		}
-	}
+	}()
+
 	return nil
 }
 
@@ -147,21 +182,33 @@ func (s *MessageService) DeleteMessage(messageID, senderID uuid.UUID) error {
 		return err
 	}
 
-	// Уведомляем всех участников чата об удалении через WebSocket
-	members, err := s.chatRepo.GetChatMembers(chatID)
-	if err != nil {
-		return err
-	}
-
-	for _, userID := range members {
-		s.hub.SendToUser(userID, websocket.Message{
+	// Рассылка — асинхронно
+	go func() {
+		members, err := s.chatRepo.GetChatMembers(chatID)
+		if err != nil {
+			return
+		}
+		s.broadcastToMembers(members, websocket.Message{
 			Type: "message_deleted",
 			Content: map[string]interface{}{
 				"message_id": messageID,
 				"chat_id":    chatID,
 			},
 		})
-	}
+	}()
 
 	return nil
+}
+
+// broadcastToMembers — рассылает WS-сообщение всем участникам параллельно
+func (s *MessageService) broadcastToMembers(members []uuid.UUID, msg websocket.Message) {
+	var wg sync.WaitGroup
+	for _, userID := range members {
+		wg.Add(1)
+		go func(uid uuid.UUID) {
+			defer wg.Done()
+			s.hub.SendToUser(uid, msg)
+		}(userID)
+	}
+	wg.Wait()
 }

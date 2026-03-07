@@ -158,7 +158,7 @@ func (r *FeedRepository) GetPersonalFeedWithPrefs(userID uuid.UUID, limit, offse
 		LEFT JOIN likes_agg la ON la.post_id = p.id
 		LEFT JOIN comments_agg ca ON ca.post_id = p.id
 		LEFT JOIN user_score us ON us.post_id = p.id
-		WHERE COALESCE(us.last_seen_at, '1970-01-01') < NOW() - INTERVAL '10 minutes'
+		WHERE (us.post_id IS NULL OR (us.view_count < 3 AND us.last_seen_at < NOW() - INTERVAL '1 hour'))
 		ORDER BY final_score DESC
 		LIMIT $5 OFFSET $6`
 
