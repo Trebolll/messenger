@@ -301,27 +301,73 @@
 <!-- Auth Modal -->
 <div id="auth-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
   <div id="auth-modal" class="w-full max-w-md rounded-3xl relative overflow-hidden transform scale-95 transition-all duration-300">
-    <button onclick="closeAuthModal()" class="absolute top-6 right-6 text-custom-muted hover:text-custom-main transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-    <div id="login-form-container" class="p-8 sm:p-12">
-      <div class="text-center mb-8"><span class="text-3xl font-bold text-custom-accent mb-2 block">λ</span><h2 class="text-2xl font-bold text-custom-main">Войти в λ</h2></div>
-      <form onsubmit="app.auth(event, 'login')" class="space-y-4">
-        <div id="login-error" class="hidden text-red-500 text-sm bg-red-50 p-3 rounded-xl border border-red-100"></div>
-        <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Email">
-        <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Пароль">
-        <button type="submit" class="w-full py-4 bg-custom-accent text-white font-semibold rounded-xl hover:opacity-90 transition">Войти</button>
-      </form>
-      <p class="mt-8 text-center text-custom-muted text-sm">Нет аккаунта? <button onclick="switchForm('register')" class="text-custom-accent font-semibold hover:underline">Зарегистрироваться</button></p>
-    </div>
-    <div id="register-form-container" class="p-8 sm:p-12 hidden">
-      <div class="text-center mb-8"><span class="text-3xl font-bold text-custom-accent mb-2 block">λ</span><h2 class="text-2xl font-bold text-custom-main">Создать аккаунт</h2></div>
-      <form onsubmit="app.auth(event, 'register')" class="space-y-4">
-        <div id="register-error" class="hidden text-red-500 text-sm bg-red-50 p-3 rounded-xl border border-red-100"></div>
-        <input type="text" name="username" required class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Имя пользователя">
-        <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Email">
-        <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Пароль (мин. 6 символов)">
-        <button type="submit" class="w-full py-4 bg-custom-accent text-white font-semibold rounded-xl hover:opacity-90 transition">Зарегистрироваться</button>
-      </form>
-      <p class="mt-8 text-center text-custom-muted text-sm">Уже есть аккаунт? <button onclick="switchForm('login')" class="text-custom-accent font-semibold hover:underline">Войти</button></p>
+    <button onclick="closeAuthModal()" class="absolute top-6 right-6 text-custom-muted hover:text-custom-main transition z-10">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+
+    <div id="smart-auth-container" class="p-8 sm:p-12">
+      <div class="text-center mb-6">
+        <span class="text-3xl font-bold text-custom-accent mb-2 block">λ</span>
+        <h2 id="auth-title" class="text-2xl font-bold text-custom-main">Добро пожаловать</h2>
+      </div>
+
+      <div id="auth-error" class="hidden text-red-400 text-sm bg-red-500/10 p-3 rounded-xl border border-red-500/20 mb-4"></div>
+
+      <!-- Вход: логин + пароль -->
+      <div id="auth-step-login" class="hidden space-y-3">
+        <input id="auth-login-input" type="text" autocomplete="username"
+               class="w-full px-4 py-3 rounded-xl border-none outline-none"
+               placeholder="Email или +7 999 123-45-67">
+        <input id="auth-password-input" type="password" autocomplete="current-password"
+               class="w-full px-4 py-3 rounded-xl border-none outline-none"
+               placeholder="Пароль">
+        <button id="auth-btn-login"
+                class="w-full py-4 bg-custom-accent text-white font-semibold rounded-xl hover:opacity-90 transition">
+          Войти
+        </button>
+        <p class="text-center text-sm text-custom-muted">Нет аккаунта?
+          <button id="auth-switch-to-register" class="text-custom-accent font-semibold hover:underline">Зарегистрироваться</button>
+        </p>
+      </div>
+
+      <!-- Регистрация: все данные сразу -->
+      <div id="auth-step-register" class="hidden space-y-3">
+        <div class="overflow-y-auto max-h-[55vh] space-y-3 pr-1">
+          <input id="reg-login"     type="text"     class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Email или +7 999 123-45-67 *">
+          <input id="reg-username"  type="text"     class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Имя пользователя *">
+          <input id="reg-fullname"  type="text"     class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Полное имя (необязательно)">
+          <input id="reg-birthdate" type="date"     class="w-full px-4 py-3 rounded-xl border-none outline-none text-custom-muted">
+          <input id="reg-location"  type="text"     class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Город (необязательно)">
+          <input id="reg-extra"     type="text"     class="w-full px-4 py-3 rounded-xl border-none outline-none" id="reg-extra" placeholder="Телефон или Email (необязательно)">
+          <input id="reg-password"  type="password" class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Пароль (мин. 6 символов) *">
+          <input id="reg-password2" type="password" class="w-full px-4 py-3 rounded-xl border-none outline-none" placeholder="Повторите пароль *">
+        </div>
+        <button id="auth-btn-send-code"
+                class="w-full py-4 bg-custom-accent text-white font-semibold rounded-xl hover:opacity-90 transition">
+          Получить код подтверждения
+        </button>
+        <p class="text-center text-sm text-custom-muted">Уже есть аккаунт?
+          <button id="auth-switch-to-login" class="text-custom-accent font-semibold hover:underline">Войти</button>
+        </p>
+      </div>
+
+      <!-- Ввод кода -->
+      <div id="auth-step-code" class="hidden space-y-3">
+        <p class="text-sm text-custom-muted text-center">Код отправлен на <span id="auth-dest-display" class="text-custom-main font-medium"></span></p>
+        <input id="auth-code-input" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
+               class="w-full px-4 py-3 rounded-xl border-none outline-none text-center text-2xl tracking-[0.5em] font-mono"
+               placeholder="••••••">
+        <button id="auth-btn-verify"
+                class="w-full py-4 bg-custom-accent text-white font-semibold rounded-xl hover:opacity-90 transition opacity-50 cursor-not-allowed"
+                disabled>
+          Подтвердить и создать аккаунт
+        </button>
+        <button id="auth-btn-resend" class="w-full text-sm text-custom-muted hover:text-custom-accent transition text-center">
+          Отправить повторно
+        </button>
+        <button id="auth-back-from-code" class="w-full text-sm text-custom-muted hover:text-custom-main transition text-center">← Назад</button>
+      </div>
+
     </div>
   </div>
 </div>

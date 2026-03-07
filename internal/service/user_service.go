@@ -5,6 +5,7 @@ import (
 	"messenger/internal/model"
 	_ "messenger/internal/repository"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,7 +13,7 @@ import (
 )
 
 type UserRepository interface {
-	GetByUsernameAndEmail(username string, email string) (*model.User, error)
+	GetByUsernameAndEmail(username, email, phone string) (*model.User, error)
 	GetByEmail(email string) (*model.User, error)
 	GetById(id uuid.UUID) (*model.User, error)
 	Create(u *model.User) error
@@ -36,7 +37,7 @@ func NewUserService(repo UserRepository, wall WallManager) *UserService {
 }
 
 func (s *UserService) CreateUser(u *model.User) error {
-	if !isValidEmail(u.Email) {
+	if u.Email != "" && !isValidEmail(u.Email) {
 		return errors.New("неверный формат электронной почты, формат должен быть в виде example@example.com")
 	}
 
@@ -44,12 +45,21 @@ func (s *UserService) CreateUser(u *model.User) error {
 		return errors.New("имя пользователя должно содержать от 3 до 50 символов")
 	}
 
-	existingUser, _ := s.repo.GetByUsernameAndEmail(u.Username, u.Email)
+	existingUser, _ := s.repo.GetByUsernameAndEmail(u.Username, u.Email, u.Phone)
 	if existingUser != nil {
-		return errors.New("пользователь с таким именем или таким адресом электронной почты пользователя уже существует")
+		if existingUser.Username == u.Username {
+			return errors.New("имя пользователя уже занято")
+		}
+		if u.Email != "" && existingUser.Email == u.Email {
+			return errors.New("пользователь с таким адресом электронной почты уже существует")
+		}
+		if u.Phone != "" && existingUser.Phone == u.Phone {
+			return errors.New("пользователь с таким номером телефона уже существует")
+		}
+		return errors.New("пользователь с такими данными уже существует")
 	}
 
-	if len(u.Password) < 6 {
+	if len(u.Password) < 6 && u.Password != "" {
 		return errors.New("пароль должен содержать не менее 6 символов")
 	}
 
@@ -182,4 +192,136 @@ func (s *UserService) UpdateAvatarUrl(userID uuid.UUID, url string) error {
 
 func (s *UserService) GetUserByID(id uuid.UUID) (*model.User, error) {
 	return s.repo.GetById(id)
+}
+
+// GetOrCreateByPhone — ищет юзера по телефону, если нет — создаёт нового.
+// username нужен только при создании; если пустой — используем номер как временное имя.
+func (s *UserService) GetOrCreateByPhone(phone, username string) (*model.User, error) {
+	// Интерфейс UserRepository нужно расширить — используем type assertion
+	type phoneRepo interface {
+		GetByPhone(phone string) (*model.User, error)
+		CreateByPhone(phone, username string) (*model.User, error)
+	}
+	pr, ok := s.repo.(phoneRepo)
+	if !ok {
+		return nil, errors.New("репозиторий не поддерживает авторизацию по телефону")
+	}
+
+	user, err := pr.GetByPhone(phone)
+	if err != nil {
+		return nil, err
+	}
+
+	// Юзер уже есть — логин
+	if user != nil {
+		user.Password = ""
+		return user, nil
+	}
+
+	// Новый юзер — регистрация
+	if username == "" {
+		// Временное имя из номера телефона пока пользователь не заполнит профиль
+		username = "user_" + phone[len(phone)-4:]
+	}
+	if len(username) < 3 || len(username) > 50 {
+		return nil, errors.New("имя пользователя должно содержать от 3 до 50 символов")
+	}
+
+	// Проверяем уникальность username
+	existing, _ := s.repo.GetByUsernameAndEmail(username, "", "")
+	if existing != nil {
+		username = username + "_" + phone[len(phone)-4:]
+	}
+
+	user, err = pr.CreateByPhone(phone, username)
+	if err != nil {
+		return nil, err
+	}
+
+	// Инициализируем стену
+	_ = s.wall.InitWall(user.ID)
+	return user, nil
+}
+
+// GetOrCreateByEmail — ищет юзера по email, если нет — создаёт без пароля.
+func (s *UserService) GetOrCreateByEmail(email, username string) (*model.User, error) {
+	user, err := s.repo.GetByEmail(email)
+	if err == nil && user != nil {
+		user.Password = ""
+		return user, nil
+	}
+
+	// Новый пользователь
+	if username == "" {
+		username = strings.Split(email, "@")[0]
+	}
+	if len(username) < 3 {
+		username = username + "_user"
+	}
+
+	// Проверяем уникальность username
+	if existing, _ := s.repo.GetByUsernameAndEmail(username, "", ""); existing != nil {
+		username = username + "_" + email[:3]
+	}
+
+	u := &model.User{Email: email, Username: username}
+	if err := s.repo.Create(u); err != nil {
+		return nil, err
+	}
+	_ = s.wall.InitWall(u.ID)
+	return u, nil
+}
+
+// ExistsByLogin — проверяет существует ли юзер по email или телефону
+func (s *UserService) ExistsByLogin(dest, method string) (bool, error) {
+	var user *model.User
+	var err error
+	if method == "phone" {
+		type phoneRepo interface {
+			GetByPhone(string) (*model.User, error)
+		}
+		if pr, ok := s.repo.(phoneRepo); ok {
+			user, err = pr.GetByPhone(dest)
+		}
+	} else {
+		user, err = s.repo.GetByEmail(dest)
+	}
+	if err != nil {
+		return false, err
+	}
+	return user != nil, nil
+}
+
+// LoginByPhone — вход по номеру телефона и паролю
+func (s *UserService) LoginByPhone(phone, password string) (*model.User, error) {
+	type phoneRepo interface {
+		GetByPhone(string) (*model.User, error)
+	}
+	pr, ok := s.repo.(phoneRepo)
+	if !ok {
+		return nil, errors.New("не поддерживается")
+	}
+	user, err := pr.GetByPhone(phone)
+	if err != nil || user == nil {
+		return nil, errors.New("неверные данные")
+	}
+	if !checkPasswordHash(password, user.Password) {
+		return nil, errors.New("неверные данные")
+	}
+	user.Password = ""
+	return user, nil
+}
+
+// SetBirthDate — устанавливает дату рождения после регистрации
+func (s *UserService) SetBirthDate(userID uuid.UUID, dateStr string) error {
+	t, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return errors.New("неверный формат даты, ожидается YYYY-MM-DD")
+	}
+	existing, err := s.repo.GetById(userID)
+	if err != nil {
+		return err
+	}
+	existing.BirthDate = &t
+	return s.repo.UpdateProfile(existing)
 }

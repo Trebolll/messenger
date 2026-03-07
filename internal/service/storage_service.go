@@ -29,8 +29,17 @@ func NewStorageService(endpoint, accessKey, secretKey, bucket string) (*StorageS
 	}
 
 	exists, err := client.BucketExists(context.Background(), bucket)
-	if err != nil || !exists {
-		return nil, fmt.Errorf("bucket %s не найден", bucket)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка проверки бакета: %w", err)
+	}
+	if !exists {
+		err = client.MakeBucket(context.Background(), bucket, minio.MakeBucketOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("не удалось создать бакет %s: %w", bucket, err)
+		}
+		// Устанавливаем публичный доступ на чтение (опционально, но полезно для веба)
+		policy := fmt.Sprintf(`{"Version":"2012-10-17","Statement":[{"Action":["s3:GetObject"],"Effect":"Allow","Principal":{"AWS":["*"]},"Resource":["arn:aws:s3:::%s/*"],"Sid":""}]}`, bucket)
+		_ = client.SetBucketPolicy(context.Background(), bucket, policy)
 	}
 
 	return &StorageService{

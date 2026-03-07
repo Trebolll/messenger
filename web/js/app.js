@@ -102,33 +102,19 @@ class AlphaApp {
 
   // ── Авторизация ────────────────────────────────────────────────────────
 
-  async auth(event, type) {
-    event.preventDefault();
-    const form    = event.target;
-    const data    = Object.fromEntries(new FormData(form).entries());
-    const errorEl = document.getElementById(`${type}-error`);
-    try {
-      const response = await fetch(`/api/${type}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Ошибка авторизации');
+  // auth() оставлен для обратной совместимости, основная логика в Auth модуле (app.js низ файла)
+  auth(event, type) { event.preventDefault(); }
 
-      this.token       = result.token;
-      this.currentUser = result.user || { email: data.email, username: data.username || data.email.split('@')[0] };
-      localStorage.setItem('alpha_token', this.token);
-      localStorage.setItem('alpha_user', JSON.stringify(this.currentUser));
-
-      this.notify('Успешно!', 'success');
-      closeAuthModal();
-      this.showChat();
-      document.dispatchEvent(new CustomEvent('app:authenticated'));
-    } catch (err) {
-      errorEl.textContent = err.message;
-      errorEl.classList.remove('hidden');
-    }
+  // Вызывается Auth модулем после успешной авторизации
+  onAuthSuccess(token, user) {
+    this.token       = token;
+    this.currentUser = user;
+    localStorage.setItem('alpha_token', token);
+    localStorage.setItem('alpha_user', JSON.stringify(user));
+    this.notify('Добро пожаловать!', 'success');
+    closeAuthModal();
+    this.showChat();
+    document.dispatchEvent(new CustomEvent('app:authenticated'));
   }
 
   logout() {
@@ -163,3 +149,200 @@ class AlphaApp {
 
 // ── Глобальный экземпляр ───────────────────────────────────────────────────
 new AlphaApp();
+// ── Auth модуль ────────────────────────────────────────────────────────────────
+
+const Auth = (() => {
+  let _login  = '';
+  let _method = '';
+  let _regData = {};
+
+  function _el(id)   { return document.getElementById(id); }
+  function _show(id) { _el(id)?.classList.remove('hidden'); }
+  function _hide(id) { _el(id)?.classList.add('hidden'); }
+  function _err(msg) {
+    const el = _el('auth-error');
+    if (!el) return;
+    el.textContent = msg;
+    msg ? _show('auth-error') : _hide('auth-error');
+  }
+  function _step(name) {
+    ['login','register','code'].forEach(s => _hide(`auth-step-${s}`));
+    _show(`auth-step-${name}`);
+    _err('');
+  }
+
+  // Вызывается из openAuthModal('login') или openAuthModal('register')
+  function open(mode) {
+    _step(mode === 'register' ? 'register' : 'login');
+    if (mode === 'login') _el('auth-login-input')?.focus();
+    else                  _el('reg-login')?.focus();
+  }
+
+  // ── Вход ────────────────────────────────────────────────────────────────
+
+  async function submitLogin() {
+    const login    = _el('auth-login-input')?.value?.trim();
+    const password = _el('auth-password-input')?.value;
+    if (!login)    { _err('Введите email или телефон'); return; }
+    if (!password) { _err('Введите пароль'); return; }
+    _err('');
+    const btn = _el('auth-btn-login');
+    btn.disabled = true; btn.textContent = 'Вход...';
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Неверный логин или пароль');
+      window.app.onAuthSuccess(data.token, data.user);
+    } catch (e) {
+      _err(e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Войти';
+    }
+  }
+
+  // ── Регистрация: валидация и отправка кода ───────────────────────────────
+
+  async function submitRegister() {
+    const login     = _el('reg-login')?.value?.trim();
+    const username  = _el('reg-username')?.value?.trim();
+    const fullName  = _el('reg-fullname')?.value?.trim();
+    const birthDate = _el('reg-birthdate')?.value;
+    const location  = _el('reg-location')?.value?.trim();
+    const extra     = _el('reg-extra')?.value?.trim();
+    const password  = _el('reg-password')?.value;
+    const password2 = _el('reg-password2')?.value;
+
+    if (!login)             { _err('Введите email или телефон'); return; }
+    if (!username)          { _err('Введите имя пользователя'); return; }
+    if (username.length < 3){ _err('Имя пользователя минимум 3 символа'); return; }
+    if (!password)          { _err('Введите пароль'); return; }
+    if (password.length < 6){ _err('Пароль минимум 6 символов'); return; }
+    if (password !== password2){ _err('Пароли не совпадают'); return; }
+    _err('');
+
+    _regData = { username, full_name: fullName, birth_date: birthDate, location, extra_contact: extra, password, password2 };
+
+    const btn = _el('auth-btn-send-code');
+    btn.disabled = true; btn.textContent = 'Отправка кода...';
+    try {
+      const res = await fetch('/api/auth/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.exists) { _err('Аккаунт уже существует — войдите'); return; }
+        throw new Error(data.error || 'Ошибка отправки');
+      }
+      _method = data.method;
+      _login  = data.login;
+      _el('auth-dest-display').textContent = _login;
+      _el('auth-code-input').value = '';
+      _setVerifyReady(false);
+      _step('code');
+      _el('auth-code-input')?.focus();
+    } catch (e) {
+      _err(e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Получить код подтверждения';
+    }
+  }
+
+  // ── Код подтверждения ────────────────────────────────────────────────────
+
+  function onCodeInput(val) {
+    _setVerifyReady(val.replace(/\D/g, '').length === 6);
+    if (val.replace(/\D/g, '').length === 6) submitCode();
+  }
+
+  function _setVerifyReady(ready) {
+    const btn = _el('auth-btn-verify');
+    if (!btn) return;
+    btn.disabled = !ready;
+    btn.classList.toggle('opacity-50', !ready);
+    btn.classList.toggle('cursor-not-allowed', !ready);
+  }
+
+  async function submitCode() {
+    const code = _el('auth-code-input')?.value?.replace(/\D/g, '');
+    if (!code || code.length !== 6) { _err('Введите 6-значный код'); return; }
+    _err('');
+    const btn = _el('auth-btn-verify');
+    btn.disabled = true; btn.textContent = 'Проверка...';
+    try {
+      const verifyRes = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login: _login, code })
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) throw new Error(verifyData.error || 'Неверный код');
+
+      const regRes = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm_token: verifyData.confirm_token, login: _login, ..._regData })
+      });
+      const regData = await regRes.json();
+      if (!regRes.ok) throw new Error(regData.error || 'Ошибка регистрации');
+      window.app.onAuthSuccess(regData.token, regData.user);
+    } catch (e) {
+      _err(e.message);
+      _setVerifyReady(true);
+    } finally {
+      btn.textContent = 'Подтвердить и создать аккаунт';
+    }
+  }
+
+  async function resendCode() {
+    const btn = _el('auth-btn-resend');
+    btn.disabled = true; btn.textContent = 'Отправка...';
+    _el('auth-code-input').value = '';
+    _setVerifyReady(false);
+    try {
+      const res = await fetch('/api/auth/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login: _login })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      btn.textContent = 'Отправлено ✓';
+      setTimeout(() => { btn.textContent = 'Отправить повторно'; btn.disabled = false; }, 60000);
+    } catch(e) {
+      _err(e.message);
+      btn.disabled = false; btn.textContent = 'Отправить повторно';
+    }
+  }
+
+  function _bind() {
+    _el('auth-btn-login')          ?.addEventListener('click',   submitLogin);
+    _el('auth-password-input')     ?.addEventListener('keydown', e => e.key === 'Enter' && submitLogin());
+    _el('auth-login-input')        ?.addEventListener('keydown', e => e.key === 'Enter' && _el('auth-password-input')?.focus());
+    _el('auth-btn-send-code')      ?.addEventListener('click',   submitRegister);
+    _el('auth-switch-to-login')    ?.addEventListener('click',   () => _step('login'));
+    _el('auth-switch-to-register') ?.addEventListener('click',   () => _step('register'));
+    _el('auth-code-input')         ?.addEventListener('input',   e => onCodeInput(e.target.value));
+    _el('auth-btn-verify')         ?.addEventListener('click',   submitCode);
+    _el('auth-btn-resend')         ?.addEventListener('click',   resendCode);
+    _el('auth-back-from-code')     ?.addEventListener('click',   () => _step('register'));
+  }
+
+  document.addEventListener('DOMContentLoaded', _bind);
+
+  return { open };
+})();
+
+// openAuthModal вызывается из HTML кнопок
+function openAuthModal(mode = 'login') {
+  const overlay = document.getElementById('auth-overlay');
+  const modal   = document.getElementById('auth-modal');
+  overlay.classList.remove('hidden');
+  setTimeout(() => { overlay.classList.add('opacity-100'); modal.classList.remove('scale-95'); }, 10);
+  Auth.open(mode);
+}
