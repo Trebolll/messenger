@@ -1,6 +1,6 @@
 /* ══ Left panel (chats + feed) ══ */
 .left-panel {
-  width: 300px;
+  width: 200px;
   flex-shrink: 0;
   transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -84,7 +84,7 @@ body.theme-twilight .nav-logout-btn:hover { background: #2d1a2a; }
 
 /* ══ Chats sidebar (legacy compat) ══ */
 .chats-sidebar {
-  width: 300px;
+  width: 200px;
   overflow: hidden;
   flex-shrink: 0;
   transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);

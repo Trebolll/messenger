@@ -17,7 +17,7 @@ function toggleWall() {
 async function openWall(userId = null) {
     const overlay = document.getElementById('wall-overlay');
     const modal   = document.getElementById('wall-modal');
-    
+
     // Сбрасываем вкладку при открытии
     _wallSelectedFiles = [];
     updateWallMediaPreview();
@@ -33,7 +33,7 @@ async function openWall(userId = null) {
     const editProfileBtn = document.getElementById('wall-settings-btn');
     const editBioBtn     = document.getElementById('edit-bio-btn');
     const postInputContainer = document.getElementById('wall-post-creator');
-    
+
     if (editProfileBtn) editProfileBtn.style.display = isMe ? 'flex' : 'none';
     if (editBioBtn)     editBioBtn.style.display     = isMe ? 'block' : 'none';
     if (postInputContainer) {
@@ -44,7 +44,7 @@ async function openWall(userId = null) {
     // Очищаем начальные данные
     document.getElementById('wall-username').textContent = isMe ? (window.app.currentUser?.username || 'User') : 'Загрузка...';
     document.getElementById('wall-status').textContent   = isMe ? (window.app.currentUser?.status || '') : '';
-    
+
     const avatarEl = document.getElementById('wall-avatar');
     if (isMe) {
         setAvatarEl(avatarEl, window.app.currentUser);
@@ -71,7 +71,7 @@ async function openWall(userId = null) {
 function closeWall() {
     const overlay = document.getElementById('wall-overlay');
     const modal   = document.getElementById('wall-modal');
-    
+
     if (_wallPostsWS) {
         _wallPostsWS.close();
         _wallPostsWS = null;
@@ -100,12 +100,12 @@ async function loadWallPosts(userId) {
             }
         });
         const result = await response.json();
-        
+
         // Обновляем данные владельца стены (Username, Avatar)
         if (result.wall) {
             const uname = result.wall.username || (isMe ? window.app.currentUser?.username : 'User');
             const status = result.wall.status || (isMe ? window.app.currentUser?.status : '');
-            
+
             document.getElementById('wall-username').textContent = uname;
             document.getElementById('wall-status').textContent   = status;
 
@@ -184,10 +184,10 @@ async function loadWallPosts(userId) {
             const mediaCount = (result.media || []).length;
             const mediaCountEl = document.getElementById('wall-media-count');
             if (mediaCountEl) mediaCountEl.textContent = mediaCount > 0 ? `${mediaCount} файлов` : 'фото и видео';
-            
+
             const avatarEl = document.getElementById('wall-avatar');
             const avatarUrl = result.wall.avatar_url || (isMe ? window.app.currentUser?.avatar_url : '');
-            
+
             if (avatarUrl) {
                 avatarEl.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover">`;
             } else {
@@ -224,7 +224,7 @@ function renderWallPostsFeed(posts, isMe) {
         const hasNonMedia = (p.attachments || []).some(a => !(a.mime_type || '').match(/^(image|video)\//));
         return hasText || hasNonMedia;
     });
-    
+
     if (!feedPosts || feedPosts.length === 0) {
         feed.innerHTML = `
             <div class="text-center py-10 opacity-50">
@@ -291,11 +291,11 @@ function renderAttachmentHtml(postId, a) {
 
 function connectWallPostsWS(userId) {
     if (_wallPostsWS) _wallPostsWS.close();
-    
+
     const token = localStorage.getItem('alpha_token') || '';
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     _wallPostsWS = new WebSocket(`${proto}://${location.host}/ws/wall-posts/${userId}?token=${token}`);
-    
+
     _wallPostsWS.onmessage = (e) => {
         const msg = JSON.parse(e.data);
         const feed = document.getElementById('wall-feed');
@@ -322,33 +322,33 @@ function connectWallPostsWS(userId) {
                 loadActivityFeed();
             }
         } else if (msg.type === 'update_post_like') {
-             const syncIds = [`post-${msg.post_id}`, `activity-post-${msg.post_id}`];
-             syncIds.forEach(id => {
-                 const card = document.getElementById(id);
-                 if (card) {
-                     const span = card.querySelector('.like-count, span');
-                     if (span) span.textContent = msg.likes_count || '';
-                 }
-             });
+            const syncIds = [`post-${msg.post_id}`, `activity-post-${msg.post_id}`];
+            syncIds.forEach(id => {
+                const card = document.getElementById(id);
+                if (card) {
+                    const span = card.querySelector('.like-count, span');
+                    if (span) span.textContent = msg.likes_count || '';
+                }
+            });
         } else if (msg.type === 'update_post_comment_count') {
-             const btns = document.querySelectorAll(`button[onclick*="${msg.chat_id}"]`);
-             btns.forEach(btn => {
-                 const card = btn.closest('.wall-post-card, .activity-post-card');
-                 if (card) {
-                     const span = card.querySelector('.comment-count, span:last-child');
-                     if (span) {
-                         if (card.classList.contains('wall-post-card')) {
-                             span.textContent = `${msg.comments_count} комментариев`;
-                         } else {
-                             span.textContent = msg.comments_count;
-                         }
-                     }
-                 }
-             });
+            const btns = document.querySelectorAll(`button[onclick*="${msg.chat_id}"]`);
+            btns.forEach(btn => {
+                const card = btn.closest('.wall-post-card, .activity-post-card');
+                if (card) {
+                    const span = card.querySelector('.comment-count, span:last-child');
+                    if (span) {
+                        if (card.classList.contains('wall-post-card')) {
+                            span.textContent = `${msg.comments_count} комментариев`;
+                        } else {
+                            span.textContent = msg.comments_count;
+                        }
+                    }
+                }
+            });
         } else if (msg.type === 'update_wall_info') {
-             if (String(_wallUserId) === String(userId)) {
-                 renderWallBio(msg.bio, String(userId) === String(window.app.currentUser?.id));
-             }
+            if (String(_wallUserId) === String(userId)) {
+                renderWallBio(msg.bio, String(userId) === String(window.app.currentUser?.id));
+            }
         }
     };
 
@@ -360,7 +360,7 @@ function connectWallPostsWS(userId) {
 async function publishWallPost() {
     const input = document.getElementById('wall-post-input');
     const content = input.value.trim();
-    
+
     if (!content && _wallSelectedFiles.length === 0) return;
 
     try {
@@ -380,7 +380,7 @@ async function publishWallPost() {
             const uploadPromises = _wallSelectedFiles.map(file => {
                 const formData = new FormData();
                 formData.append('file', file);
-                
+
                 return fetch(`/api/wall/posts/${post.id}/attachments`, {
                     method: 'POST',
                     headers: {
@@ -1040,6 +1040,26 @@ async function loadActivityFeed() {
     const container = document.getElementById('activity-feed-container');
     if (!container) return;
 
+    // Snap-скролл колёсиком — по одному посту
+    if (!container._wheelListenerAdded) {
+        container._wheelListenerAdded = true;
+        let isScrolling = false;
+        container.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            if (isScrolling) return;
+            isScrolling = true;
+            const posts = container.querySelectorAll('.activity-post-card');
+            if (!posts.length) { isScrolling = false; return; }
+            const postHeight = container.clientHeight;
+            const currentIndex = Math.round(container.scrollTop / postHeight);
+            const nextIndex = e.deltaY > 0
+                ? Math.min(currentIndex + 1, posts.length - 1)
+                : Math.max(currentIndex - 1, 0);
+            container.scrollTo({ top: nextIndex * postHeight, behavior: 'smooth' });
+            setTimeout(() => { isScrolling = false; }, 500);
+        }, { passive: false });
+    }
+
     try {
         const response = await fetch('/api/wall/feed', {
             headers: {
@@ -1048,7 +1068,7 @@ async function loadActivityFeed() {
         });
         if (!response.ok) throw new Error('Failed to load feed');
         const posts = await response.json();
-        
+
         if (!posts || posts.length === 0) {
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-full py-20 opacity-40 select-none">
@@ -1068,42 +1088,56 @@ async function loadActivityFeed() {
 function renderActivityPostHtml(p) {
     const isMe = String(p.user_id) === String(window.app.currentUser?.id);
     const hasAttachments = p.attachments && p.attachments.length > 0;
-    
+    const openAction = hasAttachments
+        ? `openMediaDetail('${p.id}', '${p.attachments[0].url}', ${(p.attachments[0].mime_type || '').startsWith('video/')})`
+        : `openPostChat('${p.id}', '${p.chat_id || ''}')`;
+
     return `
-        <div class="activity-post-card rounded-[24px] flex flex-col group relative overflow-hidden bg-custom-sidebar border border-white/5 hover:border-custom-accent/30 transition-all shadow-sm" id="activity-post-${p.id}">
+        <div class="activity-post-card group relative overflow-hidden bg-black" 
+             id="activity-post-${p.id}"
+             style="scroll-snap-align: start; flex-shrink: 0; width: 100%; height: 100%;">
            ${hasAttachments ? `
-              <div class="aspect-square w-full overflow-hidden">
+              <div class="w-full h-full overflow-hidden">
                  ${renderActivityAttachmentHtml(p.id, p.attachments[0])}
-                 ${p.attachments.length > 1 ? `<div class="absolute top-3 right-3 bg-black/50 backdrop-blur-md text-white text-[9px] px-2 py-1 rounded-full z-10">+${p.attachments.length - 1}</div>` : ''}
+                 ${p.attachments.length > 1 ? `<div class="absolute top-4 right-4 bg-black/50 backdrop-blur-md text-white text-[10px] px-2 py-1 rounded-full z-10">+${p.attachments.length - 1}</div>` : ''}
               </div>
            ` : `
-              <div class="aspect-square w-full p-4 flex items-center justify-center text-center bg-custom-sidebar/50">
-                 <div class="text-[11px] text-custom-main leading-relaxed line-clamp-6 font-medium italic">${p.content || 'Запись без текста'}</div>
+              <div class="w-full h-full p-10 flex items-center justify-center text-center bg-custom-sidebar">
+                 <div class="text-lg text-custom-main leading-relaxed font-medium">${p.content || 'Запись без текста'}</div>
               </div>
            `}
            
-           <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-              <div class="flex items-center gap-2 mb-1">
-                 <div class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center font-bold text-[8px] overflow-hidden border border-white/20">
-                    ${p.author_avatar ? `<img src="${p.author_avatar}" class="w-full h-full object-cover">` : (p.author_name ? p.author_name[0] : '?')}
+           <!-- Gradient overlay -->
+           <div class="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/85 to-transparent pointer-events-none"></div>
+
+           <!-- Author + actions -->
+           <div class="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between z-10">
+              <div class="flex-1 min-w-0 pr-4">
+                 <div class="flex items-center gap-2 mb-2">
+                    <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-xs overflow-hidden border-2 border-white/30 flex-shrink-0">
+                       ${p.author_avatar ? `<img src="${p.author_avatar}" class="w-full h-full object-cover">` : (p.author_name ? p.author_name[0] : '?')}
+                    </div>
+                    <span class="text-sm font-bold text-white drop-shadow truncate">${p.author_name}</span>
                  </div>
-                 <span class="text-[10px] font-bold text-white truncate">${p.author_name}</span>
+                 ${p.content && hasAttachments ? `<p class="text-xs text-white/80 line-clamp-2 drop-shadow">${p.content}</p>` : ''}
+                 <p class="text-[10px] text-white/40 mt-1">${new Date(p.created_at).toLocaleDateString()}</p>
               </div>
-              <div class="flex gap-3 text-white/80">
-                 <div class="flex items-center gap-1 text-[9px]">
-                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-                    <span>${p.likes_count || 0}</span>
+              <div class="flex flex-col items-center gap-5 flex-shrink-0">
+                 <div class="flex flex-col items-center gap-1 cursor-pointer">
+                    <div class="w-11 h-11 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors">
+                       <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                    </div>
+                    <span class="text-[11px] text-white/70 font-medium">${p.likes_count || 0}</span>
                  </div>
-                 <div class="flex items-center gap-1 text-[9px]">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                    <span>${p.comments_count || 0}</span>
+                 <div class="flex flex-col items-center gap-1 cursor-pointer" onclick="${openAction}">
+                    <div class="w-11 h-11 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors">
+                       <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                    </div>
+                    <span class="text-[11px] text-white/70 font-medium">${p.comments_count || 0}</span>
                  </div>
-              </div>
-              <button onclick="${hasAttachments ? `openMediaDetail('${p.id}', '${p.attachments[0].url}', ${(p.attachments[0].mime_type || '').startsWith('video/')})` : `openPostChat('${p.id}', '${p.chat_id || ''}')`}" class="absolute inset-0 z-0"></button>
-              <div class="absolute top-3 left-3 opacity-60 pointer-events-none">
-                  <p class="text-[8px] text-white/50">${new Date(p.created_at).toLocaleDateString()}</p>
               </div>
            </div>
+           <button onclick="${openAction}" class="absolute inset-0 z-0"></button>
         </div>
     `;
 }
