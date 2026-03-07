@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"messenger/internal/model"
+	"sync"
 
 	"github.com/google/uuid"
 )
@@ -55,6 +56,8 @@ func (r *ChatRepository) GetUserChats(userID uuid.UUID) ([]model.ChatListItem, e
 	defer rows.Close()
 
 	var chats []model.ChatListItem
+	var groupIDs []uuid.UUID
+
 	for rows.Next() {
 		var chat model.ChatListItem
 		var userStatus sql.NullString
@@ -65,6 +68,7 @@ func (r *ChatRepository) GetUserChats(userID uuid.UUID) ([]model.ChatListItem, e
 		chat.UserStatus = userStatus.String
 		if chat.Type == model.TypeGroup {
 			chat.IsGroup = true
+			groupIDs = append(groupIDs, chat.ID)
 		}
 		if creatorID.String != "" {
 			uid, err := uuid.Parse(creatorID.String)
@@ -75,17 +79,78 @@ func (r *ChatRepository) GetUserChats(userID uuid.UUID) ([]model.ChatListItem, e
 		chats = append(chats, chat)
 	}
 
-	// Для групп подгружаем участников
-	for i := range chats {
-		if chats[i].IsGroup {
-			members, err := r.GetMembersInfo(chats[i].ID)
-			if err == nil {
-				chats[i].Members = members
+	// Загружаем участников всех групп одним батч-запросом параллельно с возвратом
+	if len(groupIDs) > 0 {
+		membersMap, err := r.getMembersBatch(groupIDs)
+		if err == nil {
+			for i := range chats {
+				if chats[i].IsGroup {
+					chats[i].Members = membersMap[chats[i].ID]
+				}
 			}
 		}
 	}
 
 	return chats, nil
+}
+
+// getMembersBatch — загружает участников всех групп одним запросом вместо N
+func (r *ChatRepository) getMembersBatch(chatIDs []uuid.UUID) (map[uuid.UUID][]model.ChatMemberInfo, error) {
+	if len(chatIDs) == 0 {
+		return nil, nil
+	}
+
+	// Строим ANY($1::uuid[]) плейсхолдер
+	ids := make([]string, len(chatIDs))
+	for i, id := range chatIDs {
+		ids[i] = id.String()
+	}
+
+	query := `
+		SELECT cm.chat_id, u.id, u.username, COALESCE(u.full_name, ''), COALESCE(u.avatar_url, ''), COALESCE(u.status, '')
+		FROM chat_members cm
+		JOIN users u ON u.id = cm.user_id
+		WHERE cm.chat_id = ANY($1::uuid[])
+		ORDER BY cm.chat_id, cm.joined_at ASC`
+
+	// Конвертируем в формат для ANY
+	chatIDStrs := make([]interface{}, len(chatIDs))
+	for i, id := range chatIDs {
+		chatIDStrs[i] = id
+	}
+
+	// Используем pq.Array или передаём напрямую через интерфейс
+	rows, err := r.db.Query(query, pguuidArray(chatIDs))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[uuid.UUID][]model.ChatMemberInfo, len(chatIDs))
+	for rows.Next() {
+		var chatID uuid.UUID
+		var m model.ChatMemberInfo
+		if err := rows.Scan(&chatID, &m.ID, &m.Username, &m.FullName, &m.AvatarUrl, &m.Status); err != nil {
+			return nil, err
+		}
+		result[chatID] = append(result[chatID], m)
+	}
+	return result, nil
+}
+
+// pguuidArray конвертирует []uuid.UUID в строку для ANY($1::uuid[])
+func pguuidArray(ids []uuid.UUID) string {
+	if len(ids) == 0 {
+		return "{}"
+	}
+	s := "{"
+	for i, id := range ids {
+		if i > 0 {
+			s += ","
+		}
+		s += id.String()
+	}
+	return s + "}"
 }
 
 // GetMembersInfo возвращает краткую информацию об участниках чата
@@ -112,6 +177,23 @@ func (r *ChatRepository) GetMembersInfo(chatID uuid.UUID) ([]model.ChatMemberInf
 		members = append(members, m)
 	}
 	return members, nil
+}
+
+// GetChatMembersAndExistence — параллельно проверяет существование чата и получает участников.
+// Используется в message_service вместо двух последовательных запросов.
+func (r *ChatRepository) GetChatMembersAndExistence(chatID uuid.UUID) (members []uuid.UUID, exists bool, err error) {
+	var wg sync.WaitGroup
+	var membersErr error
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		members, membersErr = r.GetChatMembers(chatID)
+		exists = len(members) > 0
+	}()
+
+	wg.Wait()
+	return members, exists, membersErr
 }
 
 // UpdateGroupAvatarUrl обновляет аватар группового чата
@@ -212,7 +294,6 @@ func (r *ChatRepository) CreateGroupChat(name string, userIDs []uuid.UUID) (*mod
 	chat.Type = model.TypeGroup
 	chat.Name = name
 
-	// Первый в списке — создатель
 	var creatorID *uuid.UUID
 	if len(userIDs) > 0 {
 		id := userIDs[0]

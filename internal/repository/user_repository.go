@@ -18,8 +18,18 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 }
 
 func (r *UserRepository) Create(u *model.User) error {
-	query := `INSERT INTO users(username, email, password) VALUES($1,$2,$3) RETURNING id;`
-	return r.db.QueryRow(query, u.Username, u.Email, u.Password).Scan(&u.ID)
+	query := `INSERT INTO users(username, email, password, phone) VALUES($1,$2,$3,$4) RETURNING id, created_at;`
+
+	var email interface{} = u.Email
+	if u.Email == "" {
+		email = nil
+	}
+	var phone interface{} = u.Phone
+	if u.Phone == "" {
+		phone = nil
+	}
+
+	return r.db.QueryRow(query, u.Username, email, u.Password, phone).Scan(&u.ID, &u.CreatedAt)
 }
 
 func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
@@ -30,6 +40,9 @@ func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
 		"SELECT id, username, email, password, phone, full_name, birth_date, location, status, COALESCE(avatar_url,'') FROM users WHERE email = $1", email,
 	).Scan(&u.ID, &u.Username, &u.Email, &u.Password, &phone, &fullName, &birthDate, &location, &status, &u.AvatarUrl)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, err
 	}
 	u.Phone = phone.String
@@ -50,6 +63,9 @@ func (r *UserRepository) GetById(id uuid.UUID) (*model.User, error) {
 		"SELECT id, username, email, phone, full_name, birth_date, location, status, COALESCE(avatar_url,'') FROM users WHERE id = $1", id,
 	).Scan(&u.ID, &u.Username, &u.Email, &phone, &fullName, &birthDate, &location, &status, &u.AvatarUrl)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, err
 	}
 	u.Phone = phone.String
@@ -62,16 +78,22 @@ func (r *UserRepository) GetById(id uuid.UUID) (*model.User, error) {
 	return u, nil
 }
 
-func (r *UserRepository) GetByUsernameAndEmail(username string, email string) (*model.User, error) {
+func (r *UserRepository) GetByUsernameAndEmail(username, email, phone string) (*model.User, error) {
 	var u model.User
-	query := `SELECT id, username, email FROM users WHERE username = $1 OR email = $2 LIMIT 1`
-	err := r.db.QueryRow(query, username, email).Scan(&u.ID, &u.Username, &u.Email)
+	var e, p sql.NullString
+	query := `SELECT id, username, email, phone FROM users WHERE username = $1 
+	          OR (email = $2 AND email != '') 
+	          OR (phone = $3 AND phone != '') 
+	          LIMIT 1`
+	err := r.db.QueryRow(query, username, email, phone).Scan(&u.ID, &u.Username, &e, &p)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
 	}
+	u.Email = e.String
+	u.Phone = p.String
 	return &u, nil
 }
 
@@ -82,6 +104,9 @@ func (r *UserRepository) GetByUsername(username string) (*model.User, error) {
 	query := `SELECT id, username, email, phone, full_name, birth_date, location, status, COALESCE(avatar_url,'') FROM users WHERE username = $1`
 	err := r.db.QueryRow(query, username).Scan(&u.ID, &u.Username, &u.Email, &phone, &fullName, &birthDate, &location, &status, &u.AvatarUrl)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, err
 	}
 	u.Phone = phone.String
@@ -147,4 +172,42 @@ func (r *UserRepository) UpdateStatus(id uuid.UUID, status string) (*model.User,
 func (r *UserRepository) UpdateAvatarUrl(userID uuid.UUID, url string) error {
 	_, err := r.db.Exec(`UPDATE users SET avatar_url = $1, updated_at = NOW() WHERE id = $2`, url, userID)
 	return err
+}
+
+// GetByPhone ищет пользователя по номеру телефона
+func (r *UserRepository) GetByPhone(phone string) (*model.User, error) {
+	u := new(model.User)
+	var phoneNull, fullName, location, status sql.NullString
+	var birthDate sql.NullTime
+	err := r.db.QueryRow(
+		`SELECT id, username, email, phone, full_name, birth_date, location, status, COALESCE(avatar_url,'') 
+		 FROM users WHERE phone = $1`, phone,
+	).Scan(&u.ID, &u.Username, &u.Email, &phoneNull, &fullName, &birthDate, &location, &status, &u.AvatarUrl)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	u.Phone = phoneNull.String
+	u.FullName = fullName.String
+	u.Location = location.String
+	u.Status = status.String
+	if birthDate.Valid {
+		u.BirthDate = &birthDate.Time
+	}
+	return u, nil
+}
+
+// CreateByPhone создаёт пользователя только с телефоном (без пароля и email)
+func (r *UserRepository) CreateByPhone(phone, username string) (*model.User, error) {
+	u := &model.User{
+		Phone:    phone,
+		Username: username,
+	}
+	err := r.db.QueryRow(
+		`INSERT INTO users(username, phone) VALUES($1, $2) RETURNING id, created_at`,
+		username, phone,
+	).Scan(&u.ID, &u.CreatedAt)
+	return u, err
 }

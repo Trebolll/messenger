@@ -60,6 +60,11 @@ func main() {
 	userService := service.NewUserService(userRepository, wallService)
 	userHandler := handler.NewUserHandler(userService, hub, wallHub, storageService)
 
+	// Умная авторизация: email без верификации + phone через SMS (Twilio)
+	notifyService := service.NewNotifyServiceFromEnv()
+	otpStore := service.NewOTPStore()
+	smartHandler := handler.NewSmartAuthHandler(userService, notifyService, otpStore)
+
 	chatRepository := repository.NewChatRepository(database)
 	chatService := service.NewChatService(chatRepository, userRepository, hub)
 	chatHandler := handler.NewChatHandler(chatService, storageService)
@@ -80,6 +85,10 @@ func main() {
 	attachmentService := service.NewAttachmentService(attachmentRepository, storageService)
 	attachmentHandler := handler.NewAttachmentHandler(attachmentService)
 
+	feedRepository := repository.NewFeedRepository(database)
+	feedService := service.NewFeedService(feedRepository, wallRepository)
+	feedHandler := handler.NewFeedHandler(feedService)
+
 	wsHandler := handler.NewWebSocketHandler(hub, "your_secret_key")
 	wallChatHandler := handler.NewWallChatHandler(wallHub, messageRepository, "your_secret_key")
 
@@ -89,8 +98,12 @@ func main() {
 
 	r.GET("/", func(c *gin.Context) { c.HTML(200, "index.html", nil) })
 
-	r.POST("/api/register", userHandler.Register)
-	r.POST("/api/login", userHandler.Login)
+	r.POST("/api/register", userHandler.Register)            // старый email-only эндпоинт
+	r.POST("/api/login", userHandler.Login)                  // старый email-only эндпоинт
+	r.POST("/api/auth/send", smartHandler.SendCode)          // шаг 1: отправить код
+	r.POST("/api/auth/verify-code", smartHandler.VerifyCode) // шаг 2: проверить код
+	r.POST("/api/auth/register", smartHandler.Register)      // шаг 3: заполнить профиль
+	r.POST("/api/auth/login", smartHandler.Login)            // вход по логин+пароль
 
 	api := r.Group("/api")
 	api.Use(middleware.AuthMiddleware("your_secret_key"))
@@ -117,6 +130,12 @@ func main() {
 		api.POST("/chats/:chat_id/attachments", attachmentHandler.Upload)
 		api.POST("/messages/:message_id/vote", ratingHandler.Vote)
 		api.GET("/users/:user_id/rating", ratingHandler.GetUserRating)
+
+		feed := api.Group("/feed")
+		{
+			feed.GET("", feedHandler.GetFeed)
+			feed.POST("/track", feedHandler.TrackEvent)
+		}
 
 		wall := api.Group("/wall")
 		{

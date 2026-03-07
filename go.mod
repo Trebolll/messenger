@@ -1,6 +1,6 @@
 module messenger
 
-go 1.25
+go 1.24.0
 
 require (
 	github.com/gin-gonic/gin v1.11.0
@@ -83,6 +83,7 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/quic-go/quic-go v0.58.0 // indirect
+	github.com/resend/resend-go/v3 v3.1.1 // indirect
 	github.com/rs/xid v1.6.0 // indirect
 	github.com/shirou/gopsutil/v4 v4.25.6 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect

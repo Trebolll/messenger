@@ -19,8 +19,10 @@ function closeAuthModal() {
 }
 
 function switchForm(type) {
-  document.getElementById('login-form-container').classList.toggle('hidden', type !== 'login');
-  document.getElementById('register-form-container').classList.toggle('hidden', type !== 'register');
+  // Переключаем шаг формы через Auth модуль
+  if (typeof Auth !== 'undefined' && Auth.open) {
+    Auth.open(type);
+  }
 }
 
 // ── New Chat Modal ─────────────────────────────────────────────────────────
