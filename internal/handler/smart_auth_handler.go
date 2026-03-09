@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"crypto/rand"
 	"errors"
+	"fmt"
 	"log"
 	"messenger/internal/model"
 	"messenger/internal/service"
@@ -258,4 +260,108 @@ func normalizePhone(raw string) (string, error) {
 		return "", errors.New("неверный формат телефона, используйте: +79991234567")
 	}
 	return phone, nil
+}
+
+// ── Сброс пароля ──────────────────────────────────────────────────────────────
+
+// ResetSend — POST /api/auth/reset/send
+// {"login": "email или телефон"} → отправляет OTP
+func (h *SmartAuthHandler) ResetSend(c *gin.Context) {
+	var req struct {
+		Login string `json:"login" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "укажите email или телефон"})
+		return
+	}
+	dest, _, err := parseLogin(req.Login)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	code, err := h.otpStore.Generate(dest)
+	if err != nil {
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.notifyService.SendOTP(dest, code); err != nil {
+		h.otpStore.Delete(dest)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "не удалось отправить код: " + err.Error()})
+		return
+	}
+	log.Printf("[ResetSend] код для %s: %s", dest, code)
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+// ResetVerify — POST /api/auth/reset/verify
+// {"login": "...", "code": "123456"} → возвращает reset_token
+func (h *SmartAuthHandler) ResetVerify(c *gin.Context) {
+	var req struct {
+		Login string `json:"login" binding:"required"`
+		Code  string `json:"code"  binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "укажите логин и код"})
+		return
+	}
+	dest, _, err := parseLogin(req.Login)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.otpStore.Verify(dest, strings.TrimSpace(req.Code)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, err := generateSecureToken()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "внутренняя ошибка"})
+		return
+	}
+	h.otpStore.StoreReset(token, dest)
+	c.JSON(http.StatusOK, gin.H{"reset_token": token})
+}
+
+// ResetConfirm — POST /api/auth/reset/confirm
+// {"reset_token": "...", "password": "...", "password2": "..."} → меняет пароль
+func (h *SmartAuthHandler) ResetConfirm(c *gin.Context) {
+	var req struct {
+		ResetToken string `json:"reset_token" binding:"required"`
+		Password   string `json:"password"    binding:"required"`
+		Password2  string `json:"password2"   binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "заполните все поля"})
+		return
+	}
+	if req.Password != req.Password2 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "пароли не совпадают"})
+		return
+	}
+	if len(req.Password) < 6 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "пароль должен быть не менее 6 символов"})
+		return
+	}
+
+	dest, ok := h.otpStore.ConsumeReset(req.ResetToken)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "токен недействителен или истёк"})
+		return
+	}
+
+	if err := h.userService.UpdatePasswordByLogin(dest, req.Password); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+func generateSecureToken() (string, error) {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", b), nil
 }

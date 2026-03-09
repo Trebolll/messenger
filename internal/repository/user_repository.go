@@ -194,9 +194,9 @@ func (r *UserRepository) GetByPhone(phone string) (*model.User, error) {
 	var phoneNull, fullName, location, status, profession, email sql.NullString
 	var birthDate sql.NullTime
 	err := r.db.QueryRow(
-		`SELECT id, username, email, phone, full_name, birth_date, location, status, COALESCE(avatar_url,''), profession 
+		`SELECT id, username, email, password, phone, full_name, birth_date, location, status, COALESCE(avatar_url,''), profession 
 		 FROM users WHERE phone = $1`, phone,
-	).Scan(&u.ID, &u.Username, &email, &phoneNull, &fullName, &birthDate, &location, &status, &u.AvatarUrl, &profession)
+	).Scan(&u.ID, &u.Username, &email, &u.Password, &phoneNull, &fullName, &birthDate, &location, &status, &u.AvatarUrl, &profession)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -226,4 +226,34 @@ func (r *UserRepository) CreateByPhone(phone, username string) (*model.User, err
 		username, phone,
 	).Scan(&u.ID, &u.CreatedAt)
 	return u, err
+}
+
+func (r *UserRepository) UpdatePassword(userID uuid.UUID, hashedPassword string) error {
+	_, err := r.db.Exec(`UPDATE users SET password=$1, updated_at=NOW() WHERE id=$2`, hashedPassword, userID)
+	return err
+}
+
+func (r *UserRepository) GetByEmailOrPhone(login string) (*model.User, error) {
+	u := new(model.User)
+	var phone, fullName, location, status, profession, email sql.NullString
+	var birthDate sql.NullTime
+	query := `SELECT id, username, email, phone, full_name, birth_date, location, status, COALESCE(avatar_url,''), profession
+	          FROM users WHERE email=$1 OR phone=$1 LIMIT 1`
+	err := r.db.QueryRow(query, login).Scan(&u.ID, &u.Username, &email, &phone, &fullName, &birthDate, &location, &status, &u.AvatarUrl, &profession)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	u.Email = email.String
+	u.Phone = phone.String
+	u.FullName = fullName.String
+	u.Location = location.String
+	u.Status = status.String
+	u.Profession = profession.String
+	if birthDate.Valid {
+		u.BirthDate = &birthDate.Time
+	}
+	return u, nil
 }
