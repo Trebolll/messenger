@@ -269,7 +269,19 @@ const Feed = (() => {
         if (mediaContent) {
             // Видео на весь контейнер
             mediaContent.innerHTML = isVideo
-                ? `<video src="${url}" class="w-full h-full object-contain" controls playsinline id="modal-video-player"></video>`
+                ? `<div style="position:relative;width:100%;height:100%;">
+                    <video src="${url}" class="w-full h-full object-contain" controls playsinline id="modal-video-player"></video>
+                    <div id="video-player-controls" style="position:absolute;bottom:48px;left:12px;display:flex;gap:8px;z-index:10;">
+                        <button id="btn-loop" onclick="Feed.toggleLoop()" title="Повтор" style="background:rgba(0,0,0,0.55);border:none;border-radius:8px;padding:6px 12px;color:#fff;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;transition:background 0.2s;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            Повтор
+                        </button>
+                        <button id="btn-autonext" onclick="Feed.toggleAutoNext()" title="Следующее" style="background:rgba(0,0,0,0.55);border:none;border-radius:8px;padding:6px 12px;color:#fff;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;transition:background 0.2s;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+                            Авто
+                        </button>
+                    </div>
+                  </div>`
                 : `<img src="${url}" class="w-full h-full object-contain">`;
 
             mediaContent.style.opacity = '0';
@@ -282,7 +294,14 @@ const Feed = (() => {
             // Запускаем видео через JS после рендера — не через autoplay атрибут
             if (isVideo) {
                 const vEl = document.getElementById('modal-video-player');
-                if (vEl) { vEl.load(); vEl.play().catch(() => {}); }
+                if (vEl) {
+                    vEl.loop = _loopMode;
+                    if (_autoNextMode) {
+                        vEl.onended = () => { if (_mediaList.length > 1) openMedia(_mediaList[(_mediaIndex + 1) % _mediaList.length].postId, _mediaList[(_mediaIndex + 1) % _mediaList.length].url, true, 1); };
+                    }
+                    vEl.load(); vEl.play().catch(() => {});
+                }
+                _updateVideoButtons();
             }
         }
 
@@ -348,7 +367,40 @@ const Feed = (() => {
         mediaContainer.appendChild(el);
     }
 
-    return { load, openMedia, track: _track };
+    let _loopMode = false;
+    let _autoNextMode = false;
+
+    function toggleLoop() {
+        _loopMode = !_loopMode;
+        _autoNextMode = false;
+        const vEl = document.getElementById('modal-video-player');
+        if (vEl) vEl.loop = _loopMode;
+        _updateVideoButtons();
+    }
+
+    function toggleAutoNext() {
+        _autoNextMode = !_autoNextMode;
+        _loopMode = false;
+        const vEl = document.getElementById('modal-video-player');
+        if (vEl) {
+            vEl.loop = false;
+            if (_autoNextMode) {
+                vEl.onended = () => { if (_mediaList.length > 1) openMedia(_mediaList[(_mediaIndex + 1) % _mediaList.length].postId, _mediaList[(_mediaIndex + 1) % _mediaList.length].url, true, 1); };
+            } else {
+                vEl.onended = null;
+            }
+        }
+        _updateVideoButtons();
+    }
+
+    function _updateVideoButtons() {
+        const btnLoop = document.getElementById('btn-loop');
+        const btnNext = document.getElementById('btn-autonext');
+        if (btnLoop) btnLoop.style.background = _loopMode ? 'rgba(99,102,241,0.85)' : 'rgba(0,0,0,0.55)';
+        if (btnNext) btnNext.style.background = _autoNextMode ? 'rgba(99,102,241,0.85)' : 'rgba(0,0,0,0.55)';
+    }
+
+    return { load, openMedia, track: _track, toggleLoop, toggleAutoNext };
 
 })();
 
