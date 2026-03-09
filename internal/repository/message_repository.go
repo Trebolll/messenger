@@ -3,8 +3,10 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"messenger/internal/model"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -57,8 +59,6 @@ func (r *MessageRepository) SendComment(message *model.Message) error {
 	return nil
 }
 
-// GetCommentsByChatID — возвращает плоский список всех сообщений чата,
-// затем строит дерево в памяти (корни + вложенные replies)
 func (r *MessageRepository) GetCommentsByChatID(chatID uuid.UUID) ([]model.Message, error) {
 	query := `
 		SELECT m.id, m.chat_id, m.sender_id, u.username, COALESCE(u.avatar_url, ''), GREATEST(0, u.rating),
@@ -95,7 +95,6 @@ func (r *MessageRepository) GetCommentsByChatID(chatID uuid.UUID) ([]model.Messa
 		order = append(order, m.ID)
 	}
 
-	// Строим дерево через указатели — чтобы Replies не терялись при копировании
 	var rootPtrs []*model.Message
 	for _, id := range order {
 		m := all[id]
@@ -106,7 +105,6 @@ func (r *MessageRepository) GetCommentsByChatID(chatID uuid.UUID) ([]model.Messa
 		}
 	}
 
-	// Разыменовываем только корни (replies уже вложены)
 	roots := make([]model.Message, len(rootPtrs))
 	for i, p := range rootPtrs {
 		roots[i] = *p
@@ -168,19 +166,20 @@ func (r *MessageRepository) GetMessagesByChatID(chatID uuid.UUID) ([]model.Messa
 		messages = append(messages, m)
 	}
 
-	// Загружаем вложения для всех сообщений одним запросом
 	if len(messages) > 0 {
-		ids := make([]uuid.UUID, len(messages))
+		placeholders := make([]string, len(messages))
+		args := make([]interface{}, len(messages))
 		for i, m := range messages {
-			ids[i] = m.ID
+			placeholders[i] = fmt.Sprintf("$%d", i+1)
+			args[i] = m.ID
 		}
 
-		attQuery := `
+		attQuery := fmt.Sprintf(`
 			SELECT id, chat_id, sender_id, message_id, url, filename, mime_type, size_bytes, created_at
 			FROM attachments
-			WHERE message_id = ANY($1)`
+			WHERE message_id IN (%s)`, strings.Join(placeholders, ","))
 
-		attRows, err := r.db.Query(attQuery, ids)
+		attRows, err := r.db.Query(attQuery, args...)
 		if err == nil {
 			defer attRows.Close()
 
@@ -199,6 +198,8 @@ func (r *MessageRepository) GetMessagesByChatID(chatID uuid.UUID) ([]model.Messa
 					messages[i].Attachments = atts
 				}
 			}
+		} else {
+			log.Printf("Error loading attachments: %v", err)
 		}
 	}
 
