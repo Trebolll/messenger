@@ -33,7 +33,6 @@ async function openWall(userId = null) {
     const editProfileBtn = document.getElementById('wall-settings-btn');
     const editBioBtn     = document.getElementById('edit-bio-btn');
     const postInputContainer = document.getElementById('wall-post-creator');
-    const avatarEditOverlay  = document.getElementById('wall-avatar-edit-overlay');
     const wallStatusEl       = document.getElementById('wall-status');
 
     if (editProfileBtn) editProfileBtn.style.display = isMe ? 'flex' : 'none';
@@ -42,8 +41,6 @@ async function openWall(userId = null) {
         postInputContainer.style.display = isMe ? 'block' : 'none';
         postInputContainer.dataset.visible = isMe ? 'true' : 'false';
     }
-    // Показываем кнопку смены аватара только на своей стене
-    if (avatarEditOverlay) avatarEditOverlay.classList.toggle('hidden', !isMe);
     // Статус кликабельный только на своей стене
     if (wallStatusEl) {
         if (isMe) {
@@ -267,7 +264,7 @@ function renderSinglePostHtml(p, isMe) {
               </button>` : ''}
            </div>
            <div class="text-sm text-custom-main leading-relaxed">
-              ${p.content}
+              ${formatMessageContent(p.content)}
            </div>
            ${p.attachments && p.attachments.length > 0 ? `
               <div class="grid ${p.attachments.length === 1 ? 'grid-cols-1' : (p.attachments.length === 2 ? 'grid-cols-2' : 'grid-cols-3')} gap-2 mt-2 post-attachments-grid">
@@ -344,6 +341,18 @@ function connectWallPostsWS(userId) {
                     if (span) span.textContent = msg.likes_count || '';
                 }
             });
+            // Обновляем общий счетчик лайков в сайдбаре если мы на этой стене
+            if (msg.total_wall_likes !== undefined && String(_wallUserId) === String(userId)) {
+                const likesEl = document.getElementById('wall-info-likes');
+                const likesRow = document.getElementById('wall-info-likes-row');
+                const wallLikes = msg.total_wall_likes;
+                if (wallLikes > 0) {
+                    if (likesEl) likesEl.textContent = `${wallLikes} лайк${wallLikes === 1 ? '' : wallLikes < 5 ? 'а' : 'ов'}`;
+                    if (likesRow) likesRow.classList.remove('hidden');
+                } else if (likesRow) {
+                    likesRow.classList.add('hidden');
+                }
+            }
         } else if (msg.type === 'update_post_comment_count') {
             const btns = document.querySelectorAll(`button[onclick*="${msg.chat_id}"]`);
             btns.forEach(btn => {
@@ -362,6 +371,74 @@ function connectWallPostsWS(userId) {
         } else if (msg.type === 'update_wall_info') {
             if (String(_wallUserId) === String(userId)) {
                 renderWallBio(msg.bio, String(userId) === String(window.app.currentUser?.id));
+            }
+        } else if (msg.type === 'update_wall_status') {
+            if (String(_wallUserId) === String(userId)) {
+                const statusEl = document.getElementById('wall-status');
+                if (statusEl) statusEl.textContent = msg.status || '';
+            }
+        } else if (msg.type === 'update_wall_info_full') {
+            if (String(_wallUserId) === String(userId)) {
+                if (msg.username) document.getElementById('wall-username').textContent = msg.username;
+                if (msg.status !== undefined) document.getElementById('wall-status').textContent = msg.status || '';
+                if (msg.location !== undefined) {
+                    const locEl = document.getElementById('wall-info-location');
+                    const locRow = document.getElementById('wall-info-location-row');
+                    if (msg.location) {
+                        if (locEl) locEl.textContent = msg.location;
+                        if (locRow) locRow.classList.remove('hidden');
+                    } else if (locRow) {
+                        locRow.classList.add('hidden');
+                    }
+                }
+                if (msg.profession !== undefined) {
+                    const profEl = document.getElementById('wall-info-profession');
+                    const profRow = document.getElementById('wall-info-profession-row');
+                    if (msg.profession) {
+                        if (profEl) profEl.textContent = msg.profession;
+                        if (profRow) profRow.classList.remove('hidden');
+                    } else if (profRow) {
+                        profRow.classList.add('hidden');
+                    }
+                }
+                if (msg.birth_date !== undefined) {
+                    const ageEl = document.getElementById('wall-info-age');
+                    const ageRow = document.getElementById('wall-info-age-row');
+                    if (msg.birth_date) {
+                        const age = calculateAge(new Date(msg.birth_date));
+                        if (ageEl) ageEl.textContent = `${age} лет`;
+                        if (ageRow) ageRow.classList.remove('hidden');
+                    } else if (ageRow) {
+                        ageRow.classList.add('hidden');
+                    }
+                }
+                if (msg.rating !== undefined) {
+                    const votesEl = document.getElementById('wall-info-votes');
+                    const votesRow = document.getElementById('wall-info-votes-row');
+                    if (msg.rating !== 0) {
+                        if (votesEl) votesEl.textContent = `${msg.rating > 0 ? '+' : ''}${msg.rating} vote`;
+                        if (votesRow) votesRow.classList.remove('hidden');
+                    } else if (votesRow) {
+                        votesRow.classList.add('hidden');
+                    }
+                }
+                if (msg.total_wall_likes !== undefined) {
+                    const likesEl = document.getElementById('wall-info-likes');
+                    const likesRow = document.getElementById('wall-info-likes-row');
+                    const wallLikes = msg.total_wall_likes;
+                    if (wallLikes > 0) {
+                        if (likesEl) likesEl.textContent = `${wallLikes} лайк${wallLikes === 1 ? '' : wallLikes < 5 ? 'а' : 'ов'}`;
+                        if (likesRow) likesRow.classList.remove('hidden');
+                    } else if (likesRow) {
+                        likesRow.classList.add('hidden');
+                    }
+                }
+                if (msg.avatar_url) {
+                    const avatarEl = document.getElementById('wall-avatar');
+                    if (avatarEl) {
+                        avatarEl.innerHTML = `<img src="${msg.avatar_url}" class="w-full h-full object-cover">`;
+                    }
+                }
             }
         }
     };

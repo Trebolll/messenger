@@ -55,6 +55,10 @@ func (s *WallService) GetPostChat(postID uuid.UUID) (uuid.UUID, error) {
 	return s.repo.GetPostChat(postID)
 }
 
+func (s *WallService) GetTotalWallLikes(userID uuid.UUID) (int, error) {
+	return s.repo.GetTotalWallLikes(userID)
+}
+
 func (s *WallService) ToggleLike(postID uuid.UUID, userID uuid.UUID) (bool, int, error) {
 	return s.repo.ToggleLike(postID, userID)
 }

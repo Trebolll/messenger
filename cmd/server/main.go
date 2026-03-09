@@ -47,6 +47,7 @@ func main() {
 		os.Getenv("MINIO_ACCESS_KEY"),
 		os.Getenv("MINIO_SECRET_KEY"),
 		os.Getenv("MINIO_BUCKET"),
+		os.Getenv("MINIO_PUBLIC_ENDPOINT"),
 	)
 	if err != nil {
 		log.Fatalf("Ошибка инициализации хранилища: %v", err)
@@ -58,7 +59,7 @@ func main() {
 
 	userRepository := repository.NewUserRepository(database)
 	userService := service.NewUserService(userRepository, wallService)
-	userHandler := handler.NewUserHandler(userService, hub, wallHub, storageService)
+	userHandler := handler.NewUserHandler(userService, wallService, hub, wallHub, storageService)
 
 	// Умная авторизация: email без верификации + phone через SMS (Twilio)
 	notifyService := service.NewNotifyServiceFromEnv()

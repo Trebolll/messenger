@@ -188,29 +188,28 @@ async function apiMarkChatAsRead(chatId) {
     }
 }
 
-async function apiSaveProfile({ fullname, phone, username, statusText }) {
-    // Сохраняем статус
-    await apiFetch('/api/users/status', {
+async function apiSaveProfile({ fullname, phone, username, statusText, birthDate, location, profession }) {
+    // Сохраняем всё одним запросом в /api/users/profile
+    const profileBody = {
+        status:     statusText,
+        full_name:  fullname,
+        phone:      phone,
+        username:   username,
+        birth_date: birthDate || null,
+        location:   location,
+        profession: profession,
+    };
+
+    console.log('[apiSaveProfile] sending:', JSON.stringify(profileBody));
+    const updated = await apiFetch('/api/users/profile', {
         method: 'PUT',
-        body: JSON.stringify({ status: statusText }),
+        body: JSON.stringify(profileBody),
     });
-    if (window.app.currentUser) {
-        window.app.currentUser.status = statusText;
-    }
-    // Сохраняем профиль
-    const profileBody = {};
-    if (fullname)  profileBody.full_name = fullname;
-    if (phone)     profileBody.phone     = phone;
-    if (username)  profileBody.username  = username;
-    if (Object.keys(profileBody).length > 0) {
-        const updated = await apiFetch('/api/users/profile', {
-            method: 'PUT',
-            body: JSON.stringify(profileBody),
-        });
-        window.app.currentUser = { ...window.app.currentUser, ...updated };
-    }
-    window.app.currentUser.status = statusText;
+    console.log('[apiSaveProfile] response:', JSON.stringify(updated));
+
+    window.app.currentUser = { ...window.app.currentUser, ...updated };
     localStorage.setItem('alpha_user', JSON.stringify(window.app.currentUser));
+
     // Обновляем сайдбар сразу
     loadUserData();
 }

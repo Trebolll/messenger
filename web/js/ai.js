@@ -188,32 +188,6 @@ async function apiMarkChatAsRead(chatId) {
     }
 }
 
-async function apiSaveProfile({ fullname, phone, username, statusText }) {
-    // Сохраняем статус
-    await apiFetch('/api/users/status', {
-        method: 'PUT',
-        body: JSON.stringify({ status: statusText }),
-    });
-    if (window.app.currentUser) {
-        window.app.currentUser.status = statusText;
-    }
-    // Сохраняем профиль
-    const profileBody = {};
-    if (fullname)  profileBody.full_name = fullname;
-    if (phone)     profileBody.phone     = phone;
-    if (username)  profileBody.username  = username;
-    if (Object.keys(profileBody).length > 0) {
-        const updated = await apiFetch('/api/users/profile', {
-            method: 'PUT',
-            body: JSON.stringify(profileBody),
-        });
-        window.app.currentUser = { ...window.app.currentUser, ...updated };
-    }
-    window.app.currentUser.status = statusText;
-    localStorage.setItem('alpha_user', JSON.stringify(window.app.currentUser));
-    // Обновляем сайдбар сразу
-    loadUserData();
-}
 
 async function apiEditMessage(messageId, content) {
     return await apiFetch(`/api/messages/${messageId}`, {

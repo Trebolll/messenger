@@ -216,7 +216,7 @@ func (h *Hub) BroadcastToUsers(userIDs []uuid.UUID, message Message) {
 }
 
 // BroadcastProfileUpdate — рассылает всем онлайн-пользователям обновление профиля
-func (h *Hub) BroadcastProfileUpdate(userID uuid.UUID, avatarUrl, username, fullName, status string) {
+func (h *Hub) BroadcastProfileUpdate(userID uuid.UUID, avatarUrl, username, fullName, status, profession string) {
 	msg := Message{
 		Type: "user_profile_updated",
 		Content: map[string]interface{}{
@@ -225,6 +225,7 @@ func (h *Hub) BroadcastProfileUpdate(userID uuid.UUID, avatarUrl, username, full
 			"username":   username,
 			"full_name":  fullName,
 			"status":     status,
+			"profession": profession,
 		},
 	}
 	data, err := json.Marshal(msg)

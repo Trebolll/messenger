@@ -68,6 +68,7 @@ services:
       DB_PASSWORD: postgres
       DB_NAME: messenger
       MINIO_ENDPOINT: minio:9000
+      MINIO_PUBLIC_ENDPOINT: localhost:9000
       MINIO_ACCESS_KEY: admin
       MINIO_SECRET_KEY: password123
       MINIO_BUCKET: messenger

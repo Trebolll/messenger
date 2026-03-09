@@ -165,6 +165,16 @@ func (r *WallRepository) GetPostsByUserID(userID uuid.UUID, viewerID uuid.UUID) 
 	return posts, nil
 }
 
+func (r *WallRepository) GetTotalWallLikes(userID uuid.UUID) (int, error) {
+	var count int
+	query := `
+		SELECT COUNT(*) FROM wall_post_likes wpl
+		JOIN wall_posts wp ON wpl.post_id = wp.id
+		WHERE wp.user_id = $1`
+	err := r.db.QueryRow(query, userID).Scan(&count)
+	return count, err
+}
+
 func (r *WallRepository) ToggleLike(postID uuid.UUID, userID uuid.UUID) (liked bool, count int, err error) {
 	// Проверяем есть ли лайк
 	var exists bool

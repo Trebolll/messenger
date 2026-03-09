@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"messenger/internal/model"
 	_ "messenger/internal/repository"
 	"regexp"
@@ -116,7 +117,7 @@ func isValidEmail(email string) bool {
 	return emailRegex.MatchString(email)
 }
 
-func (s *UserService) UpdateProfile(userID interface{}, phone *string, fullName *string, username *string, birthDate *string, location *string, status *string) (*model.User, error) {
+func (s *UserService) UpdateProfile(userID interface{}, phone *string, fullName *string, username *string, birthDate *string, location *string, profession *string, status *string) (*model.User, error) {
 	var id uuid.UUID
 	switch v := userID.(type) {
 	case string:
@@ -137,7 +138,7 @@ func (s *UserService) UpdateProfile(userID interface{}, phone *string, fullName 
 		return nil, errors.New("user not found")
 	}
 
-	// Обновляем только переданные поля
+	// Обновляем только переданные поля (nil = поле не передано = не трогаем)
 	if phone != nil {
 		existing.Phone = *phone
 	}
@@ -147,23 +148,35 @@ func (s *UserService) UpdateProfile(userID interface{}, phone *string, fullName 
 	if username != nil && len(*username) >= 3 {
 		existing.Username = *username
 	}
+	// location, profession, status: nil = не трогаем, "" = очищаем, "value" = устанавливаем
 	if location != nil {
 		existing.Location = *location
+	}
+	if profession != nil {
+		existing.Profession = *profession
 	}
 	if status != nil {
 		existing.Status = *status
 	}
-	if birthDate != nil && *birthDate != "" {
-		parsedDate, err := time.Parse("2006-01-02", *birthDate)
-		if err != nil {
-			return nil, errors.New("invalid birth date format, expected YYYY-MM-DD")
+	if birthDate != nil {
+		if *birthDate == "" {
+			// Пустая строка = очищаем дату рождения
+			existing.BirthDate = nil
+		} else {
+			parsedDate, err := time.Parse("2006-01-02", *birthDate)
+			if err != nil {
+				return nil, errors.New("invalid birth date format, expected YYYY-MM-DD")
+			}
+			existing.BirthDate = &parsedDate
 		}
-		existing.BirthDate = &parsedDate
 	}
 
+	fmt.Printf("[UpdateProfile] BEFORE SAVE: location=%q profession=%q birthDate=%v\n", existing.Location, existing.Profession, existing.BirthDate)
 	if err := s.repo.UpdateProfile(existing); err != nil {
+		fmt.Printf("[UpdateProfile] DB ERROR: %v\n", err)
 		return nil, err
 	}
+	fmt.Printf("[UpdateProfile] AFTER SAVE: location=%q profession=%q birthDate=%v\n", existing.Location, existing.Profession, existing.BirthDate)
 
 	return existing, nil
 }

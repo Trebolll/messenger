@@ -123,10 +123,12 @@ func (h *WallHandler) ToggleLike(c *gin.Context) {
 
 	ownerID, err := h.wallService.GetPostOwner(postID)
 	if err == nil {
+		totalLikes, _ := h.wallService.GetTotalWallLikes(ownerID)
 		h.wallHub.BroadcastToRoom(ownerID, map[string]interface{}{
-			"type":        "update_post_like",
-			"post_id":     postID,
-			"likes_count": count,
+			"type":             "update_post_like",
+			"post_id":          postID,
+			"likes_count":      count,
+			"total_wall_likes": totalLikes,
 		})
 	}
 

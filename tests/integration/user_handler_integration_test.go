@@ -118,8 +118,8 @@ func setupTestRouter(t *testing.T, db *sql.DB) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	userRepo := repository.NewUserRepository(db)
-	userService := service.NewUserService(userRepo)
-	userHandler := handler.NewUserHandler(userService, nil, nil)
+	userService := service.NewUserService(userRepo, nil)
+	userHandler := handler.NewUserHandler(userService, nil, nil, nil, nil)
 
 	router.POST("/register", userHandler.Register)
 	router.POST("/login", userHandler.Login)
