@@ -290,7 +290,6 @@ func (h *SmartAuthHandler) ResetSend(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "не удалось отправить код: " + err.Error()})
 		return
 	}
-	log.Printf("[ResetSend] код для %s: %s", dest, code)
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 

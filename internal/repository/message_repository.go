@@ -167,6 +167,41 @@ func (r *MessageRepository) GetMessagesByChatID(chatID uuid.UUID) ([]model.Messa
 		}
 		messages = append(messages, m)
 	}
+
+	// Загружаем вложения для всех сообщений одним запросом
+	if len(messages) > 0 {
+		ids := make([]uuid.UUID, len(messages))
+		for i, m := range messages {
+			ids[i] = m.ID
+		}
+
+		attQuery := `
+			SELECT id, chat_id, sender_id, message_id, url, filename, mime_type, size_bytes, created_at
+			FROM attachments
+			WHERE message_id = ANY($1)`
+
+		attRows, err := r.db.Query(attQuery, ids)
+		if err == nil {
+			defer attRows.Close()
+
+			attMap := map[uuid.UUID][]model.Attachment{}
+			for attRows.Next() {
+				var a model.Attachment
+				var msgID uuid.UUID
+				if err := attRows.Scan(&a.ID, &a.ChatID, &a.SenderID, &msgID, &a.Url, &a.Filename, &a.MimeType, &a.SizeBytes, &a.CreatedAt); err == nil {
+					a.MessageID = &msgID
+					attMap[msgID] = append(attMap[msgID], a)
+				}
+			}
+
+			for i, m := range messages {
+				if atts, ok := attMap[m.ID]; ok {
+					messages[i].Attachments = atts
+				}
+			}
+		}
+	}
+
 	return messages, nil
 }
 

@@ -137,10 +137,10 @@ async function loadWallPosts(userId) {
             const createdRow = document.getElementById('wall-info-created-row');
             if (createdEl && result.wall.user_created_at) {
                 const date = new Date(result.wall.user_created_at);
-                const y = String(date.getFullYear()).slice(-2);
+                const y = date.getFullYear();
                 const m = String(date.getMonth() + 1).padStart(2, '0');
                 const d = String(date.getDate()).padStart(2, '0');
-                createdEl.textContent = `${y}.${m}.${d}`;
+                createdEl.textContent = `${d}.${m}.${y}`;
                 if (createdRow) createdRow.classList.remove('hidden');
             } else {
                 if (createdRow) createdRow.classList.add('hidden');
