@@ -1076,7 +1076,6 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;');
 }
 
-// Лента перенесена в feed.js — используй Feed.load()
 
 // ── Inline статус на стене ────────────────────────────────────────────────
 function startWallStatusEdit() {
