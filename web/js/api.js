@@ -188,10 +188,9 @@ async function apiMarkChatAsRead(chatId) {
     }
 }
 
-async function apiSaveProfile({ fullname, phone, username, statusText, birthDate, location, profession }) {
+async function apiSaveProfile({ fullname, phone, username, birthDate, location, profession }) {
     // Сохраняем всё одним запросом в /api/users/profile
     const profileBody = {
-        status:     statusText,
         full_name:  fullname,
         phone:      phone,
         username:   username,
@@ -199,8 +198,6 @@ async function apiSaveProfile({ fullname, phone, username, statusText, birthDate
         location:   location,
         profession: profession,
     };
-
-    console.log('[apiSaveProfile] sending:', JSON.stringify(profileBody));
     const updated = await apiFetch('/api/users/profile', {
         method: 'PUT',
         body: JSON.stringify(profileBody),

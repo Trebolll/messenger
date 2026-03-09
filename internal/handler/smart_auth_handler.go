@@ -237,6 +237,7 @@ func parseLogin(raw string) (dest, method string, err error) {
 	if reEmail.MatchString(s) {
 		return strings.ToLower(s), "email", nil
 	}
+	// Всё остальное считаем username
 	return "", "", errors.New("введите корректный email или номер телефона")
 }
 

@@ -278,7 +278,7 @@ function openProfileModal() {
     _set('profile-phone',       user.phone);
     _set('profile-location',    user.location);
     _set('profile-profession',  user.profession);
-    _set('profile-status-text', user.status);
+
 
     // Обновляем аватар в модалке профиля
     const profileAvatarEl = document.getElementById('profile-avatar');
@@ -377,11 +377,9 @@ async function saveProfile() {
   const birthDate  = document.getElementById('profile-birthdate').value;
   const location   = document.getElementById('profile-location').value.trim();
   const profession = document.getElementById('profile-profession').value.trim();
-  const statusText = document.getElementById('profile-status-text').value.trim();
 
-  console.log('[saveProfile] values:', { fullname, phone, username, birthDate, location, profession, statusText });
   try {
-    await apiSaveProfile({ fullname, phone, username, birthDate, location, profession, statusText });
+    await apiSaveProfile({ fullname, phone, username, birthDate, location, profession });
     window.app.notify('Профиль обновлён ✓', 'success');
 
     // Обновляем стену ДО закрытия модалки (пока _wallUserId ещё доступен)

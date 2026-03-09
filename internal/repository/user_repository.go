@@ -58,17 +58,18 @@ func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
 
 func (r *UserRepository) GetById(id uuid.UUID) (*model.User, error) {
 	u := new(model.User)
-	var phone, fullName, location, status, profession sql.NullString
+	var phone, fullName, location, status, profession, email sql.NullString
 	var birthDate sql.NullTime
 	err := r.db.QueryRow(
 		"SELECT id, username, email, phone, full_name, birth_date, location, status, COALESCE(avatar_url,''), profession FROM users WHERE id = $1", id,
-	).Scan(&u.ID, &u.Username, &u.Email, &phone, &fullName, &birthDate, &location, &status, &u.AvatarUrl, &profession)
+	).Scan(&u.ID, &u.Username, &email, &phone, &fullName, &birthDate, &location, &status, &u.AvatarUrl, &profession)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
 	}
+	u.Email = email.String
 	u.Phone = phone.String
 	u.FullName = fullName.String
 	u.Location = location.String
@@ -101,16 +102,17 @@ func (r *UserRepository) GetByUsernameAndEmail(username, email, phone string) (*
 
 func (r *UserRepository) GetByUsername(username string) (*model.User, error) {
 	u := new(model.User)
-	var phone, fullName, location, status, profession sql.NullString
+	var phone, fullName, location, status, profession, email sql.NullString
 	var birthDate sql.NullTime
 	query := `SELECT id, username, email, phone, full_name, birth_date, location, status, COALESCE(avatar_url,''), profession FROM users WHERE username = $1`
-	err := r.db.QueryRow(query, username).Scan(&u.ID, &u.Username, &u.Email, &phone, &fullName, &birthDate, &location, &status, &u.AvatarUrl, &profession)
+	err := r.db.QueryRow(query, username).Scan(&u.ID, &u.Username, &email, &phone, &fullName, &birthDate, &location, &status, &u.AvatarUrl, &profession)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
 	}
+	u.Email = email.String
 	u.Phone = phone.String
 	u.FullName = fullName.String
 	u.Location = location.String
@@ -123,8 +125,12 @@ func (r *UserRepository) GetByUsername(username string) (*model.User, error) {
 }
 
 func (r *UserRepository) SearchByUsername(username string) ([]model.User, error) {
-	query := `SELECT id, username, email FROM users WHERE username ILIKE $1 LIMIT 10`
-	rows, err := r.db.Query(query, "%"+username+"%")
+	q := "%" + username + "%"
+	query := `SELECT id, username, COALESCE(email,''), COALESCE(avatar_url,'')
+	          FROM users
+	          WHERE username ILIKE $1 OR email ILIKE $1 OR phone ILIKE $1
+	          LIMIT 10`
+	rows, err := r.db.Query(query, q)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +139,7 @@ func (r *UserRepository) SearchByUsername(username string) ([]model.User, error)
 	var users []model.User
 	for rows.Next() {
 		var u model.User
-		if err := rows.Scan(&u.ID, &u.Username, &u.Email); err != nil {
+		if err := rows.Scan(&u.ID, &u.Username, &u.Email, &u.AvatarUrl); err != nil {
 			return nil, err
 		}
 		users = append(users, u)
@@ -185,18 +191,19 @@ func (r *UserRepository) UpdateAvatarUrl(userID uuid.UUID, url string) error {
 // GetByPhone ищет пользователя по номеру телефона
 func (r *UserRepository) GetByPhone(phone string) (*model.User, error) {
 	u := new(model.User)
-	var phoneNull, fullName, location, status, profession sql.NullString
+	var phoneNull, fullName, location, status, profession, email sql.NullString
 	var birthDate sql.NullTime
 	err := r.db.QueryRow(
 		`SELECT id, username, email, phone, full_name, birth_date, location, status, COALESCE(avatar_url,''), profession 
 		 FROM users WHERE phone = $1`, phone,
-	).Scan(&u.ID, &u.Username, &u.Email, &phoneNull, &fullName, &birthDate, &location, &status, &u.AvatarUrl, &profession)
+	).Scan(&u.ID, &u.Username, &email, &phoneNull, &fullName, &birthDate, &location, &status, &u.AvatarUrl, &profession)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
+	u.Email = email.String
 	u.Phone = phoneNull.String
 	u.FullName = fullName.String
 	u.Location = location.String
