@@ -28,3 +28,4 @@ You can set breakpoints in `main.go` and start a debugging session via your IDE 
 .\ngrok.exe start --all --config=ngrok.yml
 docker-compose up --build -d backend
 docker-compose logs -f backend
+docker compose -f docker-compose.local.yml up -d --build

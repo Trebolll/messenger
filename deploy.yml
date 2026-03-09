@@ -3,7 +3,7 @@ name: Deploy to Production
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
@@ -21,7 +21,6 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
             cd /opt/messenger
-            git pull origin main
-            docker compose down
+            git pull origin master
             docker compose build --no-cache backend
             docker compose up -d
