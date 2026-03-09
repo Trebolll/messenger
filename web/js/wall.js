@@ -54,7 +54,7 @@ async function openWall(userId = null) {
 
     // Очищаем начальные данные
     document.getElementById('wall-username').textContent = isMe ? (window.app.currentUser?.username || 'User') : 'Загрузка...';
-    document.getElementById('wall-status').textContent   = isMe ? (window.app.currentUser?.status || '') : '';
+    document.getElementById('wall-status').textContent   = isMe ? (window.app.currentUser?.status || '...') : '';
 
     const avatarEl = document.getElementById('wall-avatar');
     if (isMe) {
@@ -118,7 +118,7 @@ async function loadWallPosts(userId) {
             const status = result.wall.status || (isMe ? window.app.currentUser?.status : '');
 
             document.getElementById('wall-username').textContent = uname;
-            document.getElementById('wall-status').textContent   = status;
+            document.getElementById('wall-status').textContent   = status || '...';
 
             // Био
             renderWallBio(result.wall.bio || '', isMe);
@@ -1106,7 +1106,7 @@ async function saveWallStatus() {
     const newStatus = input ? input.value.trim() : '';
     try {
         await apiSaveProfile({ statusText: newStatus });
-        if (statusEl) statusEl.textContent = newStatus;
+        if (statusEl) statusEl.textContent = newStatus || '...';
         if (window.app?.currentUser) window.app.currentUser.status = newStatus;
         const stored = JSON.parse(localStorage.getItem('alpha_user') || '{}');
         stored.status = newStatus;
