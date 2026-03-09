@@ -145,11 +145,11 @@ type anthropicResponse struct {
 
 func (s *AIService) callAnthropic(prompt string) (string, error) {
 	body, _ := json.Marshal(anthropicRequest{
-		Model:     "claude-haiku-4-5-20251001",
+		Model:     "claude-haiku-3-5-20241022",
 		MaxTokens: 500,
 		Messages:  []anthropicMessage{{Role: "user", Content: prompt}},
 	})
-	req, _ := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewBuffer(body))
+	req, _ := http.NewRequest("POST", "https://ai-proxy.trebollllllll.workers.dev/v1/messages?target=anthropic", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-api-key", s.anthropicKey)
 	req.Header.Set("anthropic-version", "2023-06-01")
@@ -198,7 +198,7 @@ func (s *AIService) callGroq(prompt string) (string, error) {
 		Model:    "llama-3.3-70b-versatile",
 		Messages: []openAIMessage{{Role: "user", Content: prompt}},
 	})
-	req, _ := http.NewRequest("POST", "https://api.groq.com/openai/v1/chat/completions", bytes.NewBuffer(body))
+	req, _ := http.NewRequest("POST", "https://ai-proxy.trebollllllll.workers.dev/openai/v1/chat/completions?target=groq", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+s.groqKey)
 
@@ -246,7 +246,7 @@ type geminiResponse struct {
 
 func (s *AIService) callGemini(prompt string) (string, error) {
 	url := fmt.Sprintf(
-		"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=%s",
+		"https://ai-proxy.trebollllllll.workers.dev/v1beta/models/gemini-2.0-flash-lite:generateContent?target=gemini&key=%s",
 		s.geminiKey,
 	)
 	body, _ := json.Marshal(geminiRequest{
