@@ -50,7 +50,7 @@ function formatMessageContent(content) {
 
   // Regex для YouTube (full & short links)
   const ytRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/g;
-  
+
   // Если есть ссылка на YouTube — добавляем плеер с автоплеем
   return escaped.replace(ytRegex, (match, videoId) => {
     return `<div class="yt-embed-container" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;margin:10px 0;background:#000;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
@@ -99,7 +99,7 @@ function renderChats() {
     // Приватный чат
     let isOnline = !!chat.is_online;
     if (chat.interlocutor_id && app.userStatusMap && app.userStatusMap[String(chat.interlocutor_id)]) {
-        isOnline = app.userStatusMap[String(chat.interlocutor_id)].online;
+      isOnline = app.userStatusMap[String(chat.interlocutor_id)].online;
     }
 
     const avatarHtml = `<div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
@@ -218,8 +218,8 @@ function renderMessages() {
     // Рендер вложения (если есть)
     let attachmentHtml = '';
     let isMediaAttachment = false;
-    if (msg._attachment || msg.attachment) {
-      const att = msg._attachment || msg.attachment;
+    if (msg._attachment || msg.attachment || (msg.attachments && msg.attachments.length > 0)) {
+      const att = msg._attachment || msg.attachment || msg.attachments[0];
       const mime = att.mime_type || '';
       const attUrl = att.url || '';
       const attName = escapeHtml(att.filename || 'Файл');
@@ -464,11 +464,11 @@ function renderChatHeader() {
     if (headerStatus) {
       const total = (chat.members || []).length;
       const online = (chat.members || []).filter(m => {
-          if (String(m.id) === String(app.currentUser?.id)) return true;
-          // Используем статус из глобального мапа, если он там есть
-          const globalStatus = app.userStatusMap && app.userStatusMap[String(m.id)];
-          if (globalStatus) return globalStatus.online;
-          return m.is_online;
+        if (String(m.id) === String(app.currentUser?.id)) return true;
+        // Используем статус из глобального мапа, если он там есть
+        const globalStatus = app.userStatusMap && app.userStatusMap[String(m.id)];
+        if (globalStatus) return globalStatus.online;
+        return m.is_online;
       }).length;
       headerStatus.textContent = `${online} из ${total} online`;
       headerStatus.className   = 'text-xs text-custom-muted';
@@ -481,8 +481,8 @@ function renderChatHeader() {
     let isOnline = !!chat.is_online;
     let userStatus = chat.user_status || '';
     if (chat.interlocutor_id && app.userStatusMap && app.userStatusMap[String(chat.interlocutor_id)]) {
-        isOnline = app.userStatusMap[String(chat.interlocutor_id)].online;
-        userStatus = app.userStatusMap[String(chat.interlocutor_id)].status || '';
+      isOnline = app.userStatusMap[String(chat.interlocutor_id)].online;
+      userStatus = app.userStatusMap[String(chat.interlocutor_id)].status || '';
     }
     renderStatusElements(isOnline, userStatus);
     const badge = document.getElementById('info-status-badge');
@@ -544,19 +544,19 @@ function renderChatHeader() {
     // После загрузки участников — обновляем счетчик онлайн в хедере
     const headerStatus = document.getElementById('active-chat-status');
     if (headerStatus) {
-        const total = members.length;
-        const online = members.filter(m => {
-            if (String(m.id) === String(app.currentUser?.id)) return true;
-            const globalStatus = app.userStatusMap && app.userStatusMap[String(m.id)];
-            if (globalStatus) return globalStatus.online;
-            return m.is_online;
-        }).length;
-        headerStatus.textContent = `${online} из ${total} online`;
+      const total = members.length;
+      const online = members.filter(m => {
+        if (String(m.id) === String(app.currentUser?.id)) return true;
+        const globalStatus = app.userStatusMap && app.userStatusMap[String(m.id)];
+        if (globalStatus) return globalStatus.online;
+        return m.is_online;
+      }).length;
+      headerStatus.textContent = `${online} из ${total} online`;
     }
 
     const membersList = members.map(m => {
       const isMe = String(m.id) === String(app.currentUser?.id);
-      
+
       // Статус из глобального мапа (если есть) имеет приоритет над тем что пришло от API
       let isOnline = m.is_online;
       const globalStatus = app.userStatusMap && app.userStatusMap[String(m.id)];
