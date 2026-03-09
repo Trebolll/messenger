@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: messenger-db
+    environment:
+      POSTGRES_DB: messenger
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d messenger"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - messenger-network
+
+  minio:
+    image: minio/minio
+    container_name: messenger-minio
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - messenger-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: messenger-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - messenger-network
+
+  backend:
+    build:
+      context: .
+    container_name: messenger-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: messenger
+      MINIO_ENDPOINT: minio:9000
+      MINIO_PUBLIC_ENDPOINT: localhost:9000
+      MINIO_ACCESS_KEY: admin
+      MINIO_SECRET_KEY: password123
+      MINIO_BUCKET: messenger
+    ports:
+      - "8080:8080"
+    networks:
+      - messenger-network
+
+volumes:
+  postgres_data:
+  minio_data:
+  ollama_data:
+
+networks:
+  messenger-network:
