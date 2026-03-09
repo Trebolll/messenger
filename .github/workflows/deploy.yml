@@ -21,6 +21,8 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
             cd /opt/messenger
-            git pull origin master
+            git fetch origin
+            git checkout master
+            git reset --hard origin/master
             docker compose build --no-cache backend
             docker compose up -d
