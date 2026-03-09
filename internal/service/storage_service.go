@@ -72,7 +72,7 @@ func (s *StorageService) Upload(
 		return "", err
 	}
 
-	url := "http://" + s.publicEndpoint + "/" + s.bucketName + "/" + objectName
+	url := "https://" + s.publicEndpoint + "/" + s.bucketName + "/" + objectName
 
 	return url, nil
 }

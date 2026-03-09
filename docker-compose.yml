@@ -27,7 +27,6 @@ services:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: password123
     ports:
-      - "9000:9000"
       - "9001:9001"
     volumes:
       - minio_data:/data
@@ -68,14 +67,27 @@ services:
       DB_PASSWORD: postgres
       DB_NAME: messenger
       MINIO_ENDPOINT: minio:9000
-      MINIO_PUBLIC_ENDPOINT: localhost:9000
+      MINIO_PUBLIC_ENDPOINT: www.lambdahub.ru
       MINIO_ACCESS_KEY: admin
       MINIO_SECRET_KEY: password123
       MINIO_BUCKET: messenger
-    ports:
-      - "8080:8080"
     networks:
       - messenger-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: messenger-nginx
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    networks:
+      - messenger-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
