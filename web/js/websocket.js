@@ -154,6 +154,7 @@ function updateUserProfile(data) {
         if (String(chat.interlocutor_id) === String(data.user_id)) {
             chat.avatar_url = data.avatar_url;
             chat.name       = data.username || chat.name;
+            chat.profession = data.profession;
             changed = true;
         }
     });

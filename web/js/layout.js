@@ -73,7 +73,7 @@
       viewChat.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease';
 
       if (!state.chatOpen) {
-        viewChat.style.transform = 'translateX(-40px)';
+        viewChat.style.transform = 'translateY(40px)';
         viewChat.style.opacity   = '0';
       }
     }
@@ -95,11 +95,11 @@
     if (state.chatOpen) {
       document.body.classList.add('chat-open');
       if (viewChat) {
-        viewChat.style.transform = 'translateX(-40px)';
+        viewChat.style.transform = 'translateY(40px)';
         viewChat.style.opacity   = '0';
         show(viewChat, 'flex');
         requestAnimationFrame(() => requestAnimationFrame(() => {
-          viewChat.style.transform = 'translateX(0)';
+          viewChat.style.transform = 'translateY(0)';
           viewChat.style.opacity   = '1';
         }));
       }
@@ -109,7 +109,7 @@
       // Нет активного чата: панель чата скрыта, ничего не открыто заранее
       document.body.classList.remove('chat-open');
       if (viewChat) {
-        viewChat.style.transform = 'translateX(-40px)';
+        viewChat.style.transform = 'translateY(40px)';
         viewChat.style.opacity   = '0';
         // Убираем из потока после анимации
         if (viewChat._hideTimer) clearTimeout(viewChat._hideTimer);
@@ -361,13 +361,9 @@
     var origShowChat = app.showChat.bind(app);
     app.showChat = function () {
       origShowChat();
-      // После успешной авторизации на главном экране сразу показываем ленту
       state.chatsVisible = false;
-      state.feedVisible  = true;
+      state.feedVisible  = false;
       state.chatOpen     = false;
-      if (typeof loadActivityFeed === 'function') {
-        loadActivityFeed();
-      }
       applyLayout();
     };
   }
@@ -379,13 +375,9 @@
 
     // Применить layout сразу если уже в чат-режиме
     if (isMainChatVisible()) {
-      // По умолчанию сразу показываем ленту
       state.chatsVisible = false;
-      state.feedVisible  = true;
+      state.feedVisible  = false;
       state.chatOpen     = false;
-      if (typeof loadActivityFeed === 'function') {
-        loadActivityFeed();
-      }
       applyLayout();
     }
 

@@ -14,12 +14,16 @@ type Storage interface {
 }
 
 type StorageService struct {
-	client     *minio.Client
-	bucketName string
-	endpoint   string
+	client         *minio.Client
+	bucketName     string
+	endpoint       string
+	publicEndpoint string
 }
 
-func NewStorageService(endpoint, accessKey, secretKey, bucket string) (*StorageService, error) {
+// NewStorageService принимает внутренний endpoint для подключения к MinIO
+// и publicEndpoint для генерации публичных URL (например, ngrok или внешний домен).
+// Если publicEndpoint пустой — используется endpoint.
+func NewStorageService(endpoint, accessKey, secretKey, bucket, publicEndpoint string) (*StorageService, error) {
 	client, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
 		Secure: false,
@@ -37,15 +41,20 @@ func NewStorageService(endpoint, accessKey, secretKey, bucket string) (*StorageS
 		if err != nil {
 			return nil, fmt.Errorf("не удалось создать бакет %s: %w", bucket, err)
 		}
-		// Устанавливаем публичный доступ на чтение (опционально, но полезно для веба)
 		policy := fmt.Sprintf(`{"Version":"2012-10-17","Statement":[{"Action":["s3:GetObject"],"Effect":"Allow","Principal":{"AWS":["*"]},"Resource":["arn:aws:s3:::%s/*"],"Sid":""}]}`, bucket)
 		_ = client.SetBucketPolicy(context.Background(), bucket, policy)
 	}
 
+	pub := publicEndpoint
+	if pub == "" {
+		pub = endpoint
+	}
+
 	return &StorageService{
-		client:     client,
-		bucketName: bucket,
-		endpoint:   endpoint,
+		client:         client,
+		bucketName:     bucket,
+		endpoint:       endpoint,
+		publicEndpoint: pub,
 	}, nil
 }
 
@@ -63,7 +72,7 @@ func (s *StorageService) Upload(
 		return "", err
 	}
 
-	url := "http://" + s.endpoint + "/" + s.bucketName + "/" + objectName
+	url := "http://" + s.publicEndpoint + "/" + s.bucketName + "/" + objectName
 
 	return url, nil
 }

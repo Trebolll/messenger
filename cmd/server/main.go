@@ -47,6 +47,7 @@ func main() {
 		os.Getenv("MINIO_ACCESS_KEY"),
 		os.Getenv("MINIO_SECRET_KEY"),
 		os.Getenv("MINIO_BUCKET"),
+		os.Getenv("MINIO_PUBLIC_ENDPOINT"),
 	)
 	if err != nil {
 		log.Fatalf("Ошибка инициализации хранилища: %v", err)
@@ -58,7 +59,7 @@ func main() {
 
 	userRepository := repository.NewUserRepository(database)
 	userService := service.NewUserService(userRepository, wallService)
-	userHandler := handler.NewUserHandler(userService, hub, wallHub, storageService)
+	userHandler := handler.NewUserHandler(userService, wallService, hub, wallHub, storageService)
 
 	// Умная авторизация: email без верификации + phone через SMS (Twilio)
 	notifyService := service.NewNotifyServiceFromEnv()
@@ -98,12 +99,15 @@ func main() {
 
 	r.GET("/", func(c *gin.Context) { c.HTML(200, "index.html", nil) })
 
-	r.POST("/api/register", userHandler.Register)            // старый email-only эндпоинт
-	r.POST("/api/login", userHandler.Login)                  // старый email-only эндпоинт
-	r.POST("/api/auth/send", smartHandler.SendCode)          // шаг 1: отправить код
-	r.POST("/api/auth/verify-code", smartHandler.VerifyCode) // шаг 2: проверить код
-	r.POST("/api/auth/register", smartHandler.Register)      // шаг 3: заполнить профиль
-	r.POST("/api/auth/login", smartHandler.Login)            // вход по логин+пароль
+	r.POST("/api/register", userHandler.Register)                // старый email-only эндпоинт
+	r.POST("/api/login", userHandler.Login)                      // старый email-only эндпоинт
+	r.POST("/api/auth/send", smartHandler.SendCode)              // шаг 1: отправить код
+	r.POST("/api/auth/verify-code", smartHandler.VerifyCode)     // шаг 2: проверить код
+	r.POST("/api/auth/register", smartHandler.Register)          // шаг 3: заполнить профиль
+	r.POST("/api/auth/login", smartHandler.Login)                // вход по логин+пароль
+	r.POST("/api/auth/reset/send", smartHandler.ResetSend)       // сброс: отправить OTP
+	r.POST("/api/auth/reset/verify", smartHandler.ResetVerify)   // сброс: проверить OTP → получить токен
+	r.POST("/api/auth/reset/confirm", smartHandler.ResetConfirm) // сброс: установить новый пароль
 
 	api := r.Group("/api")
 	api.Use(middleware.AuthMiddleware("your_secret_key"))

@@ -15,14 +15,16 @@ import (
 
 type UserHandler struct {
 	userService    *service.UserService
+	wallService    *service.WallService
 	hub            *websocket.Hub
 	wallHub        *websocket.WallHub
 	storageService service.Storage
 }
 
-func NewUserHandler(userService *service.UserService, hub *websocket.Hub, wallHub *websocket.WallHub, storageService service.Storage) *UserHandler {
+func NewUserHandler(userService *service.UserService, wallService *service.WallService, hub *websocket.Hub, wallHub *websocket.WallHub, storageService service.Storage) *UserHandler {
 	return &UserHandler{
 		userService:    userService,
+		wallService:    wallService,
 		hub:            hub,
 		wallHub:        wallHub,
 		storageService: storageService,
@@ -100,12 +102,13 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	}
 
 	var req struct {
-		Phone     *string `json:"phone"`
-		FullName  *string `json:"full_name"`
-		Username  *string `json:"username"`
-		BirthDate *string `json:"birth_date"`
-		Location  *string `json:"location"`
-		Status    *string `json:"status"`
+		Phone      *string `json:"phone"`
+		FullName   *string `json:"full_name"`
+		Username   *string `json:"username"`
+		BirthDate  *string `json:"birth_date"`
+		Location   *string `json:"location"`
+		Profession *string `json:"profession"`
+		Status     *string `json:"status"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -113,24 +116,33 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	user, err := h.userService.UpdateProfile(userID, req.Phone, req.FullName, req.Username, req.BirthDate, req.Location, req.Status)
+	user, err := h.userService.UpdateProfile(userID, req.Phone, req.FullName, req.Username, req.BirthDate, req.Location, req.Profession, req.Status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	// Рассылаем обновление профиля всем онлайн
+	var uid uuid.UUID
 	if id, ok := userID.(uuid.UUID); ok {
-		h.hub.BroadcastProfileUpdate(id, user.AvatarUrl, user.Username, user.FullName, user.Status)
-		// Рассылаем на стену
-		h.wallHub.BroadcastToRoom(id, map[string]interface{}{
-			"type":       "update_wall_info_full",
-			"username":   user.Username,
-			"status":     user.Status,
-			"location":   user.Location,
-			"profession": user.Profession,
-			"birth_date": user.BirthDate,
-			"avatar_url": user.AvatarUrl,
+		uid = id
+	} else if idStr, ok := userID.(string); ok {
+		uid, _ = uuid.Parse(idStr)
+	}
+
+	if uid != uuid.Nil {
+		h.hub.BroadcastProfileUpdate(uid, user.AvatarUrl, user.Username, user.FullName, user.Status, user.Profession)
+		totalLikes, _ := h.wallService.GetTotalWallLikes(uid)
+		h.wallHub.BroadcastToRoom(uid, map[string]interface{}{
+			"type":             "update_wall_info_full",
+			"username":         user.Username,
+			"status":           user.Status,
+			"location":         user.Location,
+			"profession":       user.Profession,
+			"birth_date":       user.BirthDate,
+			"avatar_url":       user.AvatarUrl,
+			"rating":           user.Rating,
+			"total_wall_likes": totalLikes,
 		})
 	}
 
@@ -162,9 +174,17 @@ func (h *UserHandler) UpdateStatus(c *gin.Context) {
 	// Broadcast статус через WebSocket всем подключённым
 	if id, ok := userID.(uuid.UUID); ok {
 		h.hub.BroadcastStatusUpdate(id, req.Status)
+		h.wallHub.BroadcastToRoom(id, map[string]interface{}{
+			"type":   "update_wall_status",
+			"status": req.Status,
+		})
 	} else if idStr, ok := userID.(string); ok {
 		if parsed, err := uuid.Parse(idStr); err == nil {
 			h.hub.BroadcastStatusUpdate(parsed, req.Status)
+			h.wallHub.BroadcastToRoom(parsed, map[string]interface{}{
+				"type":   "update_wall_status",
+				"status": req.Status,
+			})
 		}
 	}
 
@@ -234,7 +254,19 @@ func (h *UserHandler) UpdateAvatar(c *gin.Context) {
 
 	// Получаем актуальные данные пользователя для рассылки
 	if user, err := h.userService.GetUserByID(uid); err == nil {
-		h.hub.BroadcastProfileUpdate(uid, url, user.Username, user.FullName, user.Status)
+		h.hub.BroadcastProfileUpdate(uid, url, user.Username, user.FullName, user.Status, user.Profession)
+		totalLikes, _ := h.wallService.GetTotalWallLikes(uid)
+		h.wallHub.BroadcastToRoom(uid, map[string]interface{}{
+			"type":             "update_wall_info_full",
+			"username":         user.Username,
+			"status":           user.Status,
+			"location":         user.Location,
+			"profession":       user.Profession,
+			"birth_date":       user.BirthDate,
+			"avatar_url":       user.AvatarUrl,
+			"rating":           user.Rating,
+			"total_wall_likes": totalLikes,
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"avatar_url": url})

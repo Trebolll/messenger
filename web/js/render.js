@@ -44,6 +44,27 @@ function userAvatarHtml(user) {
 
 // ─── render.js — отрисовка интерфейса ─────────────────────────────────────
 
+function formatMessageContent(content) {
+  if (!content) return '';
+  let escaped = escapeHtml(content);
+
+  // Regex для YouTube (full & short links)
+  const ytRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/g;
+  
+  // Если есть ссылка на YouTube — добавляем плеер с автоплеем
+  return escaped.replace(ytRegex, (match, videoId) => {
+    return `<div class="yt-embed-container" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;margin:10px 0;background:#000;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+              <iframe 
+                src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&rel=0" 
+                style="position:absolute;top:0;left:0;width:100%;height:100%;" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen>
+              </iframe>
+            </div>` + match; // Оставляем саму ссылку под видео
+  });
+}
+
 function renderChats() {
   const app  = window.app;
   const list = document.getElementById('chats-list');
@@ -242,12 +263,12 @@ function renderMessages() {
     let captionWrap;
     if (isMediaAttachment) {
       if ((msg.content || '').trim()) {
-        captionWrap = '<p class="text-sm leading-relaxed" id="msg-content-' + msg.id + '" style="padding:2px 8px 4px;">' + escapeHtml(msg.content) + '</p>';
+        captionWrap = '<p class="text-sm leading-relaxed" id="msg-content-' + msg.id + '" style="padding:2px 8px 4px;">' + formatMessageContent(msg.content) + '</p>';
       } else {
         captionWrap = '<span id="msg-content-' + msg.id + '" style="display:none;"></span>';
       }
     } else if (msg.content || !attachmentHtml) {
-      captionWrap = '<p class="text-sm leading-relaxed" id="msg-content-' + msg.id + '" style="white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;">' + escapeHtml(msg.content) + '</p>';
+      captionWrap = '<p class="text-sm leading-relaxed" id="msg-content-' + msg.id + '" style="white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;">' + formatMessageContent(msg.content) + '</p>';
     } else {
       captionWrap = '<span id="msg-content-' + msg.id + '" style="display:none;"></span>';
     }

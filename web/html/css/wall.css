@@ -56,25 +56,31 @@
 /* Если открыто поверх стены, раздвигаем окна side-by-side (iOS Split View style) */
 body.wall-open.profile-open #wall-modal {
     transform: translateX(210px) scale(0.96) !important;
-    opacity: 0.85;
-    filter: blur(4px);
-    pointer-events: none;
+    opacity: 0.95;
+    /* Убираем блюр и возвращаем кликабельность по просьбе пользователя */
+    filter: none;
+    pointer-events: auto !important;
 }
 
 body.wall-open #profile-overlay {
     background: transparent !important;
     backdrop-filter: none !important;
+    /* Позволяем кликать по стене сквозь оверлей */
     pointer-events: none;
+    z-index: 210; /* Выше стены */
 }
 
 body.wall-open #profile-modal {
     pointer-events: auto !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 body.wall-open.profile-open #profile-modal {
-    transform: translateX(-450px) scale(1) !important;
-    box-shadow: -20px 40px 100px rgba(0,0,0,0.3) !important;
-    z-index: 200;
+    /* Side panel appears at left edge */
+    transform: translateX(0) !important;
+    box-shadow: 20px 40px 100px rgba(0,0,0,0.3) !important;
+    z-index: 220;
 }
 
 /* Эффект для кнопки шестеренки */

@@ -80,8 +80,8 @@ func (m *MockUserRepository) UpdateAvatarUrl(userID uuid.UUID, url string) error
 func setupTestRouter(mockRepo *MockUserRepository) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	userService := service.NewUserService(mockRepo)
-	userHandler := handler.NewUserHandler(userService, nil, nil)
+	userService := service.NewUserService(mockRepo, nil)
+	userHandler := handler.NewUserHandler(userService, nil, nil, nil, nil)
 
 	router.POST("/register", userHandler.Register)
 	router.POST("/login", userHandler.Login)

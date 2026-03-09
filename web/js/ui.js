@@ -264,17 +264,52 @@ function openProfileModal() {
   const modal   = document.getElementById('profile-modal');
   const user    = window.app.currentUser;
 
-  document.body.classList.add('profile-open');
+  // Если открыто из стены, добавляем спец. класс для Side-by-Side
+  const wallOverlay = document.getElementById('wall-overlay');
+  if (wallOverlay && !wallOverlay.classList.contains('hidden')) {
+    document.body.classList.add('profile-open');
+  }
 
   if (user) {
-    document.getElementById('profile-username').value    = user.username  || '';
-    document.getElementById('profile-email').value       = user.email     || '';
-    document.getElementById('profile-fullname').value    = user.full_name || '';
-    document.getElementById('profile-phone').value       = user.phone     || '';
+    const _set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    _set('profile-username',    user.username);
+    _set('profile-email',       user.email);
+    _set('profile-fullname',    user.full_name);
+    _set('profile-phone',       user.phone);
+    _set('profile-location',    user.location);
+    _set('profile-profession',  user.profession);
+
+
+    // Обновляем аватар в модалке профиля
+    const profileAvatarEl = document.getElementById('profile-avatar');
+    if (profileAvatarEl) {
+      if (user.avatar_url) {
+        profileAvatarEl.innerHTML = `<img src="${user.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      } else {
+        profileAvatarEl.innerHTML = '';
+        profileAvatarEl.textContent = (user.username || 'U')[0].toUpperCase();
+      }
+    }
+
+    if (user.birth_date) {
+      // user.birth_date may be ISO string or time object.
+      // We need YYYY-MM-DD for <input type="date">
+      try {
+        const d = new Date(user.birth_date);
+        const iso = d.toISOString().split('T')[0];
+        document.getElementById('profile-birthdate').value = iso;
+      } catch(e) {
+        console.error("Error parsing birth date", e);
+      }
+    }
   }
 
   overlay.classList.remove('hidden');
-  setTimeout(() => { overlay.classList.remove('opacity-0'); modal.classList.remove('scale-95'); }, 10);
+  setTimeout(() => {
+    overlay.classList.remove('opacity-0');
+    modal.classList.remove('-translate-x-full');
+    modal.classList.add('translate-x-0');
+  }, 10);
   _profileModalOpen = true;
   const btn = document.getElementById('profile-dock-btn');
   if (btn) btn.classList.add('active');
@@ -284,7 +319,8 @@ function closeProfileModal() {
   const overlay = document.getElementById('profile-overlay');
   const modal   = document.getElementById('profile-modal');
   overlay.classList.add('opacity-0');
-  modal.classList.add('scale-95');
+  modal.classList.add('-translate-x-full');
+  modal.classList.remove('translate-x-0');
   document.body.classList.remove('profile-open');
   _profileModalOpen = false;
   setTimeout(() => overlay.classList.add('hidden'), 300);
@@ -293,9 +329,8 @@ function closeProfileModal() {
 }
 
 function triggerAvatarUpload() {
-  const input = document.getElementById('avatar-upload');
+  const input = document.getElementById('profile-avatar-upload');
   if (!input) return;
-  // Сбрасываем value чтобы повторный выбор того же файла тоже срабатывал
   input.value = '';
   input.onchange = handleAvatarSelected;
   input.click();
@@ -321,6 +356,11 @@ async function handleAvatarSelected(e) {
     localStorage.setItem('alpha_user', JSON.stringify(stored));
     loadUserData();
     if (wallAvatarEl) setAvatarEl(wallAvatarEl, window.app.currentUser);
+    // Обновляем аватар в самой модалке профиля
+    const profileAvatarEl = document.getElementById('profile-avatar');
+    if (profileAvatarEl) {
+      profileAvatarEl.innerHTML = `<img src="${result.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    }
     window.app.notify('Фото обновлено ✓', 'success');
   } catch (err) {
     window.app.notify('Ошибка: ' + err.message, 'error');
@@ -334,9 +374,21 @@ async function saveProfile() {
   const fullname   = document.getElementById('profile-fullname').value.trim();
   const phone      = document.getElementById('profile-phone').value.trim();
   const username   = document.getElementById('profile-username').value.trim();
+  const birthDate  = document.getElementById('profile-birthdate').value;
+  const location   = document.getElementById('profile-location').value.trim();
+  const profession = document.getElementById('profile-profession').value.trim();
+
   try {
-    await apiSaveProfile({ fullname, phone, username });
+    await apiSaveProfile({ fullname, phone, username, birthDate, location, profession });
     window.app.notify('Профиль обновлён ✓', 'success');
+
+    // Обновляем стену ДО закрытия модалки (пока _wallUserId ещё доступен)
+    const wallOverlay = document.getElementById('wall-overlay');
+    if (wallOverlay && !wallOverlay.classList.contains('hidden') && typeof loadWallPosts === 'function') {
+      const wallId = (typeof _wallUserId !== 'undefined' ? _wallUserId : null) || window.app.currentUser?.id;
+      loadWallPosts(wallId);
+    }
+
     closeProfileModal();
   } catch (err) {
     window.app.notify('Ошибка сохранения: ' + err.message, 'error');

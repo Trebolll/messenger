@@ -117,3 +117,33 @@ func (s *OTPStore) cleanupLoop() {
 		s.mu.Unlock()
 	}
 }
+
+// ── Reset-token store ────────────────────────────────────────────────────────
+
+type resetEntry struct {
+	dest      string
+	expiresAt time.Time
+}
+
+var resetMu sync.Mutex
+var resetEntries = map[string]*resetEntry{}
+
+// StoreReset сохраняет токен → dest (email/phone) на 15 минут
+func (s *OTPStore) StoreReset(token, dest string) {
+	resetMu.Lock()
+	defer resetMu.Unlock()
+	resetEntries[token] = &resetEntry{dest: dest, expiresAt: time.Now().Add(15 * time.Minute)}
+}
+
+// ConsumeReset возвращает dest и удаляет токен (одноразовый)
+func (s *OTPStore) ConsumeReset(token string) (string, bool) {
+	resetMu.Lock()
+	defer resetMu.Unlock()
+	e, ok := resetEntries[token]
+	if !ok || time.Now().After(e.expiresAt) {
+		delete(resetEntries, token)
+		return "", false
+	}
+	delete(resetEntries, token)
+	return e.dest, true
+}

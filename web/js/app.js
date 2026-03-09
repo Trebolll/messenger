@@ -166,7 +166,7 @@ const Auth = (() => {
     msg ? _show('auth-error') : _hide('auth-error');
   }
   function _step(name) {
-    ['login','register','code'].forEach(s => _hide(`auth-step-${s}`));
+    ['login','register','code','reset-send','reset-code','reset-confirm'].forEach(s => _hide(`auth-step-${s}`));
     _show(`auth-step-${name}`);
     _err('');
   }
@@ -320,6 +320,90 @@ const Auth = (() => {
     }
   }
 
+  // ── Сброс пароля ──────────────────────────────────────────────────────────
+  let _resetLogin = '';
+  let _resetToken = '';
+
+  async function resetSend() {
+    const login = _el('reset-login-input')?.value?.trim();
+    if (!login) { _err('Введите email или телефон'); return; }
+    _err('');
+    const btn = _el('auth-btn-reset-send');
+    btn.disabled = true; btn.textContent = 'Отправка...';
+    try {
+      const res = await fetch('/api/auth/reset/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Ошибка');
+      _resetLogin = login;
+      _step('reset-code');
+    } catch (e) {
+      _err(e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Отправить код';
+    }
+  }
+
+  async function resetVerify() {
+    const code = _el('reset-code-input')?.value?.trim();
+    if (!code) { _err('Введите код'); return; }
+    _err('');
+    const btn = _el('auth-btn-reset-verify');
+    btn.disabled = true; btn.textContent = 'Проверка...';
+    try {
+      const res = await fetch('/api/auth/reset/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login: _resetLogin, code })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Неверный код');
+      _resetToken = data.reset_token;
+      _step('reset-confirm');
+    } catch (e) {
+      _err(e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Подтвердить';
+    }
+  }
+
+  async function resetConfirm() {
+    const p1 = _el('reset-password-input')?.value;
+    const p2 = _el('reset-password2-input')?.value;
+    if (!p1 || !p2) { _err('Заполните оба поля'); return; }
+    if (p1 !== p2)   { _err('Пароли не совпадают'); return; }
+    if (p1.length < 6) { _err('Пароль должен быть не менее 6 символов'); return; }
+    _err('');
+    const btn = _el('auth-btn-reset-confirm');
+    btn.disabled = true; btn.textContent = 'Сохранение...';
+    try {
+      const res = await fetch('/api/auth/reset/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reset_token: _resetToken, password: p1, password2: p2 })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Ошибка');
+      _step('login');
+      _err('');
+      // Показываем уведомление об успехе
+      if (_el('auth-error')) {
+        const el = _el('auth-error');
+        el.textContent = 'Пароль успешно изменён — войдите с новым паролем';
+        el.style.color = '#4ade80';
+        _show('auth-error');
+        setTimeout(() => { _hide('auth-error'); el.style.color = ''; }, 4000);
+      }
+    } catch (e) {
+      _err(e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Сохранить пароль';
+    }
+  }
+
   function _bind() {
     _el('auth-btn-login')          ?.addEventListener('click',   submitLogin);
     _el('auth-password-input')     ?.addEventListener('keydown', e => e.key === 'Enter' && submitLogin());
@@ -331,6 +415,27 @@ const Auth = (() => {
     _el('auth-btn-verify')         ?.addEventListener('click',   submitCode);
     _el('auth-btn-resend')         ?.addEventListener('click',   resendCode);
     _el('auth-back-from-code')     ?.addEventListener('click',   () => _step('register'));
+    // Сброс пароля
+    _el('auth-forgot-link')           ?.addEventListener('click', () => { _step('reset-send'); if (_el('reset-login-input')) _el('reset-login-input').value = ''; });
+    _el('reset-back-to-login')        ?.addEventListener('click', () => _step('login'));
+    _el('auth-btn-reset-send')        ?.addEventListener('click', resetSend);
+    _el('reset-login-input')          ?.addEventListener('keydown', e => e.key === 'Enter' && resetSend());
+    _el('auth-btn-reset-verify')      ?.addEventListener('click', resetVerify);
+    _el('reset-code-input')           ?.addEventListener('keydown', e => e.key === 'Enter' && resetVerify());
+    _el('auth-btn-reset-confirm')     ?.addEventListener('click', resetConfirm);
+    _el('reset-password2-input')      ?.addEventListener('keydown', e => e.key === 'Enter' && resetConfirm());
+    _el('reset-resend-code')          ?.addEventListener('click', async () => {
+      if (!_resetLogin) return;
+      try {
+        const res = await fetch('/api/auth/reset/send', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login: _resetLogin })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        _err('Код отправлен повторно');
+      } catch(e) { _err(e.message); }
+    });
   }
 
   document.addEventListener('DOMContentLoaded', _bind);

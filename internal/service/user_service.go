@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"messenger/internal/model"
 	_ "messenger/internal/repository"
 	"regexp"
@@ -16,11 +17,14 @@ type UserRepository interface {
 	GetByUsernameAndEmail(username, email, phone string) (*model.User, error)
 	GetByEmail(email string) (*model.User, error)
 	GetById(id uuid.UUID) (*model.User, error)
+	GetByUsername(username string) (*model.User, error)
 	Create(u *model.User) error
 	SearchByUsername(username string) ([]model.User, error)
 	UpdateProfile(u *model.User) error
 	UpdateStatus(id uuid.UUID, status string) (*model.User, error)
 	UpdateAvatarUrl(userID uuid.UUID, url string) error
+	GetByEmailOrPhone(login string) (*model.User, error)
+	UpdatePassword(userID uuid.UUID, hashedPassword string) error
 }
 
 type WallManager interface {
@@ -116,7 +120,7 @@ func isValidEmail(email string) bool {
 	return emailRegex.MatchString(email)
 }
 
-func (s *UserService) UpdateProfile(userID interface{}, phone *string, fullName *string, username *string, birthDate *string, location *string, status *string) (*model.User, error) {
+func (s *UserService) UpdateProfile(userID interface{}, phone *string, fullName *string, username *string, birthDate *string, location *string, profession *string, status *string) (*model.User, error) {
 	var id uuid.UUID
 	switch v := userID.(type) {
 	case string:
@@ -137,7 +141,7 @@ func (s *UserService) UpdateProfile(userID interface{}, phone *string, fullName 
 		return nil, errors.New("user not found")
 	}
 
-	// Обновляем только переданные поля
+	// Обновляем только переданные поля (nil = поле не передано = не трогаем)
 	if phone != nil {
 		existing.Phone = *phone
 	}
@@ -147,23 +151,35 @@ func (s *UserService) UpdateProfile(userID interface{}, phone *string, fullName 
 	if username != nil && len(*username) >= 3 {
 		existing.Username = *username
 	}
+	// location, profession, status: nil = не трогаем, "" = очищаем, "value" = устанавливаем
 	if location != nil {
 		existing.Location = *location
+	}
+	if profession != nil {
+		existing.Profession = *profession
 	}
 	if status != nil {
 		existing.Status = *status
 	}
-	if birthDate != nil && *birthDate != "" {
-		parsedDate, err := time.Parse("2006-01-02", *birthDate)
-		if err != nil {
-			return nil, errors.New("invalid birth date format, expected YYYY-MM-DD")
+	if birthDate != nil {
+		if *birthDate == "" {
+			// Пустая строка = очищаем дату рождения
+			existing.BirthDate = nil
+		} else {
+			parsedDate, err := time.Parse("2006-01-02", *birthDate)
+			if err != nil {
+				return nil, errors.New("invalid birth date format, expected YYYY-MM-DD")
+			}
+			existing.BirthDate = &parsedDate
 		}
-		existing.BirthDate = &parsedDate
 	}
 
+	fmt.Printf("[UpdateProfile] BEFORE SAVE: location=%q profession=%q birthDate=%v\n", existing.Location, existing.Profession, existing.BirthDate)
 	if err := s.repo.UpdateProfile(existing); err != nil {
+		fmt.Printf("[UpdateProfile] DB ERROR: %v\n", err)
 		return nil, err
 	}
+	fmt.Printf("[UpdateProfile] AFTER SAVE: location=%q profession=%q birthDate=%v\n", existing.Location, existing.Profession, existing.BirthDate)
 
 	return existing, nil
 }
@@ -312,6 +328,19 @@ func (s *UserService) LoginByPhone(phone, password string) (*model.User, error) 
 	return user, nil
 }
 
+// LoginByUsername — вход по username и паролю
+func (s *UserService) LoginByUsername(username, password string) (*model.User, error) {
+	user, err := s.repo.GetByUsername(username)
+	if err != nil || user == nil {
+		return nil, errors.New("неверные данные")
+	}
+	if !checkPasswordHash(password, user.Password) {
+		return nil, errors.New("неверные данные")
+	}
+	user.Password = ""
+	return user, nil
+}
+
 // SetBirthDate — устанавливает дату рождения после регистрации
 func (s *UserService) SetBirthDate(userID uuid.UUID, dateStr string) error {
 	t, err := time.Parse("2006-01-02", dateStr)
@@ -324,4 +353,17 @@ func (s *UserService) SetBirthDate(userID uuid.UUID, dateStr string) error {
 	}
 	existing.BirthDate = &t
 	return s.repo.UpdateProfile(existing)
+}
+
+// UpdatePasswordByLogin — находит пользователя по email или phone и меняет пароль
+func (s *UserService) UpdatePasswordByLogin(login, plainPassword string) error {
+	user, err := s.repo.GetByEmailOrPhone(login)
+	if err != nil || user == nil {
+		return errors.New("пользователь не найден")
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(plainPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	return s.repo.UpdatePassword(user.ID, string(hash))
 }
