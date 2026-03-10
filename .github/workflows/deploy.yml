@@ -22,6 +22,7 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           script: |
             cd /opt/messenger
+            git remote set-url origin https://${{ secrets.GH_TOKEN }}@github.com/Trebolll/messenger.git
             git fetch origin
             git checkout master
             git reset --hard origin/master
