@@ -67,7 +67,7 @@ func TestAISuggest_APIError(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
-	assert.Contains(t, err.Error(), "Anthropic API error: Overloaded")
+	assert.Contains(t, err.Error(), "anthropic error: Overloaded")
 }
 
 func TestAISuggest_ToneAction(t *testing.T) {

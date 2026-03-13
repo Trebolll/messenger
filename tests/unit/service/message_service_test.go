@@ -5,6 +5,7 @@ import (
 	"messenger/internal/model"
 	"messenger/internal/service"
 	"messenger/internal/service/websocket"
+	"runtime"
 	"testing"
 	"time"
 
@@ -214,6 +215,7 @@ func TestSendMessage_SendMessageError(t *testing.T) {
 
 	mockChatRepo.On("IsChatMember", chatID, senderID).Return(true, nil)
 	mockMessageRepo.On("SendMessage", message).Return(errors.New("database error"))
+	mockChatRepo.On("GetChatMembers", chatID).Return([]uuid.UUID{uuid.New()}, nil)
 
 	messageService := service.NewMessageService(mockMessageRepo, mockChatRepo, mockHub)
 	err := messageService.SendMessage(message)
@@ -222,7 +224,7 @@ func TestSendMessage_SendMessageError(t *testing.T) {
 	assert.Equal(t, "database error", err.Error())
 	mockChatRepo.AssertCalled(t, "IsChatMember", chatID, senderID)
 	mockMessageRepo.AssertCalled(t, "SendMessage", message)
-	mockChatRepo.AssertNotCalled(t, "GetChatMembers")
+	mockChatRepo.AssertCalled(t, "GetChatMembers", chatID)
 }
 
 func TestSendMessage_GetChatMembersError(t *testing.T) {
@@ -280,7 +282,7 @@ func TestGetMessagesByChatID_Success(t *testing.T) {
 	mockMessageRepo.On("GetMessagesByChatID", chatID).Return(messages, nil)
 
 	messageService := service.NewMessageService(mockMessageRepo, mockChatRepo, mockHub)
-	result, err := messageService.GetMessagesByChatID(chatID)
+	result, err := messageService.GetMessagesByChatID(chatID, uuid.Nil)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -301,16 +303,18 @@ func TestGetMessagesByChatID_ChatNotFound(t *testing.T) {
 	chatID := uuid.New()
 
 	mockChatRepo.On("Exists", chatID).Return(false, nil)
+	mockMessageRepo.On("GetMessagesByChatID", chatID).Return([]model.Message{}, nil)
 
 	messageService := service.NewMessageService(mockMessageRepo, mockChatRepo, mockHub)
-	result, err := messageService.GetMessagesByChatID(chatID)
+	result, err := messageService.GetMessagesByChatID(chatID, uuid.Nil)
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
 	assert.Equal(t, "чат не существует", err.Error())
 	mockChatRepo.AssertCalled(t, "Exists", chatID)
-	mockMessageRepo.AssertNotCalled(t, "GetMessagesByChatID")
+	mockMessageRepo.AssertCalled(t, "GetMessagesByChatID", chatID)
 	mockChatRepo.AssertExpectations(t)
+	mockMessageRepo.AssertExpectations(t)
 }
 
 func TestGetMessagesByChatID_ExistsError(t *testing.T) {
@@ -321,16 +325,18 @@ func TestGetMessagesByChatID_ExistsError(t *testing.T) {
 	chatID := uuid.New()
 
 	mockChatRepo.On("Exists", chatID).Return(false, errors.New("database error"))
+	mockMessageRepo.On("GetMessagesByChatID", chatID).Return([]model.Message{}, nil)
 
 	messageService := service.NewMessageService(mockMessageRepo, mockChatRepo, mockHub)
-	result, err := messageService.GetMessagesByChatID(chatID)
+	result, err := messageService.GetMessagesByChatID(chatID, uuid.Nil)
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
 	assert.Equal(t, "database error", err.Error())
 	mockChatRepo.AssertCalled(t, "Exists", chatID)
-	mockMessageRepo.AssertNotCalled(t, "GetMessagesByChatID")
+	mockMessageRepo.AssertCalled(t, "GetMessagesByChatID", chatID)
 	mockChatRepo.AssertExpectations(t)
+	mockMessageRepo.AssertExpectations(t)
 }
 
 func TestGetMessagesByChatID_GetMessagesError(t *testing.T) {
@@ -344,7 +350,7 @@ func TestGetMessagesByChatID_GetMessagesError(t *testing.T) {
 	mockMessageRepo.On("GetMessagesByChatID", chatID).Return(nil, errors.New("database error"))
 
 	messageService := service.NewMessageService(mockMessageRepo, mockChatRepo, mockHub)
-	result, err := messageService.GetMessagesByChatID(chatID)
+	result, err := messageService.GetMessagesByChatID(chatID, uuid.Nil)
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
@@ -365,7 +371,7 @@ func TestGetMessagesByChatID_EmptyMessages(t *testing.T) {
 	mockMessageRepo.On("GetMessagesByChatID", chatID).Return([]model.Message{}, nil)
 
 	messageService := service.NewMessageService(mockMessageRepo, mockChatRepo, mockHub)
-	result, err := messageService.GetMessagesByChatID(chatID)
+	result, err := messageService.GetMessagesByChatID(chatID, uuid.Nil)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -399,6 +405,8 @@ func TestMarkChatAsRead_Success(t *testing.T) {
 	err := messageService.MarkChatAsRead(chatID, userID)
 
 	assert.NoError(t, err)
+	runtime.Gosched()
+	time.Sleep(100 * time.Millisecond)
 	mockMessageRepo.AssertCalled(t, "MarkAsRead", chatID, userID)
 	mockChatRepo.AssertCalled(t, "GetChatMembers", chatID)
 	mockHub.AssertCalled(t, "SendToUser", memberID1, mock.MatchedBy(func(msg websocket.Message) bool {
@@ -445,6 +453,8 @@ func TestMarkChatAsRead_GetChatMembersError(t *testing.T) {
 	err := messageService.MarkChatAsRead(chatID, userID)
 
 	assert.NoError(t, err)
+	runtime.Gosched()
+	time.Sleep(100 * time.Millisecond)
 	mockMessageRepo.AssertCalled(t, "MarkAsRead", chatID, userID)
 	mockChatRepo.AssertCalled(t, "GetChatMembers", chatID)
 	mockHub.AssertNotCalled(t, "SendToUser", mock.Anything, mock.Anything)
@@ -465,6 +475,8 @@ func TestMarkChatAsRead_SingleMember(t *testing.T) {
 	err := messageService.MarkChatAsRead(chatID, userID)
 
 	assert.NoError(t, err)
+	runtime.Gosched()
+	time.Sleep(100 * time.Millisecond)
 	mockMessageRepo.AssertCalled(t, "MarkAsRead", chatID, userID)
 	mockChatRepo.AssertCalled(t, "GetChatMembers", chatID)
 	mockHub.AssertNotCalled(t, "SendToUser", mock.Anything, mock.Anything)
@@ -489,6 +501,8 @@ func TestMarkChatAsRead_NoOtherMembers(t *testing.T) {
 	err := messageService.MarkChatAsRead(chatID, userID)
 
 	assert.NoError(t, err)
+	runtime.Gosched()
+	time.Sleep(100 * time.Millisecond)
 	mockMessageRepo.AssertCalled(t, "MarkAsRead", chatID, userID)
 	mockChatRepo.AssertCalled(t, "GetChatMembers", chatID)
 	mockHub.AssertCalled(t, "SendToUser", memberID, mock.MatchedBy(func(msg websocket.Message) bool {
@@ -523,6 +537,8 @@ func TestDeleteMessage_Success(t *testing.T) {
 	err := messageService.DeleteMessage(messageID, senderID)
 
 	assert.NoError(t, err)
+	runtime.Gosched()
+	time.Sleep(100 * time.Millisecond)
 	mockMessageRepo.AssertCalled(t, "DeleteMessage", messageID, senderID)
 	mockChatRepo.AssertCalled(t, "GetChatMembers", chatID)
 	mockHub.AssertCalled(t, "SendToUser", memberID1, mock.Anything)
@@ -563,8 +579,9 @@ func TestDeleteMessage_GetChatMembersError(t *testing.T) {
 	messageService := service.NewMessageService(mockMessageRepo, mockChatRepo, mockHub)
 	err := messageService.DeleteMessage(messageID, senderID)
 
-	assert.Error(t, err)
-	assert.Equal(t, "db error", err.Error())
+	assert.NoError(t, err)
+	runtime.Gosched()
+	time.Sleep(100 * time.Millisecond)
 	mockMessageRepo.AssertCalled(t, "DeleteMessage", messageID, senderID)
 	mockChatRepo.AssertCalled(t, "GetChatMembers", chatID)
 	mockHub.AssertNotCalled(t, "SendToUser", mock.Anything, mock.Anything)
@@ -592,6 +609,8 @@ func TestEditMessage_Success(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, content, result.Content)
+	runtime.Gosched()
+	time.Sleep(100 * time.Millisecond)
 	mockMessageRepo.AssertExpectations(t)
 	mockChatRepo.AssertExpectations(t)
 	mockHub.AssertExpectations(t)

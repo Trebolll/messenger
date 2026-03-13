@@ -49,7 +49,7 @@ func TestAttachmentUpload_Success(t *testing.T) {
 		return a.Url == url && a.Filename == filename && a.ChatID == chatID
 	})).Return(nil)
 
-	result, err := s.Upload(context.Background(), senderID, chatID, file, filename, size, mimeType)
+	result, err := s.Upload(context.Background(), senderID, chatID, nil, file, filename, size, mimeType)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)

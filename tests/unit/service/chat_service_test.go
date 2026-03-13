@@ -1,7 +1,6 @@
 package service
 
 import (
-	"database/sql"
 	"errors"
 	"messenger/internal/model"
 	"messenger/internal/service"
@@ -196,7 +195,7 @@ func TestCreatePrivateChat_User0NotFound(t *testing.T) {
 	user0ID := uuid.New()
 	user1ID := uuid.New()
 
-	mockUserRepo.On("GetById", user0ID).Return(nil, sql.ErrNoRows)
+	mockUserRepo.On("GetById", user0ID).Return(nil, nil)
 
 	chatService := service.NewChatService(mockChatRepo, mockUserRepo, mockHub)
 	result, err := chatService.CreatePrivateChat(user0ID, user1ID)
@@ -225,7 +224,7 @@ func TestCreatePrivateChat_User1NotFound(t *testing.T) {
 	}
 
 	mockUserRepo.On("GetById", user0ID).Return(user0, nil)
-	mockUserRepo.On("GetById", user1ID).Return(nil, sql.ErrNoRows)
+	mockUserRepo.On("GetById", user1ID).Return(nil, nil)
 
 	chatService := service.NewChatService(mockChatRepo, mockUserRepo, mockHub)
 	result, err := chatService.CreatePrivateChat(user0ID, user1ID)
@@ -350,7 +349,7 @@ func TestCreateGroupChatByUsernames_UserNotFound(t *testing.T) {
 
 	creatorID := uuid.New()
 
-	mockUserRepo.On("GetByUsername", "user1").Return(nil, errors.New("user not found"))
+	mockUserRepo.On("GetByUsername", "user1").Return(nil, nil)
 
 	chatService := service.NewChatService(mockChatRepo, mockUserRepo, mockHub)
 	result, err := chatService.CreateGroupChatByUsernames("Test Group", []string{"user1", "user2"}, creatorID)

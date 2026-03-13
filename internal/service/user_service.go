@@ -138,6 +138,9 @@ func (s *UserService) UpdateProfile(userID interface{}, phone *string, fullName 
 	// Получаем текущие данные пользователя
 	existing, err := s.repo.GetById(id)
 	if err != nil {
+		return nil, err
+	}
+	if existing == nil {
 		return nil, errors.New("user not found")
 	}
 
@@ -350,6 +353,9 @@ func (s *UserService) SetBirthDate(userID uuid.UUID, dateStr string) error {
 	existing, err := s.repo.GetById(userID)
 	if err != nil {
 		return err
+	}
+	if existing == nil {
+		return errors.New("пользователь не найден")
 	}
 	existing.BirthDate = &t
 	return s.repo.UpdateProfile(existing)

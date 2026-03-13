@@ -18,8 +18,17 @@ type MockUserRepository struct {
 	mock.Mock
 }
 
-func (m *MockUserRepository) GetByUsernameAndEmail(username string, email string) (*model.User, error) {
-	args := m.Called(username, email)
+type MockWallManager struct {
+	mock.Mock
+}
+
+func (m *MockWallManager) InitWall(userID uuid.UUID) error {
+	args := m.Called(userID)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) GetByUsernameAndEmail(username, email, phone string) (*model.User, error) {
+	args := m.Called(username, email, phone)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -37,6 +46,27 @@ func (m *MockUserRepository) GetByEmail(email string) (*model.User, error) {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*model.User), args.Error(1)
+}
+
+func (m *MockUserRepository) GetByUsername(username string) (*model.User, error) {
+	args := m.Called(username)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.User), args.Error(1)
+}
+
+func (m *MockUserRepository) GetByEmailOrPhone(login string) (*model.User, error) {
+	args := m.Called(login)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.User), args.Error(1)
+}
+
+func (m *MockUserRepository) UpdatePassword(userID uuid.UUID, hashedPassword string) error {
+	args := m.Called(userID, hashedPassword)
+	return args.Error(0)
 }
 
 func (m *MockUserRepository) Create(u *model.User) error {
@@ -80,12 +110,14 @@ func (m *MockUserRepository) UpdateAvatarUrl(userID uuid.UUID, url string) error
 
 func TestCreateUser_Success(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com").Return(nil, nil)
+	mockWall := new(MockWallManager)
+	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com", "").Return(nil, nil)
 	mockRepo.On("Create", mock.MatchedBy(func(u *model.User) bool {
 		return u.Username == "testuser" && u.Email == "test@example.com"
 	})).Return(nil)
+	mockWall.On("InitWall", mock.Anything).Return(nil)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	user := &model.User{
 		Username: "testuser",
 		Email:    "test@example.com",
@@ -95,7 +127,7 @@ func TestCreateUser_Success(t *testing.T) {
 	err := userService.CreateUser(user)
 
 	assert.NoError(t, err)
-	mockRepo.AssertCalled(t, "GetByUsernameAndEmail", "testuser", "test@example.com")
+	mockRepo.AssertCalled(t, "GetByUsernameAndEmail", "testuser", "test@example.com", "")
 	mockRepo.AssertCalled(t, "Create", mock.MatchedBy(func(u *model.User) bool {
 		return u.Username == "testuser" && u.Email == "test@example.com"
 	}))
@@ -104,8 +136,9 @@ func TestCreateUser_Success(t *testing.T) {
 
 func TestCreateUser_InvalidEmail(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	user := &model.User{
 		Username: "testuser",
 		Email:    "invalidemail",
@@ -122,8 +155,9 @@ func TestCreateUser_InvalidEmail(t *testing.T) {
 
 func TestCreateUser_UsernameTooShort(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	user := &model.User{
 		Username: "ab",
 		Email:    "test@example.com",
@@ -140,8 +174,9 @@ func TestCreateUser_UsernameTooShort(t *testing.T) {
 
 func TestCreateUser_UsernameTooLong(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	user := &model.User{
 		Username: "a" + string(make([]byte, 50)) + "a",
 		Email:    "test@example.com",
@@ -158,14 +193,15 @@ func TestCreateUser_UsernameTooLong(t *testing.T) {
 
 func TestCreateUser_UsernameAlreadyExists(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 	existingUser := &model.User{
 		ID:       uuid.New(),
 		Username: "testuser",
 		Email:    "existing@example.com",
 	}
-	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com").Return(existingUser, nil)
+	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com", "").Return(existingUser, nil)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	user := &model.User{
 		Username: "testuser",
 		Email:    "test@example.com",
@@ -175,21 +211,22 @@ func TestCreateUser_UsernameAlreadyExists(t *testing.T) {
 	err := userService.CreateUser(user)
 
 	assert.Error(t, err)
-	assert.Equal(t, "пользователь с таким именем или таким адресом электронной почты пользователя уже существует", err.Error())
-	mockRepo.AssertCalled(t, "GetByUsernameAndEmail", "testuser", "test@example.com")
+	assert.Equal(t, "имя пользователя уже занято", err.Error())
+	mockRepo.AssertCalled(t, "GetByUsernameAndEmail", "testuser", "test@example.com", "")
 	mockRepo.AssertNotCalled(t, "Create")
 }
 
 func TestCreateUser_EmailAlreadyExists(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 	existingUser := &model.User{
 		ID:       uuid.New(),
 		Username: "otheruser",
 		Email:    "test@example.com",
 	}
-	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com").Return(existingUser, nil)
+	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com", "").Return(existingUser, nil)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	user := &model.User{
 		Username: "testuser",
 		Email:    "test@example.com",
@@ -199,16 +236,17 @@ func TestCreateUser_EmailAlreadyExists(t *testing.T) {
 	err := userService.CreateUser(user)
 
 	assert.Error(t, err)
-	assert.Equal(t, "пользователь с таким именем или таким адресом электронной почты пользователя уже существует", err.Error())
-	mockRepo.AssertCalled(t, "GetByUsernameAndEmail", "testuser", "test@example.com")
+	assert.Equal(t, "пользователь с таким адресом электронной почты уже существует", err.Error())
+	mockRepo.AssertCalled(t, "GetByUsernameAndEmail", "testuser", "test@example.com", "")
 	mockRepo.AssertNotCalled(t, "Create")
 }
 
 func TestCreateUser_PasswordTooShort(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com").Return(nil, nil)
+	mockWall := new(MockWallManager)
+	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com", "").Return(nil, nil)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	user := &model.User{
 		Username: "testuser",
 		Email:    "test@example.com",
@@ -219,18 +257,19 @@ func TestCreateUser_PasswordTooShort(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Equal(t, "пароль должен содержать не менее 6 символов", err.Error())
-	mockRepo.AssertCalled(t, "GetByUsernameAndEmail", "testuser", "test@example.com")
+	mockRepo.AssertCalled(t, "GetByUsernameAndEmail", "testuser", "test@example.com", "")
 	mockRepo.AssertNotCalled(t, "Create")
 }
 
 func TestCreateUser_DatabaseError(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com").Return(nil, nil)
+	mockWall := new(MockWallManager)
+	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com", "").Return(nil, nil)
 	mockRepo.On("Create", mock.MatchedBy(func(u *model.User) bool {
 		return u.Username == "testuser"
 	})).Return(errors.New("database connection error"))
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	user := &model.User{
 		Username: "testuser",
 		Email:    "test@example.com",
@@ -241,7 +280,7 @@ func TestCreateUser_DatabaseError(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Equal(t, "database connection error", err.Error())
-	mockRepo.AssertCalled(t, "GetByUsernameAndEmail", "testuser", "test@example.com")
+	mockRepo.AssertCalled(t, "GetByUsernameAndEmail", "testuser", "test@example.com", "")
 	mockRepo.AssertCalled(t, "Create", mock.MatchedBy(func(u *model.User) bool {
 		return u.Username == "testuser"
 	}))
@@ -250,6 +289,7 @@ func TestCreateUser_DatabaseError(t *testing.T) {
 
 func TestLoginUser_Success(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 	hashedPassword := hashPassword("password123")
 	user := &model.User{
 		ID:       uuid.New(),
@@ -259,7 +299,7 @@ func TestLoginUser_Success(t *testing.T) {
 	}
 	mockRepo.On("GetByEmail", "test@example.com").Return(user, nil)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	result, err := userService.LoginUser("test@example.com", "password123")
 
 	assert.NoError(t, err)
@@ -273,9 +313,10 @@ func TestLoginUser_Success(t *testing.T) {
 
 func TestLoginUser_UserNotFound(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 	mockRepo.On("GetByEmail", "notfound@example.com").Return(nil, nil)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	result, err := userService.LoginUser("notfound@example.com", "password123")
 
 	assert.Error(t, err)
@@ -287,9 +328,10 @@ func TestLoginUser_UserNotFound(t *testing.T) {
 
 func TestLoginUser_RepositoryError(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 	mockRepo.On("GetByEmail", "test@example.com").Return(nil, errors.New("database connection error"))
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	result, err := userService.LoginUser("test@example.com", "password123")
 
 	assert.Error(t, err)
@@ -301,6 +343,7 @@ func TestLoginUser_RepositoryError(t *testing.T) {
 
 func TestLoginUser_WrongPassword(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 	hashedPassword := hashPassword("correctpassword")
 	user := &model.User{
 		ID:       uuid.New(),
@@ -310,7 +353,7 @@ func TestLoginUser_WrongPassword(t *testing.T) {
 	}
 	mockRepo.On("GetByEmail", "test@example.com").Return(user, nil)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	result, err := userService.LoginUser("test@example.com", "wrongpassword")
 
 	assert.Error(t, err)
@@ -322,6 +365,7 @@ func TestLoginUser_WrongPassword(t *testing.T) {
 
 func TestSearchUsers_Success(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 	users := []model.User{
 		{
 			ID:       uuid.New(),
@@ -336,7 +380,7 @@ func TestSearchUsers_Success(t *testing.T) {
 	}
 	mockRepo.On("SearchByUsername", "test").Return(users, nil)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	result, err := userService.SearchUsers("test")
 
 	assert.NoError(t, err)
@@ -350,9 +394,10 @@ func TestSearchUsers_Success(t *testing.T) {
 
 func TestSearchUsers_EmptyResult(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 	mockRepo.On("SearchByUsername", "nonexistent").Return([]model.User{}, nil)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	result, err := userService.SearchUsers("nonexistent")
 
 	assert.NoError(t, err)
@@ -364,8 +409,9 @@ func TestSearchUsers_EmptyResult(t *testing.T) {
 
 func TestSearchUsers_QueryTooShort(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	result, err := userService.SearchUsers("ab")
 
 	assert.Error(t, err)
@@ -377,9 +423,10 @@ func TestSearchUsers_QueryTooShort(t *testing.T) {
 
 func TestSearchUsers_RepositoryError(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 	mockRepo.On("SearchByUsername", "test").Return(nil, errors.New("database connection error"))
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	result, err := userService.SearchUsers("test")
 
 	assert.Error(t, err)
@@ -391,6 +438,7 @@ func TestSearchUsers_RepositoryError(t *testing.T) {
 
 func TestUpdateProfile_Success(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 	userID := uuid.New()
 	existingUser := &model.User{ID: userID, Username: "olduser"}
 	newName := "New Name"
@@ -399,8 +447,8 @@ func TestUpdateProfile_Success(t *testing.T) {
 	mockRepo.On("GetById", userID).Return(existingUser, nil)
 	mockRepo.On("UpdateProfile", mock.Anything).Return(nil)
 
-	userService := service.NewUserService(mockRepo)
-	result, err := userService.UpdateProfile(userID, nil, &newName, &newUsername, nil, nil, nil)
+	userService := service.NewUserService(mockRepo, mockWall)
+	result, err := userService.UpdateProfile(userID, nil, &newName, &newUsername, nil, nil, nil, nil)
 
 	assert.NoError(t, err)
 	assert.Equal(t, newName, result.FullName)
@@ -410,13 +458,14 @@ func TestUpdateProfile_Success(t *testing.T) {
 
 func TestUpdateStatus_Success(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 	userID := uuid.New()
 	status := "online"
 	user := &model.User{ID: userID, Status: status}
 
 	mockRepo.On("UpdateStatus", userID, status).Return(user, nil)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	result, err := userService.UpdateStatus(userID, status)
 
 	assert.NoError(t, err)
@@ -426,12 +475,13 @@ func TestUpdateStatus_Success(t *testing.T) {
 
 func TestUpdateAvatarUrl_Success(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 	userID := uuid.New()
 	url := "http://example.com/avatar.png"
 
 	mockRepo.On("UpdateAvatarUrl", userID, url).Return(nil)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	err := userService.UpdateAvatarUrl(userID, url)
 
 	assert.NoError(t, err)
@@ -440,12 +490,13 @@ func TestUpdateAvatarUrl_Success(t *testing.T) {
 
 func TestGetUserByID_Success(t *testing.T) {
 	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
 	userID := uuid.New()
 	user := &model.User{ID: userID, Username: "testuser"}
 
 	mockRepo.On("GetById", userID).Return(user, nil)
 
-	userService := service.NewUserService(mockRepo)
+	userService := service.NewUserService(mockRepo, mockWall)
 	result, err := userService.GetUserByID(userID)
 
 	assert.NoError(t, err)

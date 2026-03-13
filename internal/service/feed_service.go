@@ -1,14 +1,23 @@
 package service
 
 import (
+	"database/sql"
 	"log"
 	"messenger/internal/model"
-	"messenger/internal/repository"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+type FeedRepositoryIface interface {
+	TrackEventBatch(events []*model.FeedEvent) error
+	UpsertScore(postID, userID uuid.UUID, eventType string, watchSec int) error
+	UpdatePreferences(userID uuid.UUID, mimeType string) error
+	GetPersonalFeedAndGlobal(userID uuid.UUID, limit, offset int, wi, wv, wt float64) ([]model.WallPost, []model.WallPost, error)
+	GetPreferences(userID uuid.UUID) (wi, wv, wt float64, err error)
+	DB() *sql.DB
+}
 
 // ── Кеш preferences ──────────────────────────────────────────────────────────
 
@@ -20,8 +29,8 @@ type cachedPrefs struct {
 // ── Сервис ───────────────────────────────────────────────────────────────────
 
 type FeedService struct {
-	repo     *repository.FeedRepository
-	wallRepo *repository.WallRepository
+	repo     FeedRepositoryIface
+	wallRepo WallRepositoryIface
 
 	// Кеш предпочтений — TTL 5 минут, не ходим в БД на каждый GET /feed
 	prefCache sync.Map // uuid.UUID → cachedPrefs
@@ -40,7 +49,7 @@ type eventJob struct {
 	mimeType string
 }
 
-func NewFeedService(repo *repository.FeedRepository, wallRepo *repository.WallRepository) *FeedService {
+func NewFeedService(repo FeedRepositoryIface, wallRepo WallRepositoryIface) *FeedService {
 	s := &FeedService{
 		repo:     repo,
 		wallRepo: wallRepo,
@@ -198,11 +207,9 @@ func (s *FeedService) GetCachedPrefs(userID uuid.UUID) (wi, wv, wt float64) {
 		}
 	}
 	// Промах — грузим из БД
-	if err := s.repo.DB().QueryRow(
-		`SELECT weight_image, weight_video, weight_text FROM feed_preferences WHERE user_id = $1`,
-		userID,
-	).Scan(&wi, &wv, &wt); err == nil {
+	if wi, wv, wt, err := s.repo.GetPreferences(userID); err == nil {
 		s.prefCache.Store(userID, cachedPrefs{wi, wv, wt, time.Now().Add(5 * time.Minute)})
+		return wi, wv, wt
 	}
 	return
 }

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -47,12 +46,12 @@ func NewChatService(repo ChatRepositoryForService, userRepo UserRepositoryForSer
 
 func (s *ChatService) CreatePrivateChat(userId0 uuid.UUID, userId1 uuid.UUID) (*model.Chat, error) {
 	for _, id := range []uuid.UUID{userId0, userId1} {
-		_, err := s.userRepo.GetById(id)
+		user, err := s.userRepo.GetById(id)
 		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil, fmt.Errorf("пользователь с ID %s не найден", id)
-			}
 			return nil, err
+		}
+		if user == nil {
+			return nil, fmt.Errorf("пользователь с ID %s не найден", id)
 		}
 	}
 	return s.repo.CreatePrivateChat(userId0, userId1)
@@ -67,6 +66,9 @@ func (s *ChatService) CreateGroupChatByUsernames(name string, usernames []string
 	for _, username := range usernames {
 		user, err := s.userRepo.GetByUsername(username)
 		if err != nil {
+			return nil, err
+		}
+		if user == nil {
 			return nil, fmt.Errorf("пользователь %s не найден", username)
 		}
 		if !seenIDs[user.ID] {
@@ -196,6 +198,9 @@ func (s *ChatService) AddChatMember(chatID uuid.UUID, requestingUserID uuid.UUID
 	}
 	user, err := s.userRepo.GetByUsername(username)
 	if err != nil {
+		return err
+	}
+	if user == nil {
 		return fmt.Errorf("user not found")
 	}
 
