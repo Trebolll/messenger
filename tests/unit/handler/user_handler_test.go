@@ -30,12 +30,33 @@ func (m *MockUserRepository) GetByEmail(email string) (*model.User, error) {
 	return args.Get(0).(*model.User), args.Error(1)
 }
 
-func (m *MockUserRepository) GetByUsernameAndEmail(username string, email string) (*model.User, error) {
-	args := m.Called(username, email)
+func (m *MockUserRepository) GetByUsernameAndEmail(username, email, phone string) (*model.User, error) {
+	args := m.Called(username, email, phone)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*model.User), args.Error(1)
+}
+
+func (m *MockUserRepository) GetByUsername(username string) (*model.User, error) {
+	args := m.Called(username)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.User), args.Error(1)
+}
+
+func (m *MockUserRepository) GetByEmailOrPhone(login string) (*model.User, error) {
+	args := m.Called(login)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.User), args.Error(1)
+}
+
+func (m *MockUserRepository) UpdatePassword(userID uuid.UUID, hashedPassword string) error {
+	args := m.Called(userID, hashedPassword)
+	return args.Error(0)
 }
 
 func (m *MockUserRepository) Create(u *model.User) error {
@@ -77,10 +98,19 @@ func (m *MockUserRepository) UpdateAvatarUrl(userID uuid.UUID, url string) error
 	return args.Error(0)
 }
 
-func setupTestRouter(mockRepo *MockUserRepository) *gin.Engine {
+type MockWallManager struct {
+	mock.Mock
+}
+
+func (m *MockWallManager) InitWall(userID uuid.UUID) error {
+	args := m.Called(userID)
+	return args.Error(0)
+}
+
+func setupTestRouter(mockRepo *MockUserRepository, mockWall *MockWallManager) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	userService := service.NewUserService(mockRepo, nil)
+	userService := service.NewUserService(mockRepo, mockWall)
 	userHandler := handler.NewUserHandler(userService, nil, nil, nil, nil)
 
 	router.POST("/register", userHandler.Register)
@@ -92,12 +122,14 @@ func setupTestRouter(mockRepo *MockUserRepository) *gin.Engine {
 
 func TestRegisterSuccess(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com").Return(nil, nil)
+	mockWall := new(MockWallManager)
+	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com", "").Return(nil, nil)
 	mockRepo.On("Create", mock.MatchedBy(func(u *model.User) bool {
 		return u.Username == "testuser" && u.Email == "test@example.com"
 	})).Return(nil)
+	mockWall.On("InitWall", mock.Anything).Return(nil)
 
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, mockWall)
 	body := []byte(`{"username":"testuser","email":"test@example.com","password":"password123"}`)
 	req := httptest.NewRequest("POST", "/register", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -114,7 +146,7 @@ func TestRegisterSuccess(t *testing.T) {
 
 func TestRegisterInvalidJSON(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	body := []byte(`{invalid json}`)
 	req := httptest.NewRequest("POST", "/register", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -130,9 +162,9 @@ func TestRegisterInvalidJSON(t *testing.T) {
 
 func TestRegisterInvalidEmail(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	mockRepo.On("GetByUsernameAndEmail", "testuser", "invalid-email").Return(nil, nil)
+	mockRepo.On("GetByUsernameAndEmail", "testuser", "invalid-email", "").Return(nil, nil)
 
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	body := []byte(`{"username":"testuser","email":"invalid-email","password":"password123"}`)
 	req := httptest.NewRequest("POST", "/register", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -148,9 +180,9 @@ func TestRegisterInvalidEmail(t *testing.T) {
 
 func TestRegisterUsernameTooShort(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	mockRepo.On("GetByUsernameAndEmail", "ab", "test@example.com").Return(nil, nil)
+	mockRepo.On("GetByUsernameAndEmail", "ab", "test@example.com", "").Return(nil, nil)
 
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	body := []byte(`{"username":"ab","email":"test@example.com","password":"password123"}`)
 	req := httptest.NewRequest("POST", "/register", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -170,9 +202,9 @@ func TestRegisterUsernameTooLong(t *testing.T) {
 	for i := 0; i < 51; i++ {
 		longUsername += "a"
 	}
-	mockRepo.On("GetByUsernameAndEmail", longUsername, "test@example.com").Return(nil, nil)
+	mockRepo.On("GetByUsernameAndEmail", longUsername, "test@example.com", "").Return(nil, nil)
 
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	body := []byte(`{"username":"` + longUsername + `","email":"test@example.com","password":"password123"}`)
 	req := httptest.NewRequest("POST", "/register", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -188,9 +220,9 @@ func TestRegisterUsernameTooLong(t *testing.T) {
 
 func TestRegisterPasswordTooShort(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com").Return(nil, nil)
+	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com", "").Return(nil, nil)
 
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	body := []byte(`{"username":"testuser","email":"test@example.com","password":"pass"}`)
 	req := httptest.NewRequest("POST", "/register", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -211,9 +243,9 @@ func TestRegisterDuplicateUsername(t *testing.T) {
 		Email:    "existing@example.com",
 	}
 	mockRepo := new(MockUserRepository)
-	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com").Return(existingUser, nil)
+	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com", "").Return(existingUser, nil)
 
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	body := []byte(`{"username":"testuser","email":"test@example.com","password":"password123"}`)
 	req := httptest.NewRequest("POST", "/register", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -224,7 +256,7 @@ func TestRegisterDuplicateUsername(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	var response map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Contains(t, response["ошибка"], "имен")
+	assert.Contains(t, response["ошибка"], "имя пользователя")
 }
 
 func TestRegisterDuplicateEmail(t *testing.T) {
@@ -234,9 +266,9 @@ func TestRegisterDuplicateEmail(t *testing.T) {
 		Email:    "test@example.com",
 	}
 	mockRepo := new(MockUserRepository)
-	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com").Return(existingUser, nil)
+	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com", "").Return(existingUser, nil)
 
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	body := []byte(`{"username":"testuser","email":"test@example.com","password":"password123"}`)
 	req := httptest.NewRequest("POST", "/register", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -262,7 +294,7 @@ func TestLoginSuccess(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	mockRepo.On("GetByEmail", "test@example.com").Return(user, nil)
 
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	body := []byte(`{"email":"test@example.com","password":"password123"}`)
 	req := httptest.NewRequest("POST", "/login", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -280,7 +312,7 @@ func TestLoginSuccess(t *testing.T) {
 
 func TestLoginInvalidJSON(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	body := []byte(`{invalid json}`)
 	req := httptest.NewRequest("POST", "/login", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -298,7 +330,7 @@ func TestLoginUserNotFound(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	mockRepo.On("GetByEmail", "nonexistent@example.com").Return(nil, nil)
 
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	body := []byte(`{"email":"nonexistent@example.com","password":"password123"}`)
 	req := httptest.NewRequest("POST", "/login", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -323,7 +355,7 @@ func TestLoginInvalidPassword(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	mockRepo.On("GetByEmail", "test@example.com").Return(user, nil)
 
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	body := []byte(`{"email":"test@example.com","password":"wrongpassword"}`)
 	req := httptest.NewRequest("POST", "/login", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -346,7 +378,7 @@ func TestSearchUsersWithQParameter(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	mockRepo.On("SearchByUsername", "test").Return(users, nil)
 
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	req := httptest.NewRequest("GET", "/search?q=test", nil)
 	w := httptest.NewRecorder()
 
@@ -367,7 +399,7 @@ func TestSearchUsersWithUsernameParameter(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	mockRepo.On("SearchByUsername", "john").Return(users, nil)
 
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	req := httptest.NewRequest("GET", "/search?username=john", nil)
 	w := httptest.NewRecorder()
 
@@ -383,7 +415,7 @@ func TestSearchUsersWithUsernameParameter(t *testing.T) {
 
 func TestSearchUsersMissingQuery(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	req := httptest.NewRequest("GET", "/search", nil)
 	w := httptest.NewRecorder()
 
@@ -397,7 +429,7 @@ func TestSearchUsersMissingQuery(t *testing.T) {
 
 func TestSearchUsersQueryTooShort(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	req := httptest.NewRequest("GET", "/search?q=ab", nil)
 	w := httptest.NewRecorder()
 
@@ -413,7 +445,7 @@ func TestSearchUsersEmptyResults(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	mockRepo.On("SearchByUsername", "nonexistent").Return([]model.User{}, nil)
 
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	req := httptest.NewRequest("GET", "/search?q=nonexistent", nil)
 	w := httptest.NewRecorder()
 
@@ -430,7 +462,7 @@ func TestSearchUsersServiceError(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	mockRepo.On("SearchByUsername", "test").Return(nil, assert.AnError)
 
-	router := setupTestRouter(mockRepo)
+	router := setupTestRouter(mockRepo, nil)
 	req := httptest.NewRequest("GET", "/search?q=test", nil)
 	w := httptest.NewRecorder()
 
