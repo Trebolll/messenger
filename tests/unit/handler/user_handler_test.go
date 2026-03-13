@@ -142,6 +142,7 @@ func TestRegisterSuccess(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, "пользователь успешно создан", response["сообщение"])
 	mockRepo.AssertExpectations(t)
+	mockWall.AssertExpectations(t)
 }
 
 func TestRegisterInvalidJSON(t *testing.T) {

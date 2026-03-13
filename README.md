@@ -29,3 +29,15 @@ You can set breakpoints in `main.go` and start a debugging session via your IDE 
 docker-compose up --build -d backend
 docker-compose logs -f backend
 docker compose -f docker-compose.local.yml up -d --build
+
+ssh root@193.233.103.158
+
+
+
+авторизация гит на сервере 
+
+ssh -p 9871 root@193.233.103.158
+cd /opt/messenger
+git remote set-url origin git@github.com:Trebolll/messenger.git
+git fetch origin
+git reset --hard origin/master

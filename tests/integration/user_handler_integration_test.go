@@ -9,6 +9,7 @@ import (
 	"messenger/internal/model"
 	"messenger/internal/repository"
 	"messenger/internal/service"
+	"messenger/internal/service/websocket"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -50,7 +51,9 @@ func createTestTables(t *testing.T, db *sql.DB) {
 			birth_date DATE,
 			location VARCHAR(255),
 			status VARCHAR(255),
+			profession VARCHAR(255),
 			avatar_url TEXT DEFAULT '',
+			rating INT NOT NULL DEFAULT 0,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP
 		)`,
@@ -74,11 +77,14 @@ func createTestTables(t *testing.T, db *sql.DB) {
 			chat_id UUID REFERENCES chats(id) ON DELETE CASCADE,
 			sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
 			content TEXT NOT NULL,
+			likes INT NOT NULL DEFAULT 0,
+			dislikes INT NOT NULL DEFAULT 0,
+			parent_id UUID REFERENCES messages(id) ON DELETE SET NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			read_at TIMESTAMP,
 			edited_at TIMESTAMP
 		)`,
-		`CREATE TABLE attachments (
+		`CREATE TABLE IF NOT EXISTS attachments (
 			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 			chat_id UUID REFERENCES chats(id) ON DELETE CASCADE,
 			sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -89,8 +95,43 @@ func createTestTables(t *testing.T, db *sql.DB) {
 			size_bytes BIGINT NOT NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		)`,
+		`CREATE TABLE IF NOT EXISTS walls (
+			id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+			user_id    UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+			bio        TEXT,
+			banner_url TEXT,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS wall_posts (
+			id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+			user_id    UUID REFERENCES users(id) ON DELETE CASCADE,
+			content    TEXT NOT NULL,
+			chat_id    UUID REFERENCES chats(id) ON DELETE SET NULL,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS wall_attachments (
+			id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+			post_id    UUID REFERENCES wall_posts(id) ON DELETE CASCADE,
+			url        TEXT NOT NULL,
+			filename   TEXT,
+			mime_type  VARCHAR(100),
+			size_bytes BIGINT,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS wall_post_likes (
+			post_id    UUID REFERENCES wall_posts(id) ON DELETE CASCADE,
+			user_id    UUID REFERENCES users(id)      ON DELETE CASCADE,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (post_id, user_id)
+		)`,
 		`CREATE INDEX IF NOT EXISTS idx_chat_members_user_id ON chat_members (user_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_messages_chat_id_created_at ON messages (chat_id, created_at ASC)`,
+		`CREATE INDEX IF NOT EXISTS idx_walls_user_id ON walls(user_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_wall_posts_user_id ON wall_posts(user_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_wall_posts_created_at ON wall_posts(created_at DESC)`,
+		`CREATE INDEX IF NOT EXISTS idx_wall_post_likes_post ON wall_post_likes(post_id)`,
 	}
 
 	for _, query := range queries {
@@ -101,6 +142,10 @@ func createTestTables(t *testing.T, db *sql.DB) {
 
 func cleanupTestTables(t *testing.T, db *sql.DB) {
 	queries := []string{
+		`DROP TABLE IF EXISTS wall_post_likes CASCADE`,
+		`DROP TABLE IF EXISTS wall_attachments CASCADE`,
+		`DROP TABLE IF EXISTS wall_posts CASCADE`,
+		`DROP TABLE IF EXISTS walls CASCADE`,
 		`DROP TABLE IF EXISTS attachments CASCADE`,
 		`DROP TABLE IF EXISTS messages CASCADE`,
 		`DROP TABLE IF EXISTS chat_members CASCADE`,
@@ -118,8 +163,10 @@ func setupTestRouter(t *testing.T, db *sql.DB) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	userRepo := repository.NewUserRepository(db)
-	userService := service.NewUserService(userRepo, nil)
-	userHandler := handler.NewUserHandler(userService, nil, nil, nil, nil)
+	wallRepo := repository.NewWallRepository(db)
+	wallService := service.NewWallService(wallRepo)
+	userService := service.NewUserService(userRepo, wallService)
+	userHandler := handler.NewUserHandler(userService, wallService, websocket.NewHub(), websocket.NewWallHub(), nil)
 
 	router.POST("/register", userHandler.Register)
 	router.POST("/login", userHandler.Login)
@@ -270,7 +317,7 @@ func TestRegisterDuplicateUsername(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	var response map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Contains(t, response["ошибка"], "имен")
+	assert.Contains(t, response["ошибка"], "имя пользователя")
 
 	var count int
 	db.QueryRow("SELECT COUNT(*) FROM users WHERE username = $1", "testuser").Scan(&count)

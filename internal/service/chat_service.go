@@ -47,12 +47,12 @@ func NewChatService(repo ChatRepositoryForService, userRepo UserRepositoryForSer
 
 func (s *ChatService) CreatePrivateChat(userId0 uuid.UUID, userId1 uuid.UUID) (*model.Chat, error) {
 	for _, id := range []uuid.UUID{userId0, userId1} {
-		_, err := s.userRepo.GetById(id)
+		user, err := s.userRepo.GetById(id)
 		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil, fmt.Errorf("пользователь с ID %s не найден", id)
-			}
 			return nil, err
+		}
+		if user == nil {
+			return nil, fmt.Errorf("пользователь с ID %s не найден", id)
 		}
 	}
 	return s.repo.CreatePrivateChat(userId0, userId1)
