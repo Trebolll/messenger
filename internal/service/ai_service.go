@@ -40,8 +40,11 @@ var Agents = []AgentInfo{
 
 type AIService struct {
 	anthropicKey string
+	anthropicURL string
 	groqKey      string
+	groqURL      string
 	geminiKey    string
+	geminiURL    string
 	ollamaURL    string
 	httpClient   *http.Client
 }
@@ -53,8 +56,11 @@ func NewAIService() *AIService {
 	}
 	return &AIService{
 		anthropicKey: os.Getenv("ANTHROPIC_API_KEY"),
+		anthropicURL: "https://ai-proxy.trebollllllll.workers.dev/v1/messages?target=anthropic",
 		groqKey:      os.Getenv("GROQ_API_KEY"),
+		groqURL:      "https://ai-proxy.trebollllllll.workers.dev/openai/v1/chat/completions?target=groq",
 		geminiKey:    os.Getenv("GEMINI_API_KEY"),
+		geminiURL:    "https://ai-proxy.trebollllllll.workers.dev/v1beta/models/gemini-2.0-flash-lite:generateContent?target=gemini",
 		ollamaURL:    ollamaURL,
 		httpClient:   &http.Client{},
 	}
@@ -64,6 +70,7 @@ func NewAIService() *AIService {
 func NewAIServiceWithClient(apiKey, apiURL, model string, client *http.Client) *AIService {
 	return &AIService{
 		anthropicKey: apiKey,
+		anthropicURL: apiURL,
 		httpClient:   client,
 	}
 }
@@ -149,7 +156,7 @@ func (s *AIService) callAnthropic(prompt string) (string, error) {
 		MaxTokens: 500,
 		Messages:  []anthropicMessage{{Role: "user", Content: prompt}},
 	})
-	req, _ := http.NewRequest("POST", "https://ai-proxy.trebollllllll.workers.dev/v1/messages?target=anthropic", bytes.NewBuffer(body))
+	req, _ := http.NewRequest("POST", s.anthropicURL, bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-api-key", s.anthropicKey)
 	req.Header.Set("anthropic-version", "2023-06-01")
@@ -198,7 +205,7 @@ func (s *AIService) callGroq(prompt string) (string, error) {
 		Model:    "llama-3.3-70b-versatile",
 		Messages: []openAIMessage{{Role: "user", Content: prompt}},
 	})
-	req, _ := http.NewRequest("POST", "https://ai-proxy.trebollllllll.workers.dev/openai/v1/chat/completions?target=groq", bytes.NewBuffer(body))
+	req, _ := http.NewRequest("POST", s.groqURL, bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+s.groqKey)
 
@@ -245,10 +252,7 @@ type geminiResponse struct {
 }
 
 func (s *AIService) callGemini(prompt string) (string, error) {
-	url := fmt.Sprintf(
-		"https://ai-proxy.trebollllllll.workers.dev/v1beta/models/gemini-2.0-flash-lite:generateContent?target=gemini&key=%s",
-		s.geminiKey,
-	)
+	url := fmt.Sprintf("%s&key=%s", s.geminiURL, s.geminiKey)
 	body, _ := json.Marshal(geminiRequest{
 		Contents: []geminiContent{{Parts: []geminiPart{{Text: prompt}}}},
 	})

@@ -88,6 +88,14 @@ func (r *FeedRepository) UpdatePreferences(userID uuid.UUID, mimeType string) er
 	return err
 }
 
+func (r *FeedRepository) GetPreferences(userID uuid.UUID) (wi, wv, wt float64, err error) {
+	err = r.db.QueryRow(
+		`SELECT weight_image, weight_video, weight_text FROM feed_preferences WHERE user_id = $1`,
+		userID,
+	).Scan(&wi, &wv, &wt)
+	return
+}
+
 // ── Персональная лента ────────────────────────────────────────────────────────
 //
 // Оптимизации:

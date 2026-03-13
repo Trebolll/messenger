@@ -2,16 +2,32 @@ package service
 
 import (
 	"messenger/internal/model"
-	"messenger/internal/repository"
 
 	"github.com/google/uuid"
 )
 
-type WallService struct {
-	repo *repository.WallRepository
+type WallRepositoryIface interface {
+	CreateWall(userID uuid.UUID) error
+	GetWallByUserID(userID uuid.UUID) (*model.Wall, error)
+	UpdateWallSettings(userID uuid.UUID, bio string) error
+	CreatePost(post *model.WallPost) error
+	GetPostsByUserID(userID uuid.UUID, viewerID uuid.UUID) ([]model.WallPost, error)
+	GetAllMediaByUserID(userID uuid.UUID) ([]model.WallAttachment, error)
+	GetPostChat(postID uuid.UUID) (uuid.UUID, error)
+	GetTotalWallLikes(userID uuid.UUID) (int, error)
+	ToggleLike(postID uuid.UUID, userID uuid.UUID) (bool, int, error)
+	GetPostOwner(postID uuid.UUID) (uuid.UUID, error)
+	DeletePost(postID uuid.UUID, userID uuid.UUID) (uuid.UUID, error)
+	DeleteAttachment(attID uuid.UUID, userID uuid.UUID) error
+	AddAttachment(att *model.WallAttachment) error
+	GetGlobalMediaFeed(viewerID uuid.UUID) ([]model.WallPost, error)
 }
 
-func NewWallService(repo *repository.WallRepository) *WallService {
+type WallService struct {
+	repo WallRepositoryIface
+}
+
+func NewWallService(repo WallRepositoryIface) *WallService {
 	return &WallService{repo: repo}
 }
 
