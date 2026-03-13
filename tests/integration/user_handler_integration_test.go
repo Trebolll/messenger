@@ -50,6 +50,7 @@ func createTestTables(t *testing.T, db *sql.DB) {
 			birth_date DATE,
 			location VARCHAR(255),
 			status VARCHAR(255),
+			profession VARCHAR(255),
 			avatar_url TEXT DEFAULT '',
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP
