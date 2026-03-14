@@ -5,6 +5,15 @@ let _wallMode = 'posts';        // Текущий режим: 'posts' | 'media'
 let _wallUserId = null;         // userId текущей открытой стены
 let _wallPostsWS = null;        // WebSocket для обновлений стены (новые посты)
 
+// ── Проверка авторизации для интерактивных действий ────────────────────────
+function requireAuth() {
+    if (!window.app?.currentUser) {
+        window.app?.notify?.('Вы не авторизованы', 'warning');
+        return false;
+    }
+    return true;
+}
+
 function toggleWall() {
     const overlay = document.getElementById('wall-overlay');
     if (overlay.classList.contains('hidden')) {
@@ -666,6 +675,7 @@ function renderMediaGrid(media, isMe = false) {
 // Медиа-навигация перенесена в feed.js — используй Feed.openMedia()
 
 async function toggleMediaPostLike(btn) {
+    if (!requireAuth()) return;
     const postId = btn.dataset.postId;
     if (!postId) return;
     await togglePostLike(postId, btn);
@@ -680,6 +690,7 @@ function calculateAge(birthDate) {
 }
 
 async function togglePostLike(postId, btn) {
+    if (!requireAuth()) return;
     try {
         const res = await fetch(`/api/wall/posts/${postId}/like`, {
             method: 'POST',
@@ -748,6 +759,7 @@ async function togglePostLike(postId, btn) {
 }
 
 async function openPostChat(postId, chatId) {
+    if (!requireAuth()) return;
     if (!chatId) {
         try {
             const res = await fetch(`/api/wall/posts/${postId}/chat`, {
@@ -1022,6 +1034,7 @@ function clearCommentReply() {
 }
 
 async function sendWallComment() {
+    if (!requireAuth()) return;
     const input = document.getElementById('wall-comments-input');
     const content = input.value.trim();
     if (!content || !_commentsChatId) return;

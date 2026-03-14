@@ -280,9 +280,21 @@ const Feed = (() => {
                             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
                             Авто
                         </button>
+                        <button id="btn-share" onclick="Feed.sharePost('${postId}')" title="Поделиться" style="background:rgba(0,0,0,0.55);border:none;border-radius:8px;padding:6px 12px;color:#fff;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;transition:background 0.2s;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                            Поделиться
+                        </button>
                     </div>
                   </div>`
-                : `<img src="${url}" class="w-full h-full object-contain">`;
+                : `<div style="position:relative;width:100%;height:100%;">
+                    <img src="${url}" class="w-full h-full object-contain">
+                    <div style="position:absolute;bottom:12px;left:12px;z-index:10;">
+                        <button id="btn-share" onclick="Feed.sharePost('${postId}')" title="Поделиться" style="background:rgba(0,0,0,0.55);border:none;border-radius:8px;padding:6px 12px;color:#fff;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;transition:background 0.2s;">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                            Поделиться
+                        </button>
+                    </div>
+                  </div>`;
 
             mediaContent.style.opacity = '0';
             mediaContent.style.transform = direction === null ? 'none' : `translateY(${direction > 0 ? '20px' : '-20px'})`;
@@ -400,8 +412,81 @@ const Feed = (() => {
         if (btnNext) btnNext.style.background = _autoNextMode ? 'rgba(99,102,241,0.85)' : 'rgba(0,0,0,0.55)';
     }
 
-    return { load, openMedia, track: _track, toggleLoop, toggleAutoNext };
+    // ── Поделиться постом ────────────────────────────────────────────────
+    function sharePost(postId) {
+        const url = `${location.origin}/?post=${postId}`;
+        navigator.clipboard.writeText(url).then(() => {
+            window.app?.notify?.('Ссылка скопирована в буфер обмена ✓', 'success');
+        }).catch(() => {
+            // fallback
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            window.app?.notify?.('Ссылка скопирована ✓', 'success');
+        });
+    }
+
+    return { load, openMedia, track: _track, toggleLoop, toggleAutoNext, sharePost };
 
 })();
 
 window.loadActivityFeed = () => Feed.load();
+// ── Обработка ссылки ?post=ID (поделиться) ──────────────────────────────────
+(function handleShareLink() {
+    const params = new URLSearchParams(location.search);
+    const postId = params.get('post');
+    if (!postId) return;
+
+    // Убираем параметр из URL чтобы не мозолил глаза
+    const cleanUrl = location.pathname + (location.hash || '');
+    history.replaceState(null, '', cleanUrl);
+
+    // Открываем ленту и медиа-просмотр поста после загрузки ленты
+    function _tryOpen() {
+        // Если пользователь не авторизован — просто открываем ленту (scroll до поста не нужен)
+        // Авторизованный: открываем медиа/комментарии
+        const card = document.getElementById('activity-post-' + postId);
+        if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => {
+                const mediaUrl = card.dataset.mediaUrl;
+                const isVideo  = card.dataset.mediaVideo === 'true';
+                if (mediaUrl) {
+                    Feed.openMedia(postId, mediaUrl, isVideo);
+                } else {
+                    // Текстовый пост — открываем комментарии если авторизован
+                    if (window.app?.currentUser) {
+                        openPostChat(postId, '');
+                    }
+                }
+            }, 400);
+            return true;
+        }
+        return false;
+    }
+
+    // Открываем панель ленты и ждём загрузки
+    function _waitAndOpen(attempts) {
+        if (attempts <= 0) return;
+        if (_tryOpen()) return;
+        setTimeout(() => _waitAndOpen(attempts - 1), 300);
+    }
+
+    // Подписываемся на загрузку ленты
+    document.addEventListener('DOMContentLoaded', function() {
+        // Нажимаем кнопку ленты если она есть
+        const feedBtn = document.querySelector('[onclick*="toggleFeedPanel"], [onclick*="feed"], #feed-dock-btn');
+        if (feedBtn) feedBtn.click();
+
+        // Ждём рендера карточек
+        setTimeout(() => {
+            if (typeof loadActivityFeed === 'function') {
+                loadActivityFeed();
+            }
+            _waitAndOpen(20);
+        }, 800);
+    });
+})();
