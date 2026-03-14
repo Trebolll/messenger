@@ -941,6 +941,10 @@ function closeWallComments() {
         overlay.classList.add('hidden');
         document.getElementById('wall-comments-media-container').classList.add('hidden');
         document.getElementById('wall-comments-media-content').innerHTML = '';
+        // Скрываем сайдбар и сбрасываем панель комментариев
+        const sidebar = document.getElementById('media-sidebar');
+        if (sidebar) { sidebar.classList.add('hidden'); sidebar.style.display = ''; }
+        if (typeof Feed !== 'undefined' && Feed.resetComments) Feed.resetComments();
     }, 320);
     if (_commentsWS) { _commentsWS.close(); _commentsWS = null; }
     _commentsChatId = null;
@@ -953,6 +957,9 @@ async function loadComments(chatId) {
         });
         const comments = await res.json();
         renderCommentTree(comments);
+        // Обновляем счётчик в сайдбаре
+        const countEl = document.getElementById('sidebar-comment-count');
+        if (countEl && comments?.length) countEl.textContent = comments.length;
     } catch (e) {
         document.getElementById('wall-comments-feed').innerHTML =
             '<p class="text-center text-xs opacity-40 py-8">Ошибка загрузки</p>';

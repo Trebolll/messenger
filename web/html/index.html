@@ -25,7 +25,6 @@
   <link rel="stylesheet" href="/web/html/css/profile-modal.css">
   <link rel="stylesheet" href="/web/html/css/wall.css">
   <link rel="stylesheet" href="/web/html/css/layout.css">
-  <link rel="stylesheet" href="css/responsive-modals.css">
 </head>
 <body class="bg-custom-main min-h-screen text-custom-main" style="visibility:hidden;">
 <!-- Глобальный фон λ (остается неизменным после входа) -->
@@ -772,20 +771,83 @@
   <div class="wall-comments-panel relative w-full max-w-4xl h-[85vh] sm:h-[80vh] flex flex-col sm:flex-row shadow-2xl
                 scale-90 opacity-0 transition-all duration-300 ease-out overflow-hidden">
 
-    <!-- Media Preview Area (Left side on desktop, top on mobile) -->
-    <div id="wall-comments-media-container" class="hidden w-full sm:w-3/5 bg-black/40 flex items-center justify-center relative border-b sm:border-b-0 sm:border-r border-white/5">
-      <div id="wall-comments-media-content" class="w-full h-full flex items-center justify-center p-2">
-        <!-- Media injected here -->
-      </div>
-      <!-- Like button overlay on media -->
-      <button id="wall-comments-media-like" onclick="toggleMediaPostLike(this)" class="absolute bottom-6 right-6 p-3 bg-black/40 backdrop-blur-md rounded-full text-custom-muted hover:text-red-400 transition-all hover:scale-110 border border-white/10 group">
-        <svg class="w-6 h-6 transition-transform group-active:scale-125" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-        </svg>
+    <!-- LEFT SIDEBAR: вертикальные кнопки управления -->
+    <div id="media-sidebar" class="hidden flex-shrink-0 bg-black/60 backdrop-blur-xl flex-col items-center justify-center gap-2 py-5 border-r border-white/5" style="width:64px;">
+
+      <!-- Назад -->
+      <button onclick="closeWallComments()" title="Назад"
+              class="media-sidebar-btn group flex flex-col items-center gap-1 text-white/60 hover:text-white transition-all w-full px-1">
+        <span class="w-10 h-10 rounded-2xl flex items-center justify-center transition-all group-hover:bg-white/12 group-active:scale-90" style="background:rgba(255,255,255,0.07)">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+        </span>
+        <span style="font-size:9px;font-weight:700;letter-spacing:0.01em;opacity:0.7">Назад</span>
       </button>
+
+      <div style="width:36px;height:0.5px;background:rgba(255,255,255,0.08);flex-shrink:0"></div>
+
+      <!-- Лайк -->
+      <button id="wall-comments-media-like" onclick="toggleMediaPostLike(this)" title="Лайк"
+              class="media-sidebar-btn group flex flex-col items-center gap-1 text-white/60 hover:text-red-400 transition-all w-full px-1">
+        <span class="w-10 h-10 rounded-2xl flex items-center justify-center transition-all group-hover:bg-red-500/15 group-active:scale-90" style="background:rgba(255,255,255,0.07)">
+          <svg class="w-5 h-5 transition-transform group-active:scale-125" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+          </svg>
+        </span>
+        <span class="like-sidebar-count" style="font-size:9px;font-weight:700;letter-spacing:0.01em;opacity:0.7;min-height:11px"></span>
+      </button>
+
+      <!-- Комментарии -->
+      <button id="btn-toggle-comments" onclick="Feed.toggleComments()" title="Комментарии"
+              class="media-sidebar-btn group flex flex-col items-center gap-1 text-white/60 hover:text-blue-400 transition-all w-full px-1">
+        <span class="w-10 h-10 rounded-2xl flex items-center justify-center transition-all group-hover:bg-blue-500/15 group-active:scale-90" style="background:rgba(255,255,255,0.07)">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+          </svg>
+        </span>
+        <span id="sidebar-comment-count" style="font-size:9px;font-weight:700;letter-spacing:0.01em;opacity:0.7;min-height:11px"></span>
+      </button>
+
+      <div style="width:36px;height:0.5px;background:rgba(255,255,255,0.08);flex-shrink:0"></div>
+
+      <!-- Повтор -->
+      <button id="btn-loop" onclick="Feed.toggleLoop()" title="Повтор"
+              class="media-sidebar-btn group flex flex-col items-center gap-1 text-white/60 hover:text-white transition-all w-full px-1">
+        <span class="w-10 h-10 rounded-2xl flex items-center justify-center transition-all group-hover:bg-white/12 group-active:scale-90" style="background:rgba(255,255,255,0.07)">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        </span>
+        <span style="font-size:9px;font-weight:700;letter-spacing:0.01em;opacity:0.7">Повтор</span>
+      </button>
+
+      <!-- Авто -->
+      <button id="btn-autonext" onclick="Feed.toggleAutoNext()" title="Следующее авто"
+              class="media-sidebar-btn group flex flex-col items-center gap-1 text-white/60 hover:text-white transition-all w-full px-1">
+        <span class="w-10 h-10 rounded-2xl flex items-center justify-center transition-all group-hover:bg-white/12 group-active:scale-90" style="background:rgba(255,255,255,0.07)">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+        </span>
+        <span style="font-size:9px;font-weight:700;letter-spacing:0.01em;opacity:0.7">Авто</span>
+      </button>
+
+      <div style="width:36px;height:0.5px;background:rgba(255,255,255,0.08);flex-shrink:0"></div>
+
+      <!-- Поделиться -->
+      <button id="btn-sidebar-share" onclick="" title="Поделиться в Telegram"
+              class="media-sidebar-btn group flex flex-col items-center gap-1 text-white/60 hover:text-[#2AABEE] transition-all w-full px-1">
+        <span class="w-10 h-10 rounded-2xl flex items-center justify-center transition-all group-hover:bg-[#2AABEE]/15 group-active:scale-90" style="background:rgba(255,255,255,0.07)">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.932z"/></svg>
+        </span>
+        <span style="font-size:9px;font-weight:700;letter-spacing:0.01em;opacity:0.7">Послать</span>
+      </button>
+
     </div>
 
-    <div class="flex flex-col flex-grow min-w-0">
+    <!-- Media Preview Area -->
+    <div id="wall-comments-media-container" class="hidden flex-grow bg-black/40 flex items-center justify-center relative border-b sm:border-b-0 sm:border-r border-white/5">
+      <div id="wall-comments-media-content" class="w-full h-full flex items-center justify-center">
+        <!-- Media injected here -->
+      </div>
+    </div>
+
+    <div id="comments-right-panel" class="flex flex-col min-w-0 border-l border-white/5 transition-all duration-300 overflow-hidden" style="width:0;min-width:0;opacity:0;">
       <!-- Header -->
       <div class="flex items-center justify-between px-5 py-4 border-b border-white/5 flex-shrink-0">
         <h3 class="text-sm font-bold text-custom-main">Комментарии</h3>

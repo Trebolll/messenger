@@ -1,840 +1,607 @@
-// ── Video poster generation ──────────────────────────────────────────────────
-// Захватываем первый кадр видео через Canvas и ставим как poster.
-// Вызывается из onloadedmetadata="setVideoPoster(this)"
-function setVideoPoster(videoEl) {
-  if (videoEl.poster) return; // уже есть
-  try {
-    videoEl.currentTime = 0.5; // небольшой отступ от чёрного кадра
-    const onSeeked = () => {
-      videoEl.removeEventListener('seeked', onSeeked);
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width  = videoEl.videoWidth  || 320;
-        canvas.height = videoEl.videoHeight || 180;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-        const poster = canvas.toDataURL('image/jpeg', 0.7);
-        videoEl.poster = poster;
-      } catch (e) { /* cors или другие ошибки — просто игнорируем */ }
-    };
-    videoEl.addEventListener('seeked', onSeeked);
-  } catch (e) {}
-}
+// ─── feed.js — Лента активности + медиа-навигация ───────────────────────
 
-// Inline стек аватарок для групп (в хедере и info-panel)
-function groupAvatarStackInline(members, size) {
-  const shown = members.slice(0, 4);
-  const offset = Math.round(size * 0.55);
-  const total = shown.length * size - (shown.length - 1) * (size - offset);
-  let html = `<div style="position:relative;width:${total}px;height:${size}px;flex-shrink:0;">`;
-  shown.forEach((m, i) => {
-    const letter = (m.username || '?')[0].toUpperCase();
-    const img = m.avatar_url
-        ? `<img src="${m.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
-        : letter;
-    html += `<div style="position:absolute;left:${i * offset}px;top:0;width:${size}px;height:${size}px;
-            border-radius:50%;border:2px solid var(--bg-main);background:#dbeafe;
-            display:flex;align-items:center;justify-content:center;font-weight:700;
-            font-size:${Math.round(size * 0.38)}px;color:#2563eb;overflow:hidden;z-index:${shown.length - i};">${img}</div>`;
-  });
-  html += '</div>';
-  return html;
-}
+const Feed = (() => {
 
-// Helpers для отображения имени чата
-function chatDisplayName(chat) {
-  if (chat.name) return chat.name;
-  if (chat.is_group && chat.members && chat.members.length) {
-    return chat.members.map(m => m.username).join(', ');
+  let _mediaList        = [];
+  let _mediaIndex       = 0;
+  let _mediaWheelLocked = false;
+  let _renderObserver   = null;
+  let _dwellTimers      = new Map();
+
+  // ── Трекинг ──────────────────────────────────────────────────────────
+  function _track(postId, eventType, watchSeconds = 0, mime = '') {
+    fetch(`/api/feed/track?mime=${encodeURIComponent(mime)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('alpha_token')}`
+      },
+      body: JSON.stringify({ post_id: postId, event_type: eventType, watch_seconds: watchSeconds })
+    }).catch(() => {});
   }
-  return chat.other_user_name || chat.partner_name || 'Чат';
-}
 
-// Хелперы аватаров — избегаем вложенных backtick в template literals
-function chatAvatarHtml(chat) {
-  if (chat.avatar_url) {
-    return '<img src="' + chat.avatar_url + '" style="width:100%;height:100%;object-fit:cover;">';
-  }
-  return (chat.name || '?')[0].toUpperCase();
-}
+  // ── Загрузка ─────────────────────────────────────────────────────────
+  async function load() {
+    const container = document.getElementById('activity-feed-container');
+    if (!container) return;
 
-function userAvatarHtml(user) {
-  if (user && user.avatar_url) {
-    return '<img src="' + user.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
-  }
-  return (user && user.username ? user.username[0].toUpperCase() : 'U');
-}
-
-// ─── render.js — отрисовка интерфейса ─────────────────────────────────────
-
-function formatMessageContent(content) {
-  if (!content) return '';
-  let escaped = escapeHtml(content);
-
-  // Regex для YouTube (full & short links)
-  const ytRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/g;
-
-  // Если есть ссылка на YouTube — добавляем плеер с автоплеем
-  return escaped.replace(ytRegex, (match, videoId) => {
-    return `<div class="yt-embed-container" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;margin:10px 0;background:#000;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
-              <iframe 
-                src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&rel=0" 
-                style="position:absolute;top:0;left:0;width:100%;height:100%;" 
-                frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                allowfullscreen>
-              </iframe>
-            </div>` + match; // Оставляем саму ссылку под видео
-  });
-}
-
-// ── Link Preview ────────────────────────────────────────────────────────────
-const _linkPreviewCache = new Map();
-const _urlDetectRegex   = /https?:\/\/[^\s<>"']+/g;
-const _ytPattern        = /youtube\.com|youtu\.be/;
-
-function _renderLinkPreviewCard(data, url) {
-  if (!data || (!data.title && !data.image)) return '';
-  const site  = data.site_name    ? `<span class="lp-site">${escapeHtml(data.site_name)}</span>` : '';
-  const title = data.title        ? `<div class="lp-title">${escapeHtml(data.title)}</div>` : '';
-  const desc  = data.description  ? `<div class="lp-desc">${escapeHtml(data.description)}</div>` : '';
-  const img   = data.image
-      ? `<div class="lp-image"><img src="${escapeHtml(data.image)}" onerror="this.parentElement.remove()" loading="lazy"></div>`
-      : '';
-  return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="link-preview-card">
-    ${img}
-    <div class="lp-body">${site}${title}${desc}</div>
-  </a>`;
-}
-
-async function _loadLinksInMsg(hostEl, content) {
-  _urlDetectRegex.lastIndex = 0;
-  const raw = content.match(_urlDetectRegex) || [];
-  const urls = [...new Set(raw)].filter(u => !_ytPattern.test(u)).slice(0, 1);
-  if (!urls.length) return;
-
-  for (const url of urls) {
-    const wrap = document.createElement('div');
-    wrap.className   = 'link-preview-wrap';
-    wrap.dataset.url = url;
-
-    if (_linkPreviewCache.has(url)) {
-      const cached = _linkPreviewCache.get(url);
-      if (cached && cached !== 'loading') {
-        wrap.innerHTML = _renderLinkPreviewCard(cached, url);
-        if (wrap.innerHTML) hostEl.appendChild(wrap);
-      }
-      continue;
-    }
-
-    // Скелетон-заглушка пока грузится
-    wrap.innerHTML = `<div class="lp-skeleton">
-      <div class="lp-sk-img"></div>
-      <div class="lp-sk-body"><div class="lp-sk-line"></div><div class="lp-sk-line lp-sk-short"></div></div>
-    </div>`;
-    hostEl.appendChild(wrap);
-
-    _linkPreviewCache.set(url, 'loading');
     try {
-      const res  = await fetch('/api/link-preview?url=' + encodeURIComponent(url));
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      _linkPreviewCache.set(url, data);
-      // Обновляем все карточки с этим URL по странице
-      document.querySelectorAll(`.link-preview-wrap[data-url="${CSS.escape(url)}"]`).forEach(el => {
-        const html = _renderLinkPreviewCard(data, url);
-        if (html) { el.innerHTML = html; }
-        else       { el.remove(); }
+      const response = await fetch('/api/feed', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('alpha_token')}` }
       });
-    } catch {
-      _linkPreviewCache.set(url, null);
-      wrap.remove();
+      if (!response.ok) throw new Error('Failed');
+      const posts = await response.json();
+
+      if (!posts || posts.length === 0) {
+        container.innerHTML = `<div class="col-span-3 flex items-center justify-center py-20 opacity-40">
+                    <p class="text-sm font-semibold text-custom-main">В ленте пока пусто...</p></div>`;
+        return;
+      }
+      _render(container, posts);
+    } catch (err) {
+      console.error('Feed error:', err);
+      container.innerHTML = `<p class="col-span-3 text-xs text-red-400 p-4">Ошибка загрузки ленты</p>`;
     }
   }
-}
 
-function renderChats() {
-  const app  = window.app;
-  const list = document.getElementById('chats-list');
-  list.innerHTML = app.chats.map(chat => {
-    const isActive = String(app.activeChatId) === String(chat.id);
-    const displayName = chatDisplayName(chat);
-    const lastMsg = chat.last_message || 'Нет сообщений';
+  // ── Рендер грида ─────────────────────────────────────────────────────
+  function _render(container, posts) {
+    if (_renderObserver) { _renderObserver.disconnect(); _renderObserver = null; }
+    _dwellTimers.forEach(t => clearTimeout(t));
+    _dwellTimers.clear();
+    container.innerHTML = '';
 
-    // Групповой чат
-    if (chat.is_group) {
-      const groupLetter = (chat.name || 'G')[0].toUpperCase();
-      const groupAvatarInner = chat.avatar_url
-          ? `<img src="${chat.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`
-          : groupLetter;
+    posts.forEach((p, i) => {
+      const card = document.createElement('div');
+      card.dataset.postId   = p.id;
+      card.dataset.postMime = p.attachments?.[0]?.mime_type || '';
 
-      return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
-                <div class="relative flex-shrink-0">
-                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
-                        ${groupAvatarInner}
-                    </div>
-                </div>
-                <div class="flex-grow overflow-hidden">
-                    <div class="flex justify-between items-baseline">
-                        <h4 class="font-bold text-custom-main truncate">${displayName}</h4>
-                        <span class="text-[10px] text-custom-muted">группа</span>
-                    </div>
-                    <p class="text-xs text-custom-muted truncate">${lastMsg}</p>
-                </div>
-            </div>`;
-    }
+      if (i < 9) {
+        card.innerHTML = _renderPost(p);
+      } else {
+        card.className = 'activity-post-card rounded-[24px] bg-custom-sidebar border border-white/5 aspect-square';
+        card.innerHTML = `<div class="w-full h-full rounded-[24px] bg-white/5 animate-pulse"></div>`;
+        card.dataset.postData = JSON.stringify(p);
+      }
+      container.appendChild(card);
+    });
 
-    // Приватный чат
-    let isOnline = !!chat.is_online;
-    if (chat.interlocutor_id && app.userStatusMap && app.userStatusMap[String(chat.interlocutor_id)]) {
-      isOnline = app.userStatusMap[String(chat.interlocutor_id)].online;
-    }
+    // Lazy render + трекинг просмотра (1с dwell)
+    _renderObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const card = entry.target;
+        if (card.dataset.postData) {
+          const p = JSON.parse(card.dataset.postData);
+          card.innerHTML = _renderPost(p);
+          delete card.dataset.postData;
+          // Запускаем превью для новых видео-карточек
+          card.querySelectorAll('.feed-video-thumb').forEach(el => {
+            _thumbQueue.push({ src: el.dataset.videoSrc, cid: el.dataset.canvasId });
+          });
+          _processThumbQueue();
+        }
+        const postId = card.dataset.postId;
+        const mime   = card.dataset.postMime;
+        if (postId && !_dwellTimers.has(postId)) {
+          const t = setTimeout(() => {
+            _track(postId, 'view', 0, mime);
+            _dwellTimers.delete(postId);
+          }, 1000);
+          _dwellTimers.set(postId, t);
+        }
+        _renderObserver.unobserve(card);
+      });
+    }, { rootMargin: '300px' });
 
-    const avatarHtml = `<div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
-            ${chatAvatarHtml(chat)}
-        </div>
-        ${isOnline ? '<div class="online-dot-glass"></div>' : ''}`;
+    Array.from(container.children).forEach((child, i) => {
+      if (i >= 9) _renderObserver.observe(child);
+    });
 
-    return `<div onclick="app.loadMessages('${chat.id}')" class="chat-list-item p-4 flex items-center gap-3 transition ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
-            <div class="relative flex-shrink-0">${avatarHtml}</div>
-            <div class="flex-grow overflow-hidden">
-                <div class="flex justify-between items-baseline">
-                    <h4 class="font-bold text-custom-main truncate">${displayName}</h4>
-                    <span class="text-[10px] text-custom-muted">12:45</span>
-                </div>
-                <p class="text-xs text-custom-muted truncate">${lastMsg}</p>
-            </div>
-        </div>`;
-  }).join('');
-
-  // Восстанавливаем подсветку непрочитанных после перерисовки
-  const unread = window.app._unreadHighlight;
-  if (unread && unread.size) {
-    unread.forEach(chatId => _applyUnreadHighlight(chatId));
+    // Запускаем превью для видео карточек — по одному через очередь
+    _initThumbObserver(container);
   }
-}
 
-function renderMessages() {
-  const app       = window.app;
-  const container = document.getElementById('messages-container');
-
-  // Запоминаем какие id уже отрисованы чтобы анимировать только новые
-  const existing = new Set(
-      [...container.querySelectorAll('[data-msg-id]')].map(el => el.dataset.msgId)
-  );
-
-// Строим карту онлайн-статусов из чатов
-  const onlineMap = {};
-  (app.chats || []).forEach(chat => {
-    if (chat.interlocutor_id) {
-      onlineMap[String(chat.interlocutor_id)] = !!chat.is_online;
-    }
-    if (chat.members) {
-      chat.members.forEach(m => { onlineMap[String(m.id)] = !!m.is_online; });
-    }
-  });
-
-  container.innerHTML = app.messages.map((msg, idx) => {
-    const isMe     = String(msg.sender_id) === String(app.currentUser?.id);
-    const isRead   = msg.read_at   != null;
-    const isEdited = msg.edited_at != null;
-    const isNew    = !existing.has(String(msg.id));
-
-    const delay = (existing.size === 0 && isNew)
-        ? `animation-delay:${Math.min(idx * 35, 400)}ms`
-        : '';
-
-    const animClass = isNew ? (isMe ? 'msg-anim-sent' : 'msg-anim-received') : '';
-
-    // Аватар отправителя (только для входящих)
-    let senderAvatarHtml = '';
-    if (!isMe) {
-      const isOnline = !!onlineMap[String(msg.sender_id)];
-      const avatarInner = msg.sender_avatar_url
-          ? `<img src="${msg.sender_avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
-          : `<span>${(msg.sender_name || '?')[0].toUpperCase()}</span>`;
-
-      const senderData = JSON.stringify({ id: msg.sender_id, username: msg.sender_name, avatar_url: msg.sender_avatar_url || '' }).replace(/"/g, '&quot;');
-      senderAvatarHtml = `
-                <div style="position:relative;flex-shrink:0;align-self:flex-end;cursor:pointer;"
-                     onclick="openMemberAvatarViewer(JSON.parse(this.dataset.member))"
-                     data-member="${senderData}"
-                     title="${escapeHtml(msg.sender_name || '')}">
-                    <div style="width:30px;height:30px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#2563eb;overflow:hidden;">
-                        ${avatarInner}
-                    </div>
-                </div>`;
-    }
-
-    // Никнейм над сообщением (только для входящих в группе)
-    const activeChat = app.chats.find(c => String(c.id) === String(app.activeChatId));
-    const isGroup = activeChat && activeChat.is_group;
-    const nicknameHtml = (!isMe && isGroup && msg.sender_name)
-        ? `<div style="font-size:11px;font-weight:600;color:var(--text-muted,#6b7280);margin-bottom:2px;padding-left:2px;cursor:pointer;" onclick="openWall('${msg.sender_id}')">${escapeHtml(msg.sender_name)}</div>`
-        : '';
-
-    // Если сообщение загружается — показываем прогресс
-    if (msg._uploading) {
-      const fileName = escapeHtml(msg._fileName || 'Файл');
-      const fileSize = (typeof formatFileSize === 'function') ? formatFileSize(msg._fileSize || 0) : '';
-      return `
-            <div class="flex items-end gap-2 ${animClass}"
-                 style="justify-content:flex-end;${delay}"
-                 data-msg-id="${msg.id}"
-                 data-sender-id="${msg.sender_id}">
-                <div style="display:flex;flex-direction:column;align-items:flex-end;max-width:75%;">
-                    <div class="message-bubble p-3.5 message-sent" style="width:fit-content;max-width:100%;">
-                        <div class="upload-progress-msg">
-                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                                <svg width="18" height="18" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-                                <span style="font-size:12px;font-weight:600;opacity:0.9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;">${fileName}</span>
-                            </div>
-                            <div class="upload-progress-bar-wrap">
-                                <div class="upload-progress-bar" style="width:${msg._progress || 0}%"></div>
-                            </div>
-                            <div class="upload-progress-info">
-                                <span>${(typeof formatFileSize === 'function') ? formatFileSize(msg._loadedBytes || 0) + ' / ' + fileSize : ''}</span>
-                                <span>~${msg._timeLeft || '...'}</span>
-                            </div>
-                            ${msg.content ? `<p style="font-size:13px;margin-top:4px;">${escapeHtml(msg.content)}</p>` : ''}
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-    }
-
-    // Рендер вложения (если есть)
-    let attachmentHtml = '';
-    let isMediaAttachment = false;
-    if (msg._attachment || msg.attachment || (msg.attachments && msg.attachments.length > 0)) {
-      const att = msg._attachment || msg.attachment || msg.attachments[0];
-      const mime = att.mime_type || '';
-      const attUrl = att.url || '';
-      const attName = escapeHtml(att.filename || 'Файл');
-      const attSize = (typeof formatFileSize === 'function') ? formatFileSize(att.size_bytes || 0) : '';
-
-      const isGif   = mime === 'image/gif';
-      const isImage = !isGif && mime.startsWith('image/');
-      const isVideo = mime.startsWith('video/');
-      const isAudio = mime.startsWith('audio/');
-
-      if (isGif) {
-        isMediaAttachment = true;
-        attachmentHtml = `<img src="${attUrl}" class="msg-attachment-gif" alt="${attName}" loading="lazy">`;
-      } else if (isImage) {
-        isMediaAttachment = true;
-        attachmentHtml = `<img src="${attUrl}" class="msg-attachment-image" alt="${attName}" onclick="openImgLightbox('${attUrl}')" loading="lazy">`;
-      } else if (isVideo) {
-        isMediaAttachment = true;
-        const vidId = 'vid-' + Math.random().toString(36).slice(2, 9);
-        attachmentHtml = `<video id="${vidId}" class="msg-attachment-video" controls preload="metadata" onloadedmetadata="setVideoPoster(this)">
-                    <source src="${attUrl}" type="${mime}">
-                </video>`;
-      } else if (isAudio) {
-        attachmentHtml = `<audio controls style="width:100%;min-width:220px;margin-bottom:4px;border-radius:8px;outline:none;">
-                    <source src="${attUrl}" type="${mime}">
-                </audio>`;
-      } else {
-        attachmentHtml = `<a href="${attUrl}" class="msg-attachment-file" target="_blank" download>
-                    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    <div class="msg-attachment-file-info">
-                        <span class="msg-attachment-file-name">${attName}</span>
-                        <span class="msg-attachment-file-size">${attSize}</span>
-                    </div>
-                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="opacity:0.6;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                </a>`;
-      }
-    }
-
-    // Для медиа — пузырь без горизонтальных паддингов чтобы изображение заполняло его целиком
-    const bubblePadding = isMediaAttachment ? 'p-1.5' : 'p-3.5';
-    // Контент (подпись или текст) под медиа — с паддингом
-    let captionWrap;
-    if (isMediaAttachment) {
-      if ((msg.content || '').trim()) {
-        captionWrap = '<p class="text-sm leading-relaxed" id="msg-content-' + msg.id + '" style="padding:2px 8px 4px;">' + formatMessageContent(msg.content) + '</p>';
-      } else {
-        captionWrap = '<span id="msg-content-' + msg.id + '" style="display:none;"></span>';
-      }
-    } else if (msg.content || !attachmentHtml) {
-      captionWrap = '<p class="text-sm leading-relaxed" id="msg-content-' + msg.id + '" style="white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;">' + formatMessageContent(msg.content) + '</p>';
-    } else {
-      captionWrap = '<span id="msg-content-' + msg.id + '" style="display:none;"></span>';
-    }
+  // ── HTML карточки поста ───────────────────────────────────────────────
+  function _renderPost(p) {
+    const hasAtt = p.attachments && p.attachments.length > 0;
+    const openAction = hasAtt
+        ? `Feed.openMedia('${p.id}', '${p.attachments[0].url}', ${(p.attachments[0].mime_type || '').startsWith('video/')})`
+        : `openPostChat('${p.id}', '${p.chat_id || ''}')`;
 
     return `
-            <div class="flex items-end gap-2 ${animClass}"
-                 style="justify-content:${isMe ? 'flex-end' : 'flex-start'};${delay}"
-                 data-msg-id="${msg.id}"
-                 data-sender-id="${msg.sender_id}"
-                 oncontextmenu="showMessageMenu(event, '${msg.id}', ${isMe})">
-                ${!isMe ? senderAvatarHtml : ''}
-                <div style="display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};max-width:75%;">
-                    <div class="msg-header-line" style="display:flex;align-items:center;gap:6px;">
-                        ${nicknameHtml}
-                        ${renderRatingBadge(msg.sender_rating)}
+        <div class="activity-post-card rounded-[24px] group relative overflow-hidden bg-custom-sidebar border border-white/5 hover:border-custom-accent/30 transition-all shadow-sm aspect-square" id="activity-post-${p.id}"
+             data-post-id="${p.id}" data-media-url="${hasAtt ? p.attachments[0].url : ''}" data-media-video="${hasAtt && (p.attachments[0].mime_type||'').startsWith('video/')}">
+           ${hasAtt
+        ? `<div class="w-full h-full overflow-hidden">
+                    ${_renderThumb(p.id, p.attachments[0])}
+                    ${p.attachments.length > 1 ? `<div class="absolute top-2 right-2 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-full z-10">+${p.attachments.length - 1}</div>` : ''}
+                  </div>`
+        : `<div class="w-full h-full p-3 flex items-center justify-center text-center bg-custom-sidebar/50">
+                     <div class="text-[10px] text-custom-main leading-relaxed line-clamp-6 italic">${p.content || ''}</div>
+                  </div>`}
+           <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+              <div class="absolute bottom-0 left-0 right-0 p-2.5">
+                 <div class="flex items-center gap-1.5 mb-1">
+                    <div class="w-4 h-4 rounded-full bg-white/20 overflow-hidden border border-white/20 flex-shrink-0 flex items-center justify-center text-[7px] font-bold text-white">
+                       ${p.author_avatar ? `<img src="${p.author_avatar}" class="w-full h-full object-cover">` : (p.author_name?.[0] ?? '?')}
                     </div>
-                    <!-- Обертка для пузыря и кнопок -->
-                    <div style="position:relative; width:fit-content; max-width:100%;">
-                        <div class="message-bubble ${bubblePadding} ${isMe ? 'message-sent' : 'message-received'}" 
-                             style="position:relative; z-index:10; width:fit-content; max-width:100%; ${isMediaAttachment ? 'overflow:hidden;' : ''}">
-                            ${attachmentHtml}
-                            ${captionWrap}
-                            <div class="link-preview-host" data-content="${escapeHtml(msg.content || '')}"></div>
-                            <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:2px;flex-wrap:nowrap;${isMediaAttachment ? 'padding:0 6px 4px;' : ''}">
-                                ${isEdited ? `<span class="msg-edited-label">изменено</span>` : ''}
-                                <span style="font-size:10px;white-space:nowrap;flex-shrink:0;opacity:${isMe ? '0.7' : '1'};" class="${isMe ? '' : 'text-custom-muted'}">
-                                    ${new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                                ${isMe ? `
-                                    <span style="font-size:11px;letter-spacing:-0.5em;display:inline-block;flex-shrink:0;opacity:${isRead ? '0.9' : '0.4'};">
-                                        ${isRead ? '✓✓' : '✓'}
-                                    </span>
-                                ` : ''}
-                            </div>
-                        </div>
-
-                        ${!isMe ? `
-                        <!-- Контейнер для Gooey-эффекта (только для чужих сообщений) -->
-                        <div class="gooey-vote-container">
-                            <div class="message-bubble message-received" 
-                                 style="position:absolute; inset:0; z-index:-1; margin:0; opacity: 1;"></div>
-                            
-                            <div class="msg-votes ${msg.my_vote !== 0 ? 'has-active' : ''}">
-                                ${renderVotesHtml(msg.likes || 0, msg.dislikes || 0, msg.my_vote || 0, msg.id)}
-                            </div>
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-  }).join('');
-
-  // Загружаем превью ссылок после рендера
-  setTimeout(() => {
-    container.querySelectorAll('.link-preview-host[data-content]').forEach(host => {
-      if (host.dataset.loaded) return;
-      host.dataset.loaded = '1';
-      const c = host.getAttribute('data-content');
-      if (c) _loadLinksInMsg(host, c);
-    });
-  }, 80);
-}
-
-// ─── Рейтинговый бейдж ────────────────────────────────────────────────────────
-function renderRatingBadge(rating) {
-  if (rating === undefined || rating === null) return '';
-  const rVal = Number(rating);
-  if (isNaN(rVal) || rVal < 0) return '';
-
-  const ranks = [
-    { min: 1000000000, name: 'SINGULARITY',   color: '#ffd700',    border: '2px solid #ffd700', bg: 'rgba(255, 215, 0, 0.1)' },
-    { min: 100000000,  name: 'GALACTIC',      color: '#ffb347',    border: '2px solid #ffb347', bg: 'rgba(255, 179, 71, 0.1)' },
-    { min: 10000000,   name: 'STELLAR',       color: '#ff8c00',    border: '2px solid #ff8c00', bg: 'rgba(255, 140, 0, 0.1)' },
-    { min: 1000000,    name: 'MYTHIC',        color: '#ff6600',    border: '2px solid #ff6600', bg: 'rgba(255, 102, 0, 0.1)' },
-    { min: 100000,     name: 'GODLIKE',       color: '#ff4444',    border: '2px solid #ff4444', bg: 'rgba(255, 68, 68, 0.1)' },
-    { min: 50000,      name: 'IMMORTAL',      color: '#ff6b6b',    border: '2px solid #ff6b6b', bg: 'rgba(255, 107, 107, 0.1)' },
-    { min: 1000,       name: 'LEGEND',        color: '#f59e0b',    border: '2px solid #f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
-    { min: 500,        name: 'ELITE',         color: '#8b5cf6',    border: '2px solid #8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
-    { min: 200,        name: 'EXPERT',        color: '#22c55e',    border: '2px solid #22c55e', bg: 'rgba(34, 197, 94, 0.1)' },
-    { min: 50,         name: 'SKILLED',       color: '#3b82f6',    border: '2px solid #3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
-    { min: 0,          name: 'BEGINNER',      color: '#9ca3af',    border: '1px solid #9ca3af', bg: 'transparent' }
-  ];
-  const rank = ranks.find(r => rVal >= r.min) || ranks[ranks.length - 1];
-  return `<span class="msg-rating-badge" title="${rank.name}"
-        style="display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:600;
-               color:${rank.color};background:${rank.color}18;
-               padding:1px 5px;border-radius:3px;line-height:1.4;">
-        ★ ${rank.name}
-    </span>`;
-}
-
-// ─── HTML кнопок голосования ──────────────────────────────────────────────────
-function renderVotesHtml(likes, dislikes, myVote, messageId) {
-  const likeActive    = myVote === 1;
-  const dislikeActive = myVote === -1;
-  return `
-        <button class="vote-btn vote-like ${likeActive ? 'vote-active-like' : ''}"
-                data-vote-msg="${messageId}" data-vote="1"
-                onclick="voteMessage(event, '${messageId}', 1)"
-                title="Лайк">
-            <span class="vote-icon">+</span>
-            <span class="vote-ring"></span>
-        </button>
-        <button class="vote-btn vote-dislike ${dislikeActive ? 'vote-active-dislike' : ''}"
-                data-vote-msg="${messageId}" data-vote="-1"
-                onclick="voteMessage(event, '${messageId}', -1)"
-                title="Дизлайк">
-            <span class="vote-icon">−</span>
-            <span class="vote-ring"></span>
-        </button>
-    `;
-}
-
-// ─── Обработчик клика на голосование ─────────────────────────────────────────
-async function voteMessage(e, messageId, vote) {
-  e.stopPropagation();
-  const btn = e.currentTarget;
-  const isLike = vote === 1;
-
-  // Находим пузырь сообщения
-  const msgWrap = btn.closest('[data-msg-id]');
-  const bubble  = msgWrap ? msgWrap.querySelector('.message-bubble') : null;
-  const votesPanel = msgWrap ? msgWrap.querySelector('.msg-votes') : null;
-
-  // Проверка на своё сообщение
-  if (bubble && bubble.classList.contains('message-sent')) {
-    window.app && window.app.notify('Нельзя голосовать за своё сообщение', 'error');
-    return;
-  }
-
-  // Анимация кнопки — вспышка + пульс кольца
-  btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
-  void btn.offsetWidth; // reflow
-  btn.classList.add(isLike ? 'vote-flash-like' : 'vote-flash-dislike');
-
-  // Через 180ms — свечение пузыря
-  setTimeout(() => {
-    if (bubble) {
-      bubble.classList.remove('bubble-glow-like', 'bubble-glow-dislike');
-      void bubble.offsetWidth;
-      bubble.classList.add(isLike ? 'bubble-glow-like' : 'bubble-glow-dislike');
-      setTimeout(() => bubble.classList.remove('bubble-glow-like', 'bubble-glow-dislike'), 1000);
-    }
-  }, 180);
-
-  // Скрываем панель через 1.5 секунды после голоса
-  if (votesPanel) {
-    setTimeout(() => {
-      votesPanel.classList.add('msg-votes-hidden');
-      // Возвращаем возможность показа при следующем ховере через некоторое время
-      setTimeout(() => votesPanel.classList.remove('msg-votes-hidden'), 3000);
-    }, 1500);
-  }
-
-  try {
-    await apiVoteMessage(messageId, vote);
-  } catch(err) {
-    // убираем анимацию если ошибка
-    btn.classList.remove('vote-flash-like', 'vote-flash-dislike');
-    if (votesPanel) votesPanel.classList.remove('msg-votes-hidden');
-  }
-}
-
-function renderChatHeader() {
-  const app  = window.app;
-  const chat = app.chats.find(c => String(c.id) === String(app.activeChatId));
-  if (!chat) return;
-
-  const isGroup    = !!chat.is_group;
-  const isCreator  = isGroup && chat.creator_id && String(chat.creator_id) === String(app.currentUser?.id);
-  const displayName = chatDisplayName(chat);
-
-  // ── Плавная смена имени и аватара ──────────────────────────────────
-  const nameEl   = document.getElementById('active-chat-name');
-  const avatarEl = document.getElementById('active-chat-avatar');
-  if (nameEl)   { nameEl.style.opacity   = '0'; }
-  if (avatarEl) { avatarEl.style.opacity = '0'; avatarEl.style.transform = 'scale(0.85)'; }
-  setTimeout(() => {
-    if (nameEl)   { nameEl.style.opacity   = '1'; }
-    if (avatarEl) { avatarEl.style.opacity = '1'; avatarEl.style.transform = 'scale(1)'; }
-  }, 160);
-
-  // ── Имя в хедере чата ──────────────────────────────────────────────
-  document.getElementById('active-chat-name').textContent = displayName;
-
-  // info-name: для создателя — кликабелен для inline-редактирования
-  const infoNameEl = document.getElementById('info-name');
-  infoNameEl.textContent = displayName;
-  if (isCreator) {
-    infoNameEl.style.cursor = 'pointer';
-    infoNameEl.title = 'Нажмите для редактирования';
-    infoNameEl.classList.add('group-edit-name');
-    infoNameEl.onclick = () => startInlineGroupNameEdit(chat.id, chat.name || '');
-  } else {
-    infoNameEl.style.cursor = '';
-    infoNameEl.title = '';
-    infoNameEl.classList.remove('group-edit-name');
-    infoNameEl.onclick = null;
-  }
-
-  const headerStatus = document.getElementById('active-chat-status');
-  if (isGroup) {
-    if (headerStatus) {
-      const total = (chat.members || []).length;
-      const online = (chat.members || []).filter(m => {
-        if (String(m.id) === String(app.currentUser?.id)) return true;
-        // Используем статус из глобального мапа, если он там есть
-        const globalStatus = app.userStatusMap && app.userStatusMap[String(m.id)];
-        if (globalStatus) return globalStatus.online;
-        return m.is_online;
-      }).length;
-      headerStatus.textContent = `${online} из ${total} online`;
-      headerStatus.className   = 'text-xs text-custom-muted';
-    }
-    const badge = document.getElementById('info-status-badge');
-    if (badge) badge.style.display = 'none';
-    const statusEl = document.getElementById('info-user-status');
-    if (statusEl) statusEl.textContent = '';
-  } else {
-    let isOnline = !!chat.is_online;
-    let userStatus = chat.user_status || '';
-    if (chat.interlocutor_id && app.userStatusMap && app.userStatusMap[String(chat.interlocutor_id)]) {
-      isOnline = app.userStatusMap[String(chat.interlocutor_id)].online;
-      userStatus = app.userStatusMap[String(chat.interlocutor_id)].status || '';
-    }
-    renderStatusElements(isOnline, userStatus);
-    const badge = document.getElementById('info-status-badge');
-    if (badge) badge.style.display = '';
-  }
-
-  // ── Аватар в хедере и info-panel ──────────────────────────────────
-  const _hdr = document.getElementById('active-chat-avatar');
-  const _inf = document.getElementById('info-avatar');
-
-  if (isGroup && chat.members && chat.members.length > 1) {
-    if (chat.avatar_url) {
-      const groupImgHtml = `<img src="${chat.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`;
-      _hdr.innerHTML = groupImgHtml; _hdr.style.overflow = 'hidden';
-      _inf.innerHTML = groupImgHtml; _inf.style.overflow = 'hidden';
-    } else {
-      const stackHtml = groupAvatarStackInline(chat.members, 28);
-      _hdr.innerHTML = stackHtml; _hdr.style.overflow = 'visible';
-      _inf.innerHTML = groupAvatarStackInline(chat.members, 36);
-      _inf.style.overflow = 'visible';
-    }
-  } else {
-    const _ava = chatAvatarHtml(chat);
-    _hdr.innerHTML = _ava; _hdr.style.overflow = 'hidden';
-    _inf.innerHTML = _ava; _inf.style.overflow = 'hidden';
-  }
-
-  if (isGroup && isCreator) {
-    _inf.style.cursor = 'pointer';
-    _inf.title = 'Сменить аватар группы';
-    _inf.onclick = () => triggerGroupAvatarUpload();
-  } else {
-    _inf.style.cursor = '';
-    _inf.title = '';
-    _inf.onclick = null;
-  }
-
-  // ── Блок участников в info-panel ──────────────────────────────────
-  let membersBlock = document.getElementById('info-members-block');
-  if (!membersBlock) {
-    membersBlock = document.createElement('div');
-    membersBlock.id = 'info-members-block';
-    membersBlock.className = 'w-full text-left px-4 pb-4';
-    const statusP = document.getElementById('info-user-status');
-    if (statusP && statusP.parentNode) {
-      statusP.parentNode.insertBefore(membersBlock, statusP.nextSibling);
-    }
-  }
-  membersBlock.innerHTML = '';
-
-  if (!isGroup) return;
-
-  apiGetGroupMembers(chat.id).then(members => {
-    if (!members || !members.length) return;
-
-    const localChat = app.chats.find(c => String(c.id) === String(chat.id));
-    if (localChat) localChat.members = members;
-
-    // После загрузки участников — обновляем счетчик онлайн в хедере
-    const headerStatus = document.getElementById('active-chat-status');
-    if (headerStatus) {
-      const total = members.length;
-      const online = members.filter(m => {
-        if (String(m.id) === String(app.currentUser?.id)) return true;
-        const globalStatus = app.userStatusMap && app.userStatusMap[String(m.id)];
-        if (globalStatus) return globalStatus.online;
-        return m.is_online;
-      }).length;
-      headerStatus.textContent = `${online} из ${total} online`;
-    }
-
-    const membersList = members.map(m => {
-      const isMe = String(m.id) === String(app.currentUser?.id);
-
-      // Статус из глобального мапа (если есть) имеет приоритет над тем что пришло от API
-      let isOnline = m.is_online;
-      const globalStatus = app.userStatusMap && app.userStatusMap[String(m.id)];
-      if (globalStatus) isOnline = globalStatus.online;
-      if (isMe) isOnline = true;
-
-      const avatarInner = m.avatar_url
-          ? `<img src="${m.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`
-          : (m.username || '?')[0].toUpperCase();
-      const onlineDot = isOnline ? `<span class="member-online-dot"></span>` : '';
-      const removeBtn = (isCreator && !isMe)
-          ? `<button onclick="removeGroupMember('${chat.id}','${m.id}')"
-                        title="Удалить из группы"
-                        class="ml-auto text-red-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition flex-shrink-0 member-remove-btn">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>`
-          : '';
-      return `
-                <div class="member-row flex items-center gap-3 py-1.5" data-uid="${m.id}">
-                    <div class="relative flex-shrink-0">
-                        <div onclick="openMemberAvatarViewer(JSON.parse(this.parentNode.parentNode.dataset.member))"
-                            class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-400 hover:ring-offset-1 transition text-sm">
-                            ${avatarInner}
-                        </div>
-                        ${onlineDot}
-                    </div>
-                    <div class="overflow-hidden flex-1 min-w-0">
-                        <div class="text-sm font-semibold text-custom-main truncate">
-                            ${m.username}${isMe ? ' <span class="text-xs text-custom-muted font-normal">(вы)</span>' : ''}
-                        </div>
-                        ${m.full_name ? `<div class="text-xs text-custom-muted truncate">${m.full_name}</div>` : ''}
-                        ${m.status ? `<div class="text-xs text-custom-muted truncate" style="font-style:italic;opacity:0.8;">${m.status}</div>` : ''}
-                    </div>
-                    ${removeBtn}
-                </div>`.replace('this.parentNode.parentNode.dataset.member', `'${JSON.stringify(m).replace(/'/g, "\\'").replace(/"/g, '&quot;')}'`);
-    }).join('');
-
-    // Кнопка + рядом с заголовком — только для создателя
-    const addBtnHtml = isCreator
-        ? `<button id="add-member-plus-btn" onclick="handleAddMemberBtn()" title="Добавить участника"
-                    class="add-member-plus-btn w-7 h-7 flex items-center justify-center rounded-full relative">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                </button>`
-        : `<div class="w-7 h-7"></div>`;  // заглушка для выравнивания
-
-    membersBlock.innerHTML = `
-            <div class="flex items-center justify-between mb-2 mt-1">
-                <div class="text-xs font-semibold text-custom-muted uppercase tracking-wider">
-                    Участники (${members.length})
-                </div>
-                ${addBtnHtml}
-            </div>
-            <div id="group-members-list" class="space-y-0.5">
-                ${membersList}
-            </div>`;
-  }).catch(() => {});
-}
-
-
-function renderStatusElements(isOnline, userStatus) {
-  // Бейдж онлайн в правой панели
-  const badge = document.getElementById('info-status-badge');
-  const text  = document.getElementById('info-status-text');
-  if (badge) {
-    if (isOnline) {
-      badge.style.display = 'inline-flex';
-      badge.className = 'info-status-badge online mb-2';
-    } else {
-      badge.style.display = 'none';
-    }
-  }
-  if (text) text.textContent = isOnline ? 'online' : '';
-
-  // Текстовый статус — всегда показываем, пустой если нет
-  const statusEl = document.getElementById('info-user-status');
-  if (statusEl) statusEl.textContent = userStatus ? `«${userStatus}»` : '';
-
-  // Статус под именем в хедере чата
-  const headerStatus = document.getElementById('active-chat-status');
-  if (headerStatus) {
-    headerStatus.textContent = isOnline ? 'online' : '';
-    headerStatus.className   = 'text-xs text-green-500';
-  }
-}
-
-function renderSearchResults(users) {
-  const container = document.getElementById('search-results');
-  const selected = window._ncSelected || [];
-
-  // Храним пользователей в глобальном Map по id — безопасная передача в onclick
-  if (!window._ncUserMap) window._ncUserMap = {};
-  users.forEach(u => { window._ncUserMap[String(u.id)] = u; });
-
-  // В режиме добавления — исключаем тех, кто уже в группе
-  const excludeIds = window._addMemberMode ? (window._ncExcludeIds || new Set()) : new Set();
-  const filtered = users.filter(u => !excludeIds.has(String(u.id)));
-
-  if (!filtered.length) {
-    const msg = (window._addMemberMode && users.length)
-        ? 'Все найденные пользователи уже в группе'
-        : 'Пользователи не найдены';
-    container.innerHTML = `<p class="text-xs text-custom-muted text-center py-3 opacity-60">${msg}</p>`;
-    return;
-  }
-  container.innerHTML = filtered.map(user => {
-    const isSelected = selected.some(u => String(u.id) === String(user.id));
-    const initial = (user.username || 'U')[0].toUpperCase();
-    const checkSvg = isSelected
-        ? `<svg class="w-3 h-3" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>`
-        : '';
-    return `<div onclick="ncToggleUser('${user.id}')"
-             class="nc-result-item ${isSelected ? 'selected' : ''}"
-             data-uid="${user.id}">
-            <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-500 font-bold text-sm flex-shrink-0">${initial}</div>
-            <div class="flex-1 min-w-0">
-                <div class="font-semibold text-custom-main text-sm truncate">${user.username}</div>
-                <div class="text-xs text-custom-muted truncate">${user.email}</div>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="nc-check">${checkSvg}</div>
-            </div>
+                    <span class="text-[9px] font-semibold text-white truncate">${p.author_name}</span>
+                 </div>
+                 <div class="flex gap-2 text-white/70 text-[8px]">
+                    <span class="flex items-center gap-0.5">
+                       <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                       ${p.likes_count || 0}
+                    </span>
+                    <span class="flex items-center gap-0.5">
+                       <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                       ${p.comments_count || 0}
+                    </span>
+                 </div>
+              </div>
+           </div>
+           <button onclick="${openAction}" class="absolute inset-0 z-0" style="background:transparent;border:none;"></button>
         </div>`;
-  }).join('');
-}
-
-function loadUserData() {
-  const user = window.app?.currentUser || JSON.parse(localStorage.getItem('alpha_user') || 'null');
-  if (!user) return;
-  document.getElementById('current-user-name').textContent = user.username;
-  setAvatarEl(document.getElementById('current-user-avatar'), user);
-}
-
-// Универсальная функция: ставит фото или букву в элемент-аватар
-function setAvatarEl(el, user) {
-  if (!el) return;
-  if (user.avatar_url) {
-    el.innerHTML = `<img src="${user.avatar_url}" alt="${user.username}"
-            style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-  } else {
-    el.textContent = (user.username || 'U')[0].toUpperCase();
   }
-}
 
-function updateLastMessageInChatList(msg) {
-  const app  = window.app;
-  const chat = app.chats.find(c => String(c.id) === String(msg.chat_id));
-  if (chat) {
-    chat.last_message = msg.content;
-    renderChats();
-  } else {
-    apiLoadChats();
+  // Превью: для видео — canvas рисуется только когда карточка видна (через data-src)
+  function _renderThumb(postId, a) {
+    const isVideo = (a.mime_type || '').startsWith('video/');
+    if (isVideo) {
+      const id = `vt-${postId.slice(0,8)}`;
+      return `<div class="relative w-full h-full bg-black feed-video-thumb" data-video-src="${a.url}" data-canvas-id="${id}" onclick="Feed.openMedia('${postId}', '${a.url}', true)" style="cursor:pointer;">
+                <canvas id="${id}" class="w-full h-full" style="object-fit:cover;display:block;"></canvas>
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div class="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
+                </div>
+            </div>`;
+    }
+    return `<div class="w-full h-full" onclick="Feed.openMedia('${postId}', '${a.url}', false)" style="cursor:pointer;">
+            <img src="${a.url}" class="w-full h-full object-cover" loading="lazy" decoding="async">
+        </div>`;
   }
-}
 
-// ─── Helpers ───────────────────────────────────────────────────────────────
+  // Превью видео — параллельно до 3 штук одновременно
+  const _thumbQueue   = [];
+  const THUMB_PARALLEL = 3;
+  let   _thumbActive  = 0;
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+  function _initThumbObserver(container) {
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const el  = entry.target;
+        const src = el.dataset.videoSrc;
+        const cid = el.dataset.canvasId;
+        if (src && cid) { _thumbQueue.push({ src, cid }); _processThumbQueue(); }
+        obs.unobserve(el);
+      });
+    }, { rootMargin: '150px' });
+    container.querySelectorAll('.feed-video-thumb').forEach(el => obs.observe(el));
+  }
 
-function scrollToBottom(instant) {
-  const container = document.getElementById('messages-container');
-  if (!container) return;
-  if (instant) {
-    // Скрываем контейнер, скроллим в самый низ, потом показываем — без вспышки верха
-    container.style.visibility = 'hidden';
-    container.scrollTop = container.scrollHeight;
-    requestAnimationFrame(function() {
-      container.scrollTop = container.scrollHeight;
-      container.style.visibility = '';
+  function _processThumbQueue() {
+    while (_thumbActive < THUMB_PARALLEL && _thumbQueue.length > 0) {
+      _thumbActive++;
+      const { src, cid } = _thumbQueue.shift();
+      _loadThumb(src, cid).finally(() => {
+        _thumbActive--;
+        _processThumbQueue();
+      });
+    }
+  }
+
+  function _loadThumb(src, cid) {
+    return new Promise(resolve => {
+      const v = document.createElement('video');
+      v.muted = true; v.preload = 'metadata'; v.style.display = 'none';
+      document.body.appendChild(v);
+      v.onloadedmetadata = () => { v.currentTime = 1; };
+      v.onseeked = () => {
+        const c = document.getElementById(cid);
+        if (c) {
+          c.width  = v.videoWidth  || 320;
+          c.height = v.videoHeight || 180;
+          c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+        }
+        v.pause(); v.src = ''; v.load(); v.remove();
+        resolve();
+      };
+      v.onerror = () => { v.remove(); resolve(); };
+      v.src = src;
     });
-  } else {
-    setTimeout(function() { container.scrollTop = container.scrollHeight; }, 50);
   }
-}
+
+  // ── Открытие медиа ────────────────────────────────────────────────────
+  async function openMedia(postId, url, isVideo) {
+    // Собираем список медиа только из ленты (не все посты подряд)
+    _mediaList = [];
+    const wallGrid    = document.getElementById('wall-media-grid-main');
+    const wallOverlay = document.getElementById('wall-overlay');
+    const wallIsOpen  = wallGrid && wallOverlay && !wallOverlay.classList.contains('hidden');
+
+    if (wallIsOpen) {
+      wallGrid.querySelectorAll('.wall-media-item').forEach(item => {
+        const m = (item.getAttribute('onclick') || '').match(/Feed\.openMedia\('([^']+)',\s*'([^']+)',\s*(true|false)\)/)
+            || (item.getAttribute('onclick') || '').match(/openMediaDetail\('([^']+)',\s*'([^']+)',\s*(true|false)\)/);
+        if (m) _mediaList.push({ postId: m[1], url: m[2], isVideo: m[3] === 'true' });
+      });
+    } else {
+      // Из ленты — читаем data-атрибуты карточек, без парсинга onclick
+      document.querySelectorAll('#activity-feed-container .activity-post-card[data-media-url]').forEach(card => {
+        const url = card.dataset.mediaUrl;
+        if (!url) return;
+        _mediaList.push({
+          postId:  card.dataset.postId,
+          url:     url,
+          isVideo: card.dataset.mediaVideo === 'true'
+        });
+      });
+    }
+
+    _mediaIndex = _mediaList.findIndex(m => m.postId === String(postId) && m.url === url);
+    if (_mediaIndex === -1) _mediaIndex = 0;
+
+    _track(postId, isVideo ? 'video_complete' : 'view', 0, isVideo ? 'video/mp4' : 'image/jpeg');
+    await _showMedia(postId, url, isVideo, null);
+  }
+
+  async function _showMedia(postId, url, isVideo, direction) {
+    const mediaContainer = document.getElementById('wall-comments-media-container');
+    const mediaContent   = document.getElementById('wall-comments-media-content');
+    const likeBtn        = document.getElementById('wall-comments-media-like');
+    const indicator      = document.getElementById('media-nav-indicator');
+
+    // Сбрасываем гостевые стили (если были)
+    const panel = document.querySelector('.wall-comments-panel');
+    if (panel) {
+      const rightCol = panel.querySelector('.flex-col.flex-grow');
+      if (rightCol && rightCol.style.display === 'none' && localStorage.getItem('alpha_token')) {
+        rightCol.style.display = '';
+      }
+    }
+    if (mediaContainer) {
+      if (localStorage.getItem('alpha_token')) {
+        mediaContainer.style.width  = '';
+        mediaContainer.style.border = '';
+      }
+    }
+
+    // Убираем старый индикатор при каждом открытии
+    if (indicator) indicator.remove();
+
+    mediaContainer.classList.remove('hidden');
+
+    if (direction !== null && mediaContent) {
+      mediaContent.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+      mediaContent.style.opacity = '0';
+      mediaContent.style.transform = `translateY(${direction > 0 ? '-20px' : '20px'})`;
+      await new Promise(r => setTimeout(r, 150));
+    }
+
+    if (mediaContent) {
+      // Общие стили кнопок оверлея
+      const btnBase = `
+        border:none;border-radius:12px;padding:8px 14px;color:#fff;cursor:pointer;
+        font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;
+        transition:background 0.18s, transform 0.15s;
+        background:rgba(0,0,0,0.52);
+        backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+        letter-spacing:0.01em;
+      `;
+
+      // Кнопка «← Назад» — верхний левый угол, для всех
+      const backBtn = `
+        <button onclick="closeWallComments()"
+          title="Назад"
+          style="${btnBase}position:absolute;top:14px;left:14px;z-index:20;"
+          onmouseenter="this.style.background='rgba(99,102,241,0.8)';this.style.transform='scale(1.04)'"
+          onmouseleave="this.style.background='rgba(0,0,0,0.52)';this.style.transform='scale(1)'">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Назад
+        </button>`;
+
+      // Кнопка «Поделиться» — верхний правый угол, для всех
+      const shareBtn = `
+        <button onclick="Feed.sharePost('${postId}')"
+          title="Поделиться"
+          style="${btnBase}position:absolute;top:14px;right:14px;z-index:20;"
+          onmouseenter="this.style.background='rgba(42,171,238,0.8)';this.style.transform='scale(1.04)'"
+          onmouseleave="this.style.background='rgba(0,0,0,0.52)';this.style.transform='scale(1)'">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.932z"/>
+          </svg>
+          Telegram
+        </button>`;
+
+      mediaContent.innerHTML = isVideo
+          ? `<div style="position:relative;width:100%;height:100%;">
+               <video src="${url}" class="w-full h-full object-contain" controls playsinline id="modal-video-player"></video>
+               ${backBtn}
+               ${shareBtn}
+               <!-- Кнопки Повтор и Авто — нижний левый, чуть выше нативных контролов -->
+               <div id="video-player-controls"
+                 style="position:absolute;bottom:56px;left:12px;display:flex;gap:8px;z-index:20;">
+                 <button id="btn-loop" onclick="Feed.toggleLoop()" title="Повтор"
+                   style="${btnBase}"
+                   onmouseenter="this.style.transform='scale(1.04)'"
+                   onmouseleave="this.style.transform='scale(1)'">
+                   <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                   </svg>
+                   Повтор
+                 </button>
+                 <button id="btn-autonext" onclick="Feed.toggleAutoNext()" title="Следующее"
+                   style="${btnBase}"
+                   onmouseenter="this.style.transform='scale(1.04)'"
+                   onmouseleave="this.style.transform='scale(1)'">
+                   <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+                   </svg>
+                   Авто
+                 </button>
+               </div>
+             </div>`
+          : `<div style="position:relative;width:100%;height:100%;">
+               <img src="${url}" class="w-full h-full object-contain">
+               ${backBtn}
+               ${shareBtn}
+             </div>`;
+
+      mediaContent.style.opacity = '0';
+      mediaContent.style.transform = direction === null ? 'none' : `translateY(${direction > 0 ? '20px' : '-20px'})`;
+      requestAnimationFrame(() => {
+        mediaContent.style.transition = 'opacity 0.22s ease, transform 0.22s ease';
+        mediaContent.style.opacity = '1';
+        mediaContent.style.transform = 'translateY(0)';
+      });
+      // Запускаем видео через JS после рендера — не через autoplay атрибут
+      if (isVideo) {
+        const vEl = document.getElementById('modal-video-player');
+        if (vEl) {
+          vEl.loop = _loopMode;
+          if (_autoNextMode) {
+            vEl.onended = () => { if (_mediaList.length > 1) openMedia(_mediaList[(_mediaIndex + 1) % _mediaList.length].postId, _mediaList[(_mediaIndex + 1) % _mediaList.length].url, true, 1); };
+          }
+          vEl.load(); vEl.play().catch(() => {});
+        }
+        _updateVideoButtons();
+      }
+    }
+
+    // Лайк
+    if (likeBtn) {
+      const postEl = document.getElementById(`activity-post-${postId}`) || document.getElementById(`post-${postId}`);
+      let isLiked = false;
+      if (postEl) {
+        const lb = postEl.querySelector('button[onclick^="togglePostLike"]');
+        if (lb) isLiked = lb.dataset.liked === 'true';
+      }
+      likeBtn.dataset.postId = postId;
+      likeBtn.dataset.liked = isLiked;
+      const svg = likeBtn.querySelector('svg');
+      if (isLiked) { likeBtn.classList.add('text-red-400'); svg?.setAttribute('fill', 'currentColor'); }
+      else { likeBtn.classList.remove('text-red-400'); svg?.setAttribute('fill', 'none'); }
+    }
+
+    // Комментарии (только для авторизованных)
+    const _token = localStorage.getItem('alpha_token');
+    if (_token) {
+      try {
+        const res = await fetch(`/api/wall/posts/${postId}/chat`, {
+          headers: { 'Authorization': `Bearer ${_token}` }
+        }).then(r => r.json());
+        if (res.chat_id) openWallComments(postId, res.chat_id, true);
+      } catch (e) {}
+    } else {
+      // Гость — открываем overlay для медиа (стандартный вид, как у авторизованных)
+      const overlay = document.getElementById('wall-comments-overlay');
+      if (overlay) {
+        overlay.classList.remove('hidden');
+        requestAnimationFrame(() => overlay.classList.add('comments-open'));
+        // Скрываем правую панель комментариев
+        const panel = overlay.querySelector('.wall-comments-panel');
+        if (panel) {
+          const rightCol = panel.querySelector('.flex-col.flex-grow');
+          if (rightCol) rightCol.style.display = 'none';
+          const mediaCol = document.getElementById('wall-comments-media-container');
+          if (mediaCol) { mediaCol.style.width = '100%'; mediaCol.style.border = 'none'; }
+        }
+        // Кнопка «← Назад» теперь встроена прямо в медиа-контент для всех пользователей
+      }
+    }
+
+    // Wheel навигация (вешаем один раз)
+    const overlay = document.getElementById('wall-comments-overlay');
+    if (overlay && !overlay._mediaWheelAdded) {
+      overlay._mediaWheelAdded = true;
+      overlay.addEventListener('wheel', (e) => {
+        if (_mediaList.length < 2) return;
+        e.preventDefault();
+        if (_mediaWheelLocked) return;
+        _mediaWheelLocked = true;
+        const dir = e.deltaY > 0 ? 1 : -1;
+        _mediaIndex = Math.max(0, Math.min(_mediaList.length - 1, _mediaIndex + dir));
+        const next = _mediaList[_mediaIndex];
+        if (next) _showMedia(next.postId, next.url, next.isVideo, dir);
+        setTimeout(() => { _mediaWheelLocked = false; }, 500);
+      }, { passive: false });
+    }
+
+    // Индикатор — только если медиа больше 1
+    if (_mediaList.length > 1) _renderIndicator(mediaContainer);
+  }
+
+  function _renderIndicator(mediaContainer) {
+    const el = document.createElement('div');
+    el.id = 'media-nav-indicator';
+    el.style.cssText = 'position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:4px;z-index:20;pointer-events:none;';
+    // Показываем максимум 10 точек вокруг текущего
+    const total = _mediaList.length;
+    const start = Math.max(0, Math.min(_mediaIndex - 4, total - 10));
+    const end   = Math.min(total, start + 10);
+    el.innerHTML = Array.from({ length: end - start }, (_, i) => {
+      const idx = start + i;
+      const active = idx === _mediaIndex;
+      return `<div style="width:3px;height:${active ? '18px' : '5px'};border-radius:2px;
+                background:${active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.3)'};
+                transition:all 0.2s ease;"></div>`;
+    }).join('');
+    mediaContainer.appendChild(el);
+  }
+
+  let _loopMode = false;
+  let _autoNextMode = false;
+
+  function toggleLoop() {
+    _loopMode = !_loopMode;
+    _autoNextMode = false;
+    const vEl = document.getElementById('modal-video-player');
+    if (vEl) vEl.loop = _loopMode;
+    _updateVideoButtons();
+  }
+
+  function toggleAutoNext() {
+    _autoNextMode = !_autoNextMode;
+    _loopMode = false;
+    const vEl = document.getElementById('modal-video-player');
+    if (vEl) {
+      vEl.loop = false;
+      if (_autoNextMode) {
+        vEl.onended = () => { if (_mediaList.length > 1) openMedia(_mediaList[(_mediaIndex + 1) % _mediaList.length].postId, _mediaList[(_mediaIndex + 1) % _mediaList.length].url, true, 1); };
+      } else {
+        vEl.onended = null;
+      }
+    }
+    _updateVideoButtons();
+  }
+
+  function _updateVideoButtons() {
+    const btnLoop = document.getElementById('btn-loop');
+    const btnNext = document.getElementById('btn-autonext');
+    if (btnLoop) btnLoop.style.background = _loopMode ? 'rgba(99,102,241,0.85)' : 'rgba(0,0,0,0.55)';
+    if (btnNext) btnNext.style.background = _autoNextMode ? 'rgba(99,102,241,0.85)' : 'rgba(0,0,0,0.55)';
+  }
+
+  // ── Поделиться постом ─────────────────────────────────────────────────
+  function sharePost(postId) {
+    const url = encodeURIComponent(`${location.origin}${location.pathname}?post=${postId}`);
+    window.open(`https://t.me/share/url?url=${url}`, '_blank', 'width=600,height=500,noopener');
+  }
+
+  return { load, openMedia, track: _track, toggleLoop, toggleAutoNext, sharePost };
+
+})();
+
+window.loadActivityFeed = () => Feed.load();
+
+// ── Обработка ссылки ?post=ID (поделиться) ──────────────────────────────────
+(function handleShareLink() {
+  const params = new URLSearchParams(location.search);
+  const postId = params.get('post');
+  if (!postId) return;
+
+  history.replaceState(null, '', location.pathname);
+
+  // Показываем main-chat вместо лендинга (гостевой режим)
+  function _showGuestFeed() {
+    const landing  = document.getElementById('landing-page');
+    const mainChat = document.getElementById('main-chat');
+    const dock     = document.getElementById('bottom-dock');
+    if (!mainChat) return;
+
+    if (landing) landing.classList.add('hidden');
+    if (dock)    dock.classList.add('guest-hidden');
+    mainChat.classList.remove('hidden');
+
+    // Открываем ленту через layout
+    if (typeof window.openFeedPanel === 'function') {
+      window.openFeedPanel();
+    }
+  }
+
+  // Всегда вызывается при закрытии просмотрщика (и гость, и авторизованный)
+  function _onClose() {
+    const isAuth = !!(window.app && window.app.currentUser);
+
+    // Убираем кнопку «На главную» и восстанавливаем стили панели
+    const closeBtn = document.getElementById('guest-close-btn');
+    if (closeBtn) closeBtn.remove();
+    const panel = document.querySelector('.wall-comments-panel');
+    if (panel) {
+      const rightCol = panel.querySelector('.flex-col.flex-grow');
+      if (rightCol) rightCol.style.display = '';
+    }
+    const mediaCol = document.getElementById('wall-comments-media-container');
+    if (mediaCol) { mediaCol.style.width = ''; mediaCol.style.border = ''; }
+
+    if (isAuth) {
+      // Авторизован — просто показываем dock
+      const dock = document.getElementById('bottom-dock');
+      if (dock) {
+        dock.classList.remove('guest-hidden');
+        dock.style.display = '';
+        // Показываем dock через layout если доступно
+        if (typeof window.openFeedPanel !== 'undefined') {
+          dock.classList.add('visible');
+          setTimeout(() => dock.classList.remove('visible'), 5000);
+        }
+      }
+    } else {
+      // Гость — возвращаем лендинг
+      const landing  = document.getElementById('landing-page');
+      const mainChat = document.getElementById('main-chat');
+      const dock     = document.getElementById('bottom-dock');
+      if (landing)  landing.classList.remove('hidden');
+      if (mainChat) mainChat.classList.add('hidden');
+      if (dock)     dock.classList.remove('guest-hidden');
+    }
+  }
+
+  // Патчим closeWallComments один раз — навсегда
+  function _patchClose() {
+    const origClose = window.closeWallComments;
+    if (!origClose || origClose._guestPatched) return;
+    window.closeWallComments = function() {
+      origClose();
+      setTimeout(_onClose, 350);
+    };
+    window.closeWallComments._guestPatched = true;
+  }
+
+  function _tryOpenPost() {
+    const card = document.getElementById('activity-post-' + postId);
+    if (!card) return false;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => {
+      const mediaUrl = card.dataset.mediaUrl;
+      const isVideo  = card.dataset.mediaVideo === 'true';
+      if (mediaUrl) {
+        _patchClose();
+        Feed.openMedia(postId, mediaUrl, isVideo);
+      }
+    }, 400);
+    return true;
+  }
+
+  function _poll(attempts) {
+    if (attempts <= 0) return;
+    if (_tryOpenPost()) return;
+    setTimeout(() => _poll(attempts - 1), 300);
+  }
+
+  function _start() {
+    _showGuestFeed();
+    setTimeout(() => _poll(30), 700);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(_start, 300));
+  } else {
+    setTimeout(_start, 300);
+  }
+})();

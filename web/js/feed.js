@@ -282,34 +282,23 @@ const Feed = (() => {
     }
 
     if (mediaContent) {
-      // Видео на весь контейнер
+      // Показываем сайдбар и обновляем кнопку поделиться
+      const sidebar = document.getElementById('media-sidebar');
+      if (sidebar) {
+        sidebar.classList.remove('hidden');
+        sidebar.style.display = 'flex';
+      }
+      // Сбрасываем панель комментариев при смене медиа
+      _resetCommentsState();
+      // Обновляем onclick кнопки поделиться с текущим postId
+      const shareBtn = document.getElementById('btn-sidebar-share');
+      if (shareBtn) {
+        shareBtn.onclick = () => Feed.sharePost(postId);
+      }
+
       mediaContent.innerHTML = isVideo
-          ? `<div style="position:relative;width:100%;height:100%;">
-                    <video src="${url}" class="w-full h-full object-contain" controls playsinline id="modal-video-player"></video>
-                    <div id="video-player-controls" style="position:absolute;bottom:48px;left:12px;display:flex;gap:8px;z-index:10;">
-                        <button id="btn-loop" onclick="Feed.toggleLoop()" title="Повтор" style="background:rgba(0,0,0,0.55);border:none;border-radius:8px;padding:6px 12px;color:#fff;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;transition:background 0.2s;">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                            Повтор
-                        </button>
-                        <button id="btn-autonext" onclick="Feed.toggleAutoNext()" title="Следующее" style="background:rgba(0,0,0,0.55);border:none;border-radius:8px;padding:6px 12px;color:#fff;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;transition:background 0.2s;">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
-                            Авто
-                        </button>
-                        <button id="btn-share" onclick="Feed.sharePost('${postId}')" title="Поделиться" style="background:rgba(0,0,0,0.55);border:none;border-radius:8px;padding:6px 12px;color:#fff;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;transition:background 0.2s;">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-                            Поделиться
-                        </button>
-                    </div>
-                  </div>`
-          : `<div style="position:relative;width:100%;height:100%;">
-                    <img src="${url}" class="w-full h-full object-contain">
-                    <div style="position:absolute;bottom:12px;left:12px;z-index:10;">
-                        <button onclick="Feed.sharePost('${postId}')" title="Поделиться" style="background:rgba(0,0,0,0.55);border:none;border-radius:8px;padding:6px 12px;color:#fff;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;transition:background 0.2s;">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-                            Поделиться
-                        </button>
-                    </div>
-                  </div>`;
+          ? `<video src="${url}" class="w-full h-full object-contain" controls playsinline id="modal-video-player"></video>`
+          : `<img src="${url}" class="w-full h-full object-contain">`;
 
       mediaContent.style.opacity = '0';
       mediaContent.style.transform = direction === null ? 'none' : `translateY(${direction > 0 ? '20px' : '-20px'})`;
@@ -336,15 +325,32 @@ const Feed = (() => {
     if (likeBtn) {
       const postEl = document.getElementById(`activity-post-${postId}`) || document.getElementById(`post-${postId}`);
       let isLiked = false;
+      let likesCount = '';
       if (postEl) {
         const lb = postEl.querySelector('button[onclick^="togglePostLike"]');
-        if (lb) isLiked = lb.dataset.liked === 'true';
+        if (lb) {
+          isLiked = lb.dataset.liked === 'true';
+          likesCount = lb.querySelector('.like-count')?.textContent || '';
+        }
       }
       likeBtn.dataset.postId = postId;
       likeBtn.dataset.liked = isLiked;
       const svg = likeBtn.querySelector('svg');
-      if (isLiked) { likeBtn.classList.add('text-red-400'); svg?.setAttribute('fill', 'currentColor'); }
-      else { likeBtn.classList.remove('text-red-400'); svg?.setAttribute('fill', 'none'); }
+      const countEl = likeBtn.querySelector('.like-sidebar-count');
+      if (isLiked) {
+        likeBtn.classList.add('text-red-400');
+        likeBtn.style.color = '#f87171';
+        svg?.setAttribute('fill', 'currentColor');
+        const icon = likeBtn.querySelector('span:first-child');
+        if (icon) icon.style.background = 'rgba(239,68,68,0.2)';
+      } else {
+        likeBtn.classList.remove('text-red-400');
+        likeBtn.style.color = '';
+        svg?.setAttribute('fill', 'none');
+        const icon = likeBtn.querySelector('span:first-child');
+        if (icon) icon.style.background = 'rgba(255,255,255,0.07)';
+      }
+      if (countEl) countEl.textContent = likesCount;
     }
 
     // Комментарии (только для авторизованных)
@@ -354,7 +360,12 @@ const Feed = (() => {
         const res = await fetch(`/api/wall/posts/${postId}/chat`, {
           headers: { 'Authorization': `Bearer ${_token}` }
         }).then(r => r.json());
-        if (res.chat_id) openWallComments(postId, res.chat_id, true);
+        if (res.chat_id) {
+          _currentPostId = postId;
+          openWallComments(postId, res.chat_id, true);
+          // Автоматически открываем панель комментариев
+          _showComments();
+        }
       } catch (e) {}
     } else {
       // Гость — открываем overlay для медиа (стандартный вид, как у авторизованных)
@@ -370,17 +381,7 @@ const Feed = (() => {
           const mediaCol = document.getElementById('wall-comments-media-container');
           if (mediaCol) { mediaCol.style.width = '100%'; mediaCol.style.border = 'none'; }
         }
-        // Кнопка «← На главную»
-        if (!document.getElementById('guest-close-btn')) {
-          const btn = document.createElement('button');
-          btn.id = 'guest-close-btn';
-          btn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg> На главную';
-          btn.onclick = function() { closeWallComments(); };
-          btn.style.cssText = 'position:absolute;top:14px;left:14px;z-index:300;background:rgba(0,0,0,0.55);border:none;border-radius:10px;padding:7px 14px;color:#fff;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;backdrop-filter:blur(8px);transition:background 0.2s;';
-          btn.onmouseenter = () => btn.style.background = 'rgba(99,102,241,0.75)';
-          btn.onmouseleave = () => btn.style.background = 'rgba(0,0,0,0.55)';
-          overlay.appendChild(btn);
-        }
+        // Кнопка «← Назад» теперь встроена прямо в медиа-контент для всех пользователей
       }
     }
 
@@ -423,8 +424,73 @@ const Feed = (() => {
     mediaContainer.appendChild(el);
   }
 
-  let _loopMode = false;
-  let _autoNextMode = false;
+  let _commentsOpen = false;
+  let _currentPostId = null;
+
+  // ── Показать / скрыть панель комментариев ────────────────────────────
+  function toggleComments() {
+    if (_commentsOpen) {
+      _hideComments();
+    } else {
+      _showComments();
+    }
+  }
+
+  function _showComments() {
+    const panel = document.getElementById('comments-right-panel');
+    const btn   = document.getElementById('btn-toggle-comments');
+    if (!panel) return;
+    _commentsOpen = true;
+
+    // Открываем панель — анимация через width + opacity
+    panel.style.width   = '300px';
+    panel.style.minWidth = '220px';
+    panel.style.opacity = '1';
+
+    // Подсвечиваем кнопку
+    if (btn) {
+      const icon = btn.querySelector('span:first-child');
+      if (icon) icon.style.background = 'rgba(59,130,246,0.35)';
+      btn.style.color = '#60a5fa';
+    }
+
+    // Фокус на инпут
+    setTimeout(() => document.getElementById('wall-comments-input')?.focus(), 320);
+  }
+
+  function _hideComments() {
+    const panel = document.getElementById('comments-right-panel');
+    const btn   = document.getElementById('btn-toggle-comments');
+    if (!panel) return;
+    _commentsOpen = false;
+
+    panel.style.width    = '0';
+    panel.style.minWidth = '0';
+    panel.style.opacity  = '0';
+
+    // Сбрасываем подсветку кнопки
+    if (btn) {
+      const icon = btn.querySelector('span:first-child');
+      if (icon) icon.style.background = 'rgba(255,255,255,0.07)';
+      btn.style.color = '';
+    }
+  }
+
+  // Сброс состояния при закрытии модала
+  function _resetCommentsState() {
+    _commentsOpen = false;
+    _currentPostId = null;
+    const panel = document.getElementById('comments-right-panel');
+    if (panel) { panel.style.width = '0'; panel.style.minWidth = '0'; panel.style.opacity = '0'; }
+    const btn = document.getElementById('btn-toggle-comments');
+    if (btn) {
+      const icon = btn.querySelector('span:first-child');
+      if (icon) icon.style.background = 'rgba(255,255,255,0.07)';
+      btn.style.color = '';
+    }
+  }
+
+
 
   function toggleLoop() {
     _loopMode = !_loopMode;
@@ -452,27 +518,25 @@ const Feed = (() => {
   function _updateVideoButtons() {
     const btnLoop = document.getElementById('btn-loop');
     const btnNext = document.getElementById('btn-autonext');
-    if (btnLoop) btnLoop.style.background = _loopMode ? 'rgba(99,102,241,0.85)' : 'rgba(0,0,0,0.55)';
-    if (btnNext) btnNext.style.background = _autoNextMode ? 'rgba(99,102,241,0.85)' : 'rgba(0,0,0,0.55)';
+    if (btnLoop) {
+      const icon = btnLoop.querySelector('span:first-child');
+      if (icon) icon.style.background = _loopMode ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.07)';
+      btnLoop.style.color = _loopMode ? '#a5b4fc' : '';
+    }
+    if (btnNext) {
+      const icon = btnNext.querySelector('span:first-child');
+      if (icon) icon.style.background = _autoNextMode ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.07)';
+      btnNext.style.color = _autoNextMode ? '#a5b4fc' : '';
+    }
   }
 
   // ── Поделиться постом ─────────────────────────────────────────────────
   function sharePost(postId) {
-    const url = `${location.origin}${location.pathname}?post=${postId}`;
-    navigator.clipboard.writeText(url).then(() => {
-      window.app?.notify?.('Ссылка скопирована ✓', 'success');
-    }).catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = url;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      window.app?.notify?.('Ссылка скопирована ✓', 'success');
-    });
+    const url = encodeURIComponent(`${location.origin}${location.pathname}?post=${postId}`);
+    window.open(`https://t.me/share/url?url=${url}`, '_blank', 'width=600,height=500,noopener');
   }
 
-  return { load, openMedia, track: _track, toggleLoop, toggleAutoNext, sharePost };
+  return { load, openMedia, track: _track, toggleLoop, toggleAutoNext, sharePost, toggleComments, resetComments: _resetCommentsState };
 
 })();
 
