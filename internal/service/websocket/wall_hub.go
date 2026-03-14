@@ -108,6 +108,10 @@ func (h *WallHub) Register() chan<- *WallClient {
 	return h.register
 }
 
+func (h *WallHub) Unregister() chan<- *WallClient {
+	return h.unregister
+}
+
 // BroadcastToRoom — отправить сообщение всем в комнате (чат поста или стена пользователя)
 func (h *WallHub) BroadcastToRoom(roomID uuid.UUID, msg interface{}) {
 	log.Printf("WallHub: Broadcasting to room %s", roomID)

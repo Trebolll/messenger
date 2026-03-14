@@ -56,7 +56,11 @@ func (h *ChatHandler) CreateGroupChat(c *gin.Context) {
 		return
 	}
 
-	val, _ := c.Get("userID")
+	val, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 	creatorID := val.(uuid.UUID)
 
 	chat, err := h.chatService.CreateGroupChatByUsernames(req.Name, req.Usernames, creatorID)

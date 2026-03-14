@@ -65,10 +65,7 @@ func (s *ChatService) CreateGroupChatByUsernames(name string, usernames []string
 
 	for _, username := range usernames {
 		user, err := s.userRepo.GetByUsername(username)
-		if err != nil {
-			return nil, err
-		}
-		if user == nil {
+		if err != nil || user == nil {
 			return nil, fmt.Errorf("пользователь %s не найден", username)
 		}
 		if !seenIDs[user.ID] {
@@ -123,7 +120,7 @@ func (s *ChatService) GetChatByID(chatID uuid.UUID, requestingUserID uuid.UUID) 
 // UpdateGroupChat — изменить имя/аватар группы (только создатель)
 func (s *ChatService) UpdateGroupChat(chatID uuid.UUID, requestingUserID uuid.UUID, name string, avatarUrl string) (*model.Chat, error) {
 	chat, err := s.repo.GetChatByID(chatID)
-	if err != nil {
+	if err != nil || chat == nil {
 		return nil, fmt.Errorf("chat not found")
 	}
 	if chat.Type != model.TypeGroup {
@@ -149,7 +146,7 @@ func (s *ChatService) UpdateGroupChat(chatID uuid.UUID, requestingUserID uuid.UU
 // RemoveChatMember — удалить участника (только создатель)
 func (s *ChatService) RemoveChatMember(chatID uuid.UUID, requestingUserID uuid.UUID, targetUserID uuid.UUID) error {
 	chat, err := s.repo.GetChatByID(chatID)
-	if err != nil {
+	if err != nil || chat == nil {
 		return fmt.Errorf("chat not found")
 	}
 	if chat.Type != model.TypeGroup {
@@ -187,7 +184,7 @@ func (s *ChatService) RemoveChatMember(chatID uuid.UUID, requestingUserID uuid.U
 // AddChatMember — добавить участника по username (только создатель)
 func (s *ChatService) AddChatMember(chatID uuid.UUID, requestingUserID uuid.UUID, username string) error {
 	chat, err := s.repo.GetChatByID(chatID)
-	if err != nil {
+	if err != nil || chat == nil {
 		return fmt.Errorf("chat not found")
 	}
 	if chat.Type != model.TypeGroup {
@@ -197,10 +194,7 @@ func (s *ChatService) AddChatMember(chatID uuid.UUID, requestingUserID uuid.UUID
 		return fmt.Errorf("only the creator can add members")
 	}
 	user, err := s.userRepo.GetByUsername(username)
-	if err != nil {
-		return err
-	}
-	if user == nil {
+	if err != nil || user == nil {
 		return fmt.Errorf("user not found")
 	}
 

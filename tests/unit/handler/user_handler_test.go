@@ -123,7 +123,6 @@ func setupTestRouter(mockRepo *MockUserRepository, mockWall *MockWallManager) *g
 func TestRegisterSuccess(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	mockWall := new(MockWallManager)
-
 	mockRepo.On("GetByUsernameAndEmail", "testuser", "test@example.com", "").Return(nil, nil)
 	mockRepo.On("Create", mock.MatchedBy(func(u *model.User) bool {
 		return u.Username == "testuser" && u.Email == "test@example.com"
