@@ -93,6 +93,7 @@ jobs:
           fail_ci_if_error: true
           verbose: true
           root_dir: ${{ github.workspace }}
+          flags: unit,integration
 
       - name: Add Codecov link to PR
         if: github.event_name == 'pull_request'

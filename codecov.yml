@@ -28,6 +28,12 @@ comment:
   require_head: true
   hide_project_coverage: false
 
+flags:
+  unit:
+    carryforward: true
+  integration:
+    carryforward: true
+
 ignore:
   - "**/mock_*.go"
   - "cmd/server/main.go"
