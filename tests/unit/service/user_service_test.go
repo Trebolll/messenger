@@ -108,6 +108,22 @@ func (m *MockUserRepository) UpdateAvatarUrl(userID uuid.UUID, url string) error
 	return args.Error(0)
 }
 
+func (m *MockUserRepository) GetByPhone(phone string) (*model.User, error) {
+	args := m.Called(phone)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.User), args.Error(1)
+}
+
+func (m *MockUserRepository) CreateByPhone(phone, username string) (*model.User, error) {
+	args := m.Called(phone, username)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.User), args.Error(1)
+}
+
 func TestCreateUser_Success(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	mockWall := new(MockWallManager)
@@ -501,5 +517,281 @@ func TestGetUserByID_Success(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, user, result)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUpdateProfile_UserIdAsString(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	userID := uuid.New()
+	existingUser := &model.User{ID: userID, Username: "olduser"}
+	newName := "New Name"
+
+	mockRepo.On("GetById", userID).Return(existingUser, nil)
+	mockRepo.On("UpdateProfile", mock.Anything).Return(nil)
+
+	userService := service.NewUserService(mockRepo, mockWall)
+	result, err := userService.UpdateProfile(userID.String(), nil, &newName, nil, nil, nil, nil, nil)
+
+	assert.NoError(t, err)
+	assert.Equal(t, newName, result.FullName)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUpdateProfile_InvalidUserIdString(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	userService := service.NewUserService(mockRepo, mockWall)
+	result, err := userService.UpdateProfile("invalid-uuid", nil, nil, nil, nil, nil, nil, nil)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Equal(t, "invalid user id", err.Error())
+}
+
+func TestUpdateProfile_InvalidUserIdType(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	userService := service.NewUserService(mockRepo, mockWall)
+	result, err := userService.UpdateProfile(123, nil, nil, nil, nil, nil, nil, nil)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Equal(t, "invalid user id type", err.Error())
+}
+
+func TestUpdateProfile_UserNotFound(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	userID := uuid.New()
+	mockRepo.On("GetById", userID).Return(nil, nil)
+
+	userService := service.NewUserService(mockRepo, mockWall)
+	result, err := userService.UpdateProfile(userID, nil, nil, nil, nil, nil, nil, nil)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Equal(t, "user not found", err.Error())
+}
+
+func TestUpdateProfile_BirthDate(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	userID := uuid.New()
+	existingUser := &model.User{ID: userID}
+	birthDate := "1990-01-01"
+
+	mockRepo.On("GetById", userID).Return(existingUser, nil)
+	mockRepo.On("UpdateProfile", mock.Anything).Return(nil)
+
+	userService := service.NewUserService(mockRepo, mockWall)
+	result, err := userService.UpdateProfile(userID, nil, nil, nil, &birthDate, nil, nil, nil)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result.BirthDate)
+	assert.Equal(t, "1990-01-01", result.BirthDate.Format("2006-01-02"))
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUpdateProfile_BirthDateInvalid(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	userID := uuid.New()
+	existingUser := &model.User{ID: userID}
+	birthDate := "01-01-1990"
+
+	mockRepo.On("GetById", userID).Return(existingUser, nil)
+
+	userService := service.NewUserService(mockRepo, mockWall)
+	result, err := userService.UpdateProfile(userID, nil, nil, nil, &birthDate, nil, nil, nil)
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Equal(t, "invalid birth date format, expected YYYY-MM-DD", err.Error())
+}
+
+func TestUpdateProfile_BirthDateEmpty(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	userID := uuid.New()
+	existingUser := &model.User{ID: userID}
+	birthDate := ""
+
+	mockRepo.On("GetById", userID).Return(existingUser, nil)
+	mockRepo.On("UpdateProfile", mock.Anything).Return(nil)
+
+	userService := service.NewUserService(mockRepo, mockWall)
+	result, err := userService.UpdateProfile(userID, nil, nil, nil, &birthDate, nil, nil, nil)
+
+	assert.NoError(t, err)
+	assert.Nil(t, result.BirthDate)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUpdateStatus_UserIdAsString(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	userID := uuid.New()
+	status := "away"
+	user := &model.User{ID: userID, Status: status}
+
+	mockRepo.On("UpdateStatus", userID, status).Return(user, nil)
+
+	userService := service.NewUserService(mockRepo, mockWall)
+	result, err := userService.UpdateStatus(userID.String(), status)
+
+	assert.NoError(t, err)
+	assert.Equal(t, status, result.Status)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUpdateStatus_InvalidUserIdType(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	userService := service.NewUserService(mockRepo, mockWall)
+	result, err := userService.UpdateStatus(123, "online")
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+	assert.Equal(t, "invalid user id type", err.Error())
+}
+
+func TestGetOrCreateByPhone_Success_Login(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	phone := "+1234567890"
+	user := &model.User{ID: uuid.New(), Phone: phone, Password: "hashedpassword"}
+
+	mockRepo.On("GetByPhone", phone).Return(user, nil)
+
+	userService := service.NewUserService(mockRepo, mockWall)
+	result, err := userService.GetOrCreateByPhone(phone, "")
+
+	assert.NoError(t, err)
+	assert.Equal(t, phone, result.Phone)
+	assert.Empty(t, result.Password)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestGetOrCreateByPhone_Success_Create(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	phone := "+1234567890"
+	username := "testuser"
+	user := &model.User{ID: uuid.New(), Phone: phone, Username: username}
+
+	mockRepo.On("GetByPhone", phone).Return(nil, nil)
+	mockRepo.On("GetByUsernameAndEmail", username, "", "").Return(nil, nil)
+	mockRepo.On("CreateByPhone", phone, username).Return(user, nil)
+	mockWall.On("InitWall", user.ID).Return(nil)
+
+	userService := service.NewUserService(mockRepo, mockWall)
+	result, err := userService.GetOrCreateByPhone(phone, username)
+
+	assert.NoError(t, err)
+	assert.Equal(t, username, result.Username)
+	mockRepo.AssertExpectations(t)
+	mockWall.AssertExpectations(t)
+}
+
+func TestGetOrCreateByEmail_Success_Login(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	email := "test@example.com"
+	user := &model.User{ID: uuid.New(), Email: email, Password: "hashedpassword"}
+
+	mockRepo.On("GetByEmail", email).Return(user, nil)
+
+	userService := service.NewUserService(mockRepo, mockWall)
+	result, err := userService.GetOrCreateByEmail(email, "")
+
+	assert.NoError(t, err)
+	assert.Equal(t, email, result.Email)
+	assert.Empty(t, result.Password)
+}
+
+func TestExistsByLogin_Phone(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	phone := "+1234567890"
+	user := &model.User{ID: uuid.New(), Phone: phone}
+
+	mockRepo.On("GetByPhone", phone).Return(user, nil)
+
+	userService := service.NewUserService(mockRepo, mockWall)
+	exists, err := userService.ExistsByLogin(phone, "phone")
+
+	assert.NoError(t, err)
+	assert.True(t, exists)
+}
+
+func TestLoginByPhone_Success(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	phone := "+1234567890"
+	password := "password123"
+	hashedPassword := hashPassword(password)
+	user := &model.User{ID: uuid.New(), Phone: phone, Password: hashedPassword}
+
+	mockRepo.On("GetByPhone", phone).Return(user, nil)
+
+	userService := service.NewUserService(mockRepo, mockWall)
+	result, err := userService.LoginByPhone(phone, password)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Empty(t, result.Password)
+}
+
+func TestLoginByUsername_Success(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	username := "testuser"
+	password := "password123"
+	hashedPassword := hashPassword(password)
+	user := &model.User{ID: uuid.New(), Username: username, Password: hashedPassword}
+
+	mockRepo.On("GetByUsername", username).Return(user, nil)
+
+	userService := service.NewUserService(mockRepo, mockWall)
+	result, err := userService.LoginByUsername(username, password)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Empty(t, result.Password)
+}
+
+func TestSetBirthDate_Success(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	userID := uuid.New()
+	user := &model.User{ID: userID}
+	dateStr := "1990-01-01"
+
+	mockRepo.On("GetById", userID).Return(user, nil)
+	mockRepo.On("UpdateProfile", mock.MatchedBy(func(u *model.User) bool {
+		return u.BirthDate != nil && u.BirthDate.Format("2006-01-02") == dateStr
+	})).Return(nil)
+
+	userService := service.NewUserService(mockRepo, mockWall)
+	err := userService.SetBirthDate(userID, dateStr)
+
+	assert.NoError(t, err)
+	mockRepo.AssertExpectations(t)
+}
+
+func TestUpdatePasswordByLogin_Success(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockWall := new(MockWallManager)
+	login := "test@example.com"
+	user := &model.User{ID: uuid.New(), Email: login}
+
+	mockRepo.On("GetByEmailOrPhone", login).Return(user, nil)
+	mockRepo.On("UpdatePassword", user.ID, mock.Anything).Return(nil)
+
+	userService := service.NewUserService(mockRepo, mockWall)
+	err := userService.UpdatePasswordByLogin(login, "newpassword")
+
+	assert.NoError(t, err)
 	mockRepo.AssertExpectations(t)
 }
