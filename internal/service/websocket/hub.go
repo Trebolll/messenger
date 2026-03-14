@@ -71,7 +71,7 @@ func (h *Hub) Run() {
 		case message := <-h.Broadcast:
 			data, err := json.Marshal(message)
 			if err != nil {
-				log.Printf("error marshaling message: %v", err)
+				log.Printf("error marshaling message : %v", err)
 				continue
 			}
 			h.mu.RLock()
