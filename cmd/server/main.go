@@ -112,10 +112,6 @@ func main() {
 	// Лента — публичная (незарегистрированные могут смотреть, но не лайкать)
 	r.GET("/api/feed", feedHandler.GetFeed)
 
-	// Публичные эндпоинты для просмотра постов и комментариев (без авторизации)
-	r.GET("/api/wall/posts/:post_id/chat", wallHandler.GetPostChat)
-	r.GET("/api/wall/chat/:chat_id/comments", wallChatHandler.GetComments)
-
 	r.POST("/api/register", userHandler.Register)                // старый email-only эндпоинт
 	r.POST("/api/login", userHandler.Login)                      // старый email-only эндпоинт
 	r.POST("/api/auth/send", smartHandler.SendCode)              // шаг 1: отправить код
@@ -169,11 +165,15 @@ func main() {
 			wall.GET("/:user_id", wallHandler.GetWall)
 			wall.PUT("/settings", wallHandler.UpdateSettings)
 
-			// Комментарии к постам
-			wall.GET("/chat/:chat_id/comments", wallChatHandler.GetComments)
+			// Комментарии к постам — POST только для авторизованных
 			wall.POST("/chat/:chat_id/comments", wallChatHandler.PostComment)
+			// GET /posts/:post_id/chat и GET /chat/:chat_id/comments — публичные, объявлены ниже
 		}
 	}
+
+	// Публичные маршруты для комментариев (без авторизации — гости тоже читают)
+	r.GET("/api/wall/posts/:post_id/chat", wallHandler.GetPostChat)
+	r.GET("/api/wall/chat/:chat_id/comments", wallChatHandler.GetComments)
 
 	r.GET("/api/ws", wsHandler.HandleWebSocket)
 	r.GET("/ws/wall/:chat_id", wallChatHandler.HandleWallWS)
