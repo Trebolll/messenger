@@ -3,17 +3,12 @@ name: Deploy to Production
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -27,5 +22,5 @@ jobs:
             git fetch origin
             git checkout master
             git reset --hard origin/master
-            docker compose build --no-cache backend
-            docker compose up -d
+            docker compose build backend
+            docker compose up -d --force-recreate backend
