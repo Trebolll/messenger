@@ -36,17 +36,20 @@ jobs:
 
       - name: Run tests
         run: |
-          go test -v -covermode=atomic -coverpkg=./internal/... -coverprofile=coverage.out ./internal/... ./tests/... || [ -f coverage.out ]
+          go test -v -covermode=atomic -coverpkg=./internal/... -coverprofile=coverage.out ./internal/... ./tests/...
           go tool cover -func=coverage.out
 
-      - name: Check coverage file
-        run: ls -l coverage.out
+      - name: Debug coverage paths
+        run: head -5 coverage.out
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.out
+          files: ./coverage.out
           token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+          root_dir: ${{ github.workspace }}
 
       - name: Add Codecov link to PR
         if: github.event_name == 'pull_request'
