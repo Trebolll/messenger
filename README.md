@@ -46,3 +46,9 @@ cd /opt/messenger
 git remote set-url origin git@github.com:Trebolll/messenger.git
 git fetch origin
 git reset --hard origin/master
+
+обновить код на сервере
+cd /opt/messenger
+git pull origin master
+docker compose build backend
+docker compose up -d --force-recreate backend

@@ -49,38 +49,48 @@ type ogData struct {
 	RedirectURL string
 }
 
-func (h *OGHandler) HandleOG(c *gin.Context) {
-	postIDStr := c.Query("post")
-	if postIDStr == "" {
-		c.Redirect(http.StatusFound, "/")
-		return
+// isBotUserAgent проверяет, является ли User-Agent ботом для превью ссылок.
+func isBotUserAgent(ua string) bool {
+	ua = strings.ToLower(ua)
+	bots := []string{
+		"telegrambot",
+		"twitterbot",
+		"facebookexternalhit",
+		"vkshare",
+		"whatsapp",
+		"slackbot",
+		"discordbot",
+		"linkedinbot",
+		"applebot",
 	}
+	for _, bot := range bots {
+		if strings.Contains(ua, bot) {
+			return true
+		}
+	}
+	return false
+}
 
+func (h *OGHandler) buildOGData(postIDStr string) (*ogData, error) {
 	postID, err := uuid.Parse(postIDStr)
 	if err != nil {
-		c.Redirect(http.StatusFound, "/")
-		return
+		return nil, err
 	}
 
 	post, err := h.wallRepo.GetPostByID(postID)
 	if err != nil {
-		c.Redirect(http.StatusFound, "/")
-		return
+		return nil, err
 	}
 
-	// Заголовок — имя автора
 	title := fmt.Sprintf("%s в lambda", post.AuthorName)
 
-	// Описание — текст поста (до 200 символов)
 	desc := post.Content
 	runes := []rune(desc)
 	if len(runes) > 200 {
 		desc = string(runes[:200]) + "…"
 	}
-	// Убираем переносы строк для мета-тегов
 	desc = strings.ReplaceAll(desc, "\n", " ")
 
-	// Картинка — первое изображение из вложений
 	var image string
 	for _, att := range post.Attachments {
 		if strings.HasPrefix(att.MimeType, "image/") {
@@ -88,7 +98,6 @@ func (h *OGHandler) HandleOG(c *gin.Context) {
 			break
 		}
 	}
-	// Если нет картинки в посте — аватар автора
 	if image == "" && post.AuthorAvatar != "" {
 		image = post.AuthorAvatar
 	}
@@ -96,15 +105,50 @@ func (h *OGHandler) HandleOG(c *gin.Context) {
 	postURL := fmt.Sprintf("%s/?post=%s", h.baseURL, postIDStr)
 	redirectURL := fmt.Sprintf("/?post=%s", postIDStr)
 
-	data := ogData{
+	return &ogData{
 		Title:       title,
 		Description: desc,
 		Image:       image,
 		URL:         postURL,
 		RedirectURL: redirectURL,
+	}, nil
+}
+
+// HandleOG обрабатывает маршрут /og?post=UUID (прямой запрос OG-страницы).
+func (h *OGHandler) HandleOG(c *gin.Context) {
+	postIDStr := c.Query("post")
+	if postIDStr == "" {
+		c.Redirect(http.StatusFound, "/")
+		return
+	}
+
+	data, err := h.buildOGData(postIDStr)
+	if err != nil {
+		c.Redirect(http.StatusFound, "/")
+		return
 	}
 
 	c.Header("Content-Type", "text/html; charset=utf-8")
 	c.Status(http.StatusOK)
 	ogTemplate.Execute(c.Writer, data)
+}
+
+// HandleIndex обрабатывает маршрут /?post=UUID.
+// Если запрос от бота — отдаёт OG-страницу с мета-тегами.
+// Иначе — отдаёт обычный index.html (SPA).
+func (h *OGHandler) HandleIndex(c *gin.Context) {
+	postIDStr := c.Query("post")
+	ua := c.GetHeader("User-Agent")
+
+	if postIDStr != "" && isBotUserAgent(ua) {
+		data, err := h.buildOGData(postIDStr)
+		if err == nil {
+			c.Header("Content-Type", "text/html; charset=utf-8")
+			c.Status(http.StatusOK)
+			ogTemplate.Execute(c.Writer, data)
+			return
+		}
+	}
+
+	c.HTML(http.StatusOK, "index.html", nil)
 }
