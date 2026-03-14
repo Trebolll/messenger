@@ -94,8 +94,6 @@ jobs:
           fail_ci_if_error: true
           verbose: true
           root_dir: ${{ github.workspace }}
-          override_branch: ${{ github.head_ref }}
-          override_commit: ${{ github.event.pull_request.head.sha }}
 
       - name: Upload integration coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -106,8 +104,6 @@ jobs:
           fail_ci_if_error: true
           verbose: true
           root_dir: ${{ github.workspace }}
-          override_branch: ${{ github.head_ref }}
-          override_commit: ${{ github.event.pull_request.head.sha }}
 
       - name: Add Codecov link to PR
         if: github.event_name == 'pull_request'
