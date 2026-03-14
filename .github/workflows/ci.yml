@@ -85,7 +85,7 @@ jobs:
         with:
           name: coverage-integration
 
-      - name: Upload coverage to Codecov
+      - name: Upload unit coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           files: ./coverage.unit.out
@@ -95,7 +95,7 @@ jobs:
           verbose: true
           root_dir: ${{ github.workspace }}
 
-      - name: Upload coverage to Codecov
+      - name: Upload integration coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           files: ./coverage.integration.out
@@ -121,7 +121,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    needs: [unit-tests]
+    needs: [unit-tests, integration-tests]
     steps:
       - uses: actions/checkout@v3
 
