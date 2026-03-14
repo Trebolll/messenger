@@ -99,6 +99,12 @@ func main() {
 
 	r.GET("/", func(c *gin.Context) { c.HTML(200, "index.html", nil) })
 
+	// Link preview — публичный endpoint (без авторизации)
+	r.GET("/api/link-preview", handler.GetLinkPreview)
+
+	// Лента — публичная (незарегистрированные могут смотреть, но не лайкать)
+	r.GET("/api/feed", feedHandler.GetFeed)
+
 	r.POST("/api/register", userHandler.Register)                // старый email-only эндпоинт
 	r.POST("/api/login", userHandler.Login)                      // старый email-only эндпоинт
 	r.POST("/api/auth/send", smartHandler.SendCode)              // шаг 1: отправить код
@@ -137,7 +143,6 @@ func main() {
 
 		feed := api.Group("/feed")
 		{
-			feed.GET("", feedHandler.GetFeed)
 			feed.POST("/track", feedHandler.TrackEvent)
 		}
 

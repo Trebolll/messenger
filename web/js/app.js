@@ -80,6 +80,12 @@ class AlphaApp {
   showChat() {
     document.getElementById('landing-page').classList.add('hidden');
     document.getElementById('main-chat').classList.remove('hidden');
+    // Восстанавливаем dock (мог быть скрыт в гостевом режиме)
+    const dock = document.getElementById('bottom-dock');
+    if (dock) {
+      dock.classList.remove('guest-hidden');
+      dock.style.display = '';
+    }
     loadUserData();
     this.loadChats();
     this.connectWebSocket();

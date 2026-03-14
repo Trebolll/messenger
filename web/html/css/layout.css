@@ -289,6 +289,7 @@ body.theme-ocean #info-panel { box-shadow: -4px 0 24px rgba(0,0,0,0.22) !importa
 /* Dock скрыт пока main-chat не виден (лендинг) и в открытом чате */
 #main-chat.hidden ~ #bottom-dock { display: none !important; }
 body.chat-open #bottom-dock { display: none !important; }
+#bottom-dock.guest-hidden { display: none !important; }
 
 /* Сам бар */
 #bottom-dock {

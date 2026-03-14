@@ -65,6 +65,71 @@ function formatMessageContent(content) {
   });
 }
 
+// ── Link Preview ────────────────────────────────────────────────────────────
+const _linkPreviewCache = new Map();
+const _urlDetectRegex   = /https?:\/\/[^\s<>"']+/g;
+const _ytPattern        = /youtube\.com|youtu\.be/;
+
+function _renderLinkPreviewCard(data, url) {
+  if (!data || (!data.title && !data.image)) return '';
+  const site  = data.site_name    ? `<span class="lp-site">${escapeHtml(data.site_name)}</span>` : '';
+  const title = data.title        ? `<div class="lp-title">${escapeHtml(data.title)}</div>` : '';
+  const desc  = data.description  ? `<div class="lp-desc">${escapeHtml(data.description)}</div>` : '';
+  const img   = data.image
+      ? `<div class="lp-image"><img src="${escapeHtml(data.image)}" onerror="this.parentElement.remove()" loading="lazy"></div>`
+      : '';
+  return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="link-preview-card">
+    ${img}
+    <div class="lp-body">${site}${title}${desc}</div>
+  </a>`;
+}
+
+async function _loadLinksInMsg(hostEl, content) {
+  _urlDetectRegex.lastIndex = 0;
+  const raw = content.match(_urlDetectRegex) || [];
+  const urls = [...new Set(raw)].filter(u => !_ytPattern.test(u)).slice(0, 1);
+  if (!urls.length) return;
+
+  for (const url of urls) {
+    const wrap = document.createElement('div');
+    wrap.className   = 'link-preview-wrap';
+    wrap.dataset.url = url;
+
+    if (_linkPreviewCache.has(url)) {
+      const cached = _linkPreviewCache.get(url);
+      if (cached && cached !== 'loading') {
+        wrap.innerHTML = _renderLinkPreviewCard(cached, url);
+        if (wrap.innerHTML) hostEl.appendChild(wrap);
+      }
+      continue;
+    }
+
+    // Скелетон-заглушка пока грузится
+    wrap.innerHTML = `<div class="lp-skeleton">
+      <div class="lp-sk-img"></div>
+      <div class="lp-sk-body"><div class="lp-sk-line"></div><div class="lp-sk-line lp-sk-short"></div></div>
+    </div>`;
+    hostEl.appendChild(wrap);
+
+    _linkPreviewCache.set(url, 'loading');
+    try {
+      const res  = await fetch('/api/link-preview?url=' + encodeURIComponent(url));
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      _linkPreviewCache.set(url, data);
+      // Обновляем все карточки с этим URL по странице
+      document.querySelectorAll(`.link-preview-wrap[data-url="${CSS.escape(url)}"]`).forEach(el => {
+        const html = _renderLinkPreviewCard(data, url);
+        if (html) { el.innerHTML = html; }
+        else       { el.remove(); }
+      });
+    } catch {
+      _linkPreviewCache.set(url, null);
+      wrap.remove();
+    }
+  }
+}
+
 function renderChats() {
   const app  = window.app;
   const list = document.getElementById('chats-list');
@@ -291,6 +356,7 @@ function renderMessages() {
                              style="position:relative; z-index:10; width:fit-content; max-width:100%; ${isMediaAttachment ? 'overflow:hidden;' : ''}">
                             ${attachmentHtml}
                             ${captionWrap}
+                            <div class="link-preview-host" data-content="${escapeHtml(msg.content || '')}"></div>
                             <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:2px;flex-wrap:nowrap;${isMediaAttachment ? 'padding:0 6px 4px;' : ''}">
                                 ${isEdited ? `<span class="msg-edited-label">изменено</span>` : ''}
                                 <span style="font-size:10px;white-space:nowrap;flex-shrink:0;opacity:${isMe ? '0.7' : '1'};" class="${isMe ? '' : 'text-custom-muted'}">
@@ -320,6 +386,16 @@ function renderMessages() {
             </div>
         `;
   }).join('');
+
+  // Загружаем превью ссылок после рендера
+  setTimeout(() => {
+    container.querySelectorAll('.link-preview-host[data-content]').forEach(host => {
+      if (host.dataset.loaded) return;
+      host.dataset.loaded = '1';
+      const c = host.getAttribute('data-content');
+      if (c) _loadLinksInMsg(host, c);
+    });
+  }, 80);
 }
 
 // ─── Рейтинговый бейдж ────────────────────────────────────────────────────────

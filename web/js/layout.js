@@ -365,6 +365,9 @@
       state.feedVisible  = false;
       state.chatOpen     = false;
       applyLayout();
+      // Показываем dock сразу при входе
+      showDock();
+      scheduleHide();
     };
   }
 
@@ -381,6 +384,22 @@
       applyLayout();
     }
 
+    // Показываем dock сразу если уже авторизован
+    if (window.app && window.app.currentUser) {
+      var dock = el('bottom-dock');
+      if (dock) { dock.classList.remove('guest-hidden'); dock.style.display = ''; }
+      showDock();
+      scheduleHide();
+    } else {
+      // Ждём авторизации
+      document.addEventListener('app:authenticated', function() {
+        var dock = el('bottom-dock');
+        if (dock) { dock.classList.remove('guest-hidden'); dock.style.display = ''; }
+        showDock();
+        scheduleHide();
+      }, { once: true });
+    }
+
     var attempts = 0;
     var iv = setInterval(function () {
       attempts++;
@@ -394,5 +413,13 @@
   } else {
     init();
   }
+
+  // Публичная функция — открыть ленту принудительно (для share-ссылок)
+  window.openFeedPanel = function () {
+    state.feedVisible  = true;
+    state.chatsVisible = false;
+    applyLayout();
+    if (typeof loadActivityFeed === 'function') loadActivityFeed();
+  };
 
 })();
