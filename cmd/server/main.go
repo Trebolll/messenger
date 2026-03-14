@@ -99,6 +99,14 @@ func main() {
 
 	r.GET("/", func(c *gin.Context) { c.HTML(200, "index.html", nil) })
 
+	// OG-превью для Telegram/VK: /og?post=UUID
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		baseURL = "https://www.lambdahub.ru"
+	}
+	ogHandler := handler.NewOGHandler(wallRepository, baseURL)
+	r.GET("/og", ogHandler.HandleOG)
+
 	// Link preview — публичный endpoint (без авторизации)
 	r.GET("/api/link-preview", handler.GetLinkPreview)
 
