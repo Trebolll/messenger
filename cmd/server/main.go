@@ -104,6 +104,7 @@ func main() {
 	}
 	ogHandler := handler.NewOGHandler(wallRepository, baseURL)
 	r.GET("/og", ogHandler.HandleOG)
+	r.GET("/player", ogHandler.HandlePlayer)
 	r.GET("/", ogHandler.HandleIndex)
 
 	// Link preview — публичный endpoint (без авторизации)

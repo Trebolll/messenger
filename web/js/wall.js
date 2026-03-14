@@ -298,8 +298,8 @@ function renderAttachmentHtml(postId, a) {
     const isVideo = (a.mime_type || '').startsWith('video/');
     if (isVideo) {
         return `<div class="rounded-lg overflow-hidden border border-white/5 bg-black/20 relative aspect-video cursor-pointer" onclick="Feed.openMedia('${postId}', '${a.url}', true)">
-            <video src="${a.url}" class="w-full h-full object-cover" preload="metadata"></video>
-            <div class="absolute inset-0 flex items-center justify-center bg-black/20">
+            <video src="${a.url}" class="w-full h-full object-cover" preload="metadata" onloadedmetadata="setVideoPoster(this)" onclick="event.stopPropagation()"></video>
+            <div class="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
                 <svg class="w-10 h-10 text-white opacity-80" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </div>
         </div>`;
@@ -655,7 +655,7 @@ function renderMediaGrid(media, isMe = false) {
         if (isVideo) {
             return `
                 <div id="media-item-${m.id}" class="aspect-square rounded-xl overflow-hidden bg-black/20 border border-white/5 relative group cursor-pointer wall-media-item" onclick="Feed.openMedia('${m.post_id}', '${m.url}', true)">
-                    <video src="${m.url}" class="w-full h-full object-cover" muted preload="metadata"></video>
+                    <video src="${m.url}" class="w-full h-full object-cover" muted preload="metadata" onloadedmetadata="setVideoPoster(this)"></video>
                     <div class="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
                         <svg class="w-8 h-8 text-white drop-shadow" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                     </div>

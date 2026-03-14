@@ -1,3 +1,26 @@
+// ── Video poster generation ──────────────────────────────────────────────────
+// Захватываем первый кадр видео через Canvas и ставим как poster.
+// Вызывается из onloadedmetadata="setVideoPoster(this)"
+function setVideoPoster(videoEl) {
+  if (videoEl.poster) return; // уже есть
+  try {
+    videoEl.currentTime = 0.5; // небольшой отступ от чёрного кадра
+    const onSeeked = () => {
+      videoEl.removeEventListener('seeked', onSeeked);
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width  = videoEl.videoWidth  || 320;
+        canvas.height = videoEl.videoHeight || 180;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+        const poster = canvas.toDataURL('image/jpeg', 0.7);
+        videoEl.poster = poster;
+      } catch (e) { /* cors или другие ошибки — просто игнорируем */ }
+    };
+    videoEl.addEventListener('seeked', onSeeked);
+  } catch (e) {}
+}
+
 // Inline стек аватарок для групп (в хедере и info-panel)
 function groupAvatarStackInline(members, size) {
   const shown = members.slice(0, 4);
@@ -303,7 +326,8 @@ function renderMessages() {
         attachmentHtml = `<img src="${attUrl}" class="msg-attachment-image" alt="${attName}" onclick="openImgLightbox('${attUrl}')" loading="lazy">`;
       } else if (isVideo) {
         isMediaAttachment = true;
-        attachmentHtml = `<video class="msg-attachment-video" controls preload="metadata">
+        const vidId = 'vid-' + Math.random().toString(36).slice(2, 9);
+        attachmentHtml = `<video id="${vidId}" class="msg-attachment-video" controls preload="metadata" onloadedmetadata="setVideoPoster(this)">
                     <source src="${attUrl}" type="${mime}">
                 </video>`;
       } else if (isAudio) {
