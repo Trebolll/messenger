@@ -104,7 +104,6 @@ func main() {
 	}
 	ogHandler := handler.NewOGHandler(wallRepository, baseURL)
 	r.GET("/og", ogHandler.HandleOG)
-	r.GET("/player", ogHandler.HandlePlayer)
 	r.GET("/", ogHandler.HandleIndex)
 
 	// Link preview — публичный endpoint (без авторизации)
@@ -112,6 +111,10 @@ func main() {
 
 	// Лента — публичная (незарегистрированные могут смотреть, но не лайкать)
 	r.GET("/api/feed", feedHandler.GetFeed)
+
+	// Публичные эндпоинты для просмотра постов и комментариев (без авторизации)
+	r.GET("/api/wall/posts/:post_id/chat", wallHandler.GetPostChat)
+	r.GET("/api/wall/chat/:chat_id/comments", wallChatHandler.GetComments)
 
 	r.POST("/api/register", userHandler.Register)                // старый email-only эндпоинт
 	r.POST("/api/login", userHandler.Login)                      // старый email-only эндпоинт

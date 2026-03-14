@@ -912,7 +912,7 @@ async function saveWallBio() {
 let _commentsWS = null;
 let _commentsChatId = null;
 
-function openWallComments(postId, chatId, keepMediaVisible = false) {
+function openWallComments(postId, chatId, keepMediaVisible = false, guestMode = false) {
     _commentsChatId = chatId;
     const overlay = document.getElementById('wall-comments-overlay');
     if (!keepMediaVisible) {
@@ -930,8 +930,37 @@ function openWallComments(postId, chatId, keepMediaVisible = false) {
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
             </svg>
         </div>`;
-    loadComments(chatId);
-    connectCommentsWS(chatId);
+
+    // Гостевой режим: прячем инпут, показываем плашку входа
+    const inputArea = document.querySelector('#wall-comments-overlay .flex-shrink-0.px-4.py-3.border-t');
+    if (inputArea) {
+        if (guestMode) {
+            inputArea.style.display = 'none';
+            // Добавляем плашку если её ещё нет
+            if (!document.getElementById('guest-login-banner')) {
+                const banner = document.createElement('div');
+                banner.id = 'guest-login-banner';
+                banner.innerHTML = `
+                    <div class="flex items-center justify-between gap-3 px-4 py-3 border-t border-white/5">
+                        <span class="text-xs text-custom-muted">Войдите, чтобы комментировать</span>
+                        <button onclick="openAuthModal()" class="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold bg-custom-accent text-white hover:opacity-90 transition">
+                            Войти
+                        </button>
+                    </div>`;
+                inputArea.parentNode.insertBefore(banner, inputArea.nextSibling);
+            }
+            // Скрываем reply-badge тоже
+            document.getElementById('wall-comments-reply-to').style.display = 'none';
+        } else {
+            inputArea.style.display = '';
+            // Убираем плашку если была
+            document.getElementById('guest-login-banner')?.remove();
+            document.getElementById('wall-comments-reply-to').style.display = '';
+        }
+    }
+
+    loadComments(chatId, guestMode);
+    if (!guestMode) connectCommentsWS(chatId);
 }
 
 function closeWallComments() {
@@ -945,18 +974,23 @@ function closeWallComments() {
         const sidebar = document.getElementById('media-sidebar');
         if (sidebar) { sidebar.classList.add('hidden'); sidebar.style.display = ''; }
         if (typeof Feed !== 'undefined' && Feed.resetComments) Feed.resetComments();
+        // Восстанавливаем инпут и убираем гостевую плашку
+        const inputArea = document.querySelector('#wall-comments-overlay .flex-shrink-0.px-4.py-3.border-t');
+        if (inputArea) inputArea.style.display = '';
+        document.getElementById('guest-login-banner')?.remove();
+        document.getElementById('wall-comments-reply-to').style.display = '';
     }, 320);
     if (_commentsWS) { _commentsWS.close(); _commentsWS = null; }
     _commentsChatId = null;
 }
 
-async function loadComments(chatId) {
+async function loadComments(chatId, guestMode = false) {
     try {
-        const res = await fetch(`/api/wall/chat/${chatId}/comments`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('alpha_token')}` }
-        });
+        const token = localStorage.getItem('alpha_token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const res = await fetch(`/api/wall/chat/${chatId}/comments`, { headers });
         const comments = await res.json();
-        renderCommentTree(comments);
+        renderCommentTree(comments, guestMode);
         // Обновляем счётчик в сайдбаре
         const countEl = document.getElementById('sidebar-comment-count');
         if (countEl && comments?.length) countEl.textContent = comments.length;
@@ -980,20 +1014,30 @@ function connectCommentsWS(chatId) {
     _commentsWS.onclose = () => { _commentsWS = null; };
 }
 
-function renderCommentTree(comments) {
+function renderCommentTree(comments, guestMode = false) {
     const feed = document.getElementById('wall-comments-feed');
     if (!comments || comments.length === 0) {
-        feed.innerHTML = '<p class="text-center text-xs opacity-30 italic py-8">Первым напишите комментарий</p>';
+        const msg = guestMode
+            ? '<p class="text-center text-xs opacity-30 italic py-8">Комментариев пока нет</p>'
+            : '<p class="text-center text-xs opacity-30 italic py-8">Первым напишите комментарий</p>';
+        feed.innerHTML = msg;
         return;
     }
-    feed.innerHTML = comments.map(c => renderCommentNode(c, 0)).join('');
+    feed.innerHTML = comments.map(c => renderCommentNode(c, 0, guestMode)).join('');
 }
 
-function renderCommentNode(c, depth) {
+function renderCommentNode(c, depth, guestMode = false) {
     const indent = depth > 0 ? `style="margin-left:${Math.min(depth * 16, 64)}px"` : '';
     const hasReplies = c.replies && c.replies.length > 0;
     const repliesId = `replies-${c.id}`;
     const time = new Date(c.created_at).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
+
+    // Кнопка "ответить" — только для авторизованных
+    const replyBtn = guestMode ? '' : `
+                    <button onclick="setCommentReply('${c.id}', '${escapeHtml(c.sender_name)}')"
+                        class="text-[10px] text-custom-muted/50 hover:text-custom-accent transition">
+                        ответить
+                    </button>`;
 
     return `
     <div class="wall-comment-node" ${indent} data-id="${c.id}">
@@ -1008,10 +1052,7 @@ function renderCommentNode(c, depth) {
                 </div>
                 <p class="text-xs text-custom-main/80 leading-relaxed break-words">${escapeHtml(c.content)}</p>
                 <div class="flex items-center gap-3 mt-1.5">
-                    <button onclick="setCommentReply('${c.id}', '${escapeHtml(c.sender_name)}')"
-                        class="text-[10px] text-custom-muted/50 hover:text-custom-accent transition">
-                        ответить
-                    </button>
+                    ${replyBtn}
                     ${hasReplies ? `
                     <button onclick="toggleReplies('${repliesId}', this)"
                         class="text-[10px] text-custom-muted/50 hover:text-custom-accent transition flex items-center gap-1">
@@ -1025,7 +1066,7 @@ function renderCommentNode(c, depth) {
         </div>
         ${hasReplies ? `
         <div id="${repliesId}" class="hidden mt-2 space-y-2 border-l border-white/5 pl-3">
-            ${c.replies.map(r => renderCommentNode(r, depth + 1)).join('')}
+            ${c.replies.map(r => renderCommentNode(r, depth + 1, guestMode)).join('')}
         </div>` : ''}
     </div>`;
 }

@@ -353,36 +353,22 @@ const Feed = (() => {
       if (countEl) countEl.textContent = likesCount;
     }
 
-    // Комментарии (только для авторизованных)
+    // Комментарии — загружаем для всех (авторизованных и гостей)
     const _token = localStorage.getItem('alpha_token');
-    if (_token) {
-      try {
-        const res = await fetch(`/api/wall/posts/${postId}/chat`, {
-          headers: { 'Authorization': `Bearer ${_token}` }
-        }).then(r => r.json());
-        if (res.chat_id) {
-          _currentPostId = postId;
-          openWallComments(postId, res.chat_id, true);
-          // Автоматически открываем панель комментариев
-          _showComments();
-        }
-      } catch (e) {}
-    } else {
-      // Гость — открываем overlay для медиа (стандартный вид, как у авторизованных)
-      const overlay = document.getElementById('wall-comments-overlay');
-      if (overlay) {
-        overlay.classList.remove('hidden');
-        requestAnimationFrame(() => overlay.classList.add('comments-open'));
-        // Скрываем правую панель комментариев
-        const panel = overlay.querySelector('.wall-comments-panel');
-        if (panel) {
-          const rightCol = panel.querySelector('.flex-col.flex-grow');
-          if (rightCol) rightCol.style.display = 'none';
-          const mediaCol = document.getElementById('wall-comments-media-container');
-          if (mediaCol) { mediaCol.style.width = '100%'; mediaCol.style.border = 'none'; }
-        }
-        // Кнопка «← Назад» теперь встроена прямо в медиа-контент для всех пользователей
+    try {
+      const headers = _token ? { 'Authorization': `Bearer ${_token}` } : {};
+      const res = await fetch(`/api/wall/posts/${postId}/chat`, { headers }).then(r => r.json());
+      if (res.chat_id) {
+        _currentPostId = postId;
+        openWallComments(postId, res.chat_id, true, !_token /* гостевой режим */);
+        _showComments();
       }
+    } catch (e) {}
+
+    if (!_token) {
+      // Гость — скрываем лайк в сайдбаре
+      const likeBtn = document.getElementById('wall-comments-media-like');
+      if (likeBtn) { likeBtn.style.opacity = '0.3'; likeBtn.style.pointerEvents = 'none'; }
     }
 
     // Wheel навигация (вешаем один раз)
