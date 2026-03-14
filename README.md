@@ -52,3 +52,14 @@ cd /opt/messenger
 git pull origin master
 docker compose build backend
 docker compose up -d --force-recreate backend
+
+//чистка
+docker builder prune -af        # только кеш сборки (самый тяжёлый обычно)
+docker image prune -af          # неиспользуемые образы
+docker container prune -f       # остановленные контейнеры
+docker volume prune -f          # неиспользуемые тома
+docker network prune -f         # неиспользуемые сети
+
+
+//логи
+docker compose logs backend --tail=50
