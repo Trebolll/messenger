@@ -88,12 +88,22 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          files: ./coverage.unit.out,./coverage.integration.out
+          files: ./coverage.unit.out
           token: ${{ secrets.CODECOV_TOKEN }}
+          flags: unit
           fail_ci_if_error: true
           verbose: true
           root_dir: ${{ github.workspace }}
-          flags: unit,integration
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.integration.out
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: integration
+          fail_ci_if_error: true
+          verbose: true
+          root_dir: ${{ github.workspace }}
 
       - name: Add Codecov link to PR
         if: github.event_name == 'pull_request'

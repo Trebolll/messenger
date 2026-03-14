@@ -31,8 +31,12 @@ comment:
 flags:
   unit:
     carryforward: true
+    paths:
+      - internal/
   integration:
     carryforward: true
+    paths:
+      - internal/
 
 ignore:
   - "**/mock_*.go"
