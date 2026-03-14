@@ -24,16 +24,25 @@ var ogTemplate = template.Must(template.New("og").Parse(`<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta property="og:type" content="article">
+  <meta property="og:type" content="{{if .Video}}video.other{{else}}article{{end}}">
   <meta property="og:site_name" content="lambda">
   <meta property="og:title" content="{{.Title}}">
   <meta property="og:description" content="{{.Description}}">
+  {{if .Video}}
+  <meta property="og:video" content="{{.Video}}">
+  <meta property="og:video:secure_url" content="{{.Video}}">
+  <meta property="og:video:type" content="{{.VideoMime}}">
+  <meta property="og:image" content="{{if .Image}}{{.Image}}{{end}}">
+  <meta name="twitter:card" content="player">
+  <meta name="twitter:player" content="{{.Video}}">
+  {{else}}
   {{if .Image}}<meta property="og:image" content="{{.Image}}">{{end}}
-  <meta property="og:url" content="{{.URL}}">
   <meta name="twitter:card" content="summary_large_image">
+  {{if .Image}}<meta name="twitter:image" content="{{.Image}}">{{end}}
+  {{end}}
+  <meta property="og:url" content="{{.URL}}">
   <meta name="twitter:title" content="{{.Title}}">
   <meta name="twitter:description" content="{{.Description}}">
-  {{if .Image}}<meta name="twitter:image" content="{{.Image}}">{{end}}
   <meta http-equiv="refresh" content="0; url={{.RedirectURL}}">
 </head>
 <body>
@@ -45,6 +54,8 @@ type ogData struct {
 	Title       string
 	Description string
 	Image       string
+	Video       string
+	VideoMime   string
 	URL         string
 	RedirectURL string
 }
@@ -92,10 +103,15 @@ func (h *OGHandler) buildOGData(postIDStr string) (*ogData, error) {
 	desc = strings.ReplaceAll(desc, "\n", " ")
 
 	var image string
+	var video string
+	var videoMime string
 	for _, att := range post.Attachments {
-		if strings.HasPrefix(att.MimeType, "image/") {
+		if strings.HasPrefix(att.MimeType, "video/") && video == "" {
+			video = att.Url
+			videoMime = att.MimeType
+		}
+		if strings.HasPrefix(att.MimeType, "image/") && image == "" {
 			image = att.Url
-			break
 		}
 	}
 	if image == "" && post.AuthorAvatar != "" {
@@ -109,6 +125,8 @@ func (h *OGHandler) buildOGData(postIDStr string) (*ogData, error) {
 		Title:       title,
 		Description: desc,
 		Image:       image,
+		Video:       video,
+		VideoMime:   videoMime,
 		URL:         postURL,
 		RedirectURL: redirectURL,
 	}, nil
