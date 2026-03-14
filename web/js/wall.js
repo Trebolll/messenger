@@ -289,6 +289,19 @@ function renderSinglePostHtml(p, isMe) {
                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                  <span class="comment-count">${p.comments_count || 0} комментариев</span>
               </button>
+              <!-- Кнопки шаринга справа -->
+              <div class="ml-auto flex gap-2">
+                 <!-- Копировать ссылку -->
+                 <button onclick="copyPostLink('${p.id}', this)" title="Копировать ссылку"
+                    class="flex items-center gap-1 text-xs text-custom-muted hover:text-custom-accent transition px-2 py-1 rounded-lg hover:bg-white/5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                 </button>
+                 <!-- Поделиться в Telegram -->
+                 <button onclick="shareToTelegram('${p.id}')" title="Поделиться в Telegram"
+                    class="flex items-center gap-1 text-xs text-custom-muted hover:text-[#2AABEE] transition px-2 py-1 rounded-lg hover:bg-[#2AABEE]/10">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-1.97 9.289c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.932z"/></svg>
+                 </button>
+              </div>
            </div>
         </div>
     `;
@@ -1128,4 +1141,26 @@ async function saveWallStatus() {
         window.app?.notify?.('Ошибка: ' + err.message, 'error');
     }
     cancelWallStatus();
+}
+// ── Post sharing ─────────────────────────────────────────────────────────────
+
+function copyPostLink(postId, btn) {
+    const url = `${location.origin}/?post=${postId}`;
+    navigator.clipboard.writeText(url).then(() => {
+        // Временно меняем иконку на галочку
+        const origHTML = btn.innerHTML;
+        btn.innerHTML = `<svg class="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>`;
+        btn.classList.add('text-green-400');
+        setTimeout(() => {
+            btn.innerHTML = origHTML;
+            btn.classList.remove('text-green-400');
+        }, 1500);
+    }).catch(() => {
+        window.app?.notify?.('Не удалось скопировать ссылку', 'error');
+    });
+}
+
+function shareToTelegram(postId) {
+    const url = encodeURIComponent(`${location.origin}/?post=${postId}`);
+    window.open(`https://t.me/share/url?url=${url}`, '_blank', 'width=600,height=500,noopener');
 }
