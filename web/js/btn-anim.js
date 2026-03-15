@@ -149,12 +149,18 @@
     ctx.translate(x, y);
     ctx.rotate(rotation);
 
-    // По умолчанию используем акцентный цвет, чтобы частицы были видны на прозрачном фоне
-    let color = getComputedStyle(document.body).getPropertyValue('--accent-color').trim() || '#3b82f6';
+    // По умолчанию используем акцентный цвет
+    let accent = getComputedStyle(document.body).getPropertyValue('--accent-color').trim() || '#3b82f6';
+    let color = accent;
 
-    // Если кнопка "solid" и мы на неё навели — цвет белый (т.к. фон становится акцентным)
-    if (hovered && type === 'solid') {
-      color = 'rgba(255,255,255,1)';
+    if (type === 'solid') {
+      // Кнопка закрашена акцентным — частицы белые.
+      // При наведении становится прозрачной — частицы акцентные.
+      color = hovered ? accent : 'rgba(255,255,255,1)';
+    } else {
+      // Кнопка прозрачная — частицы акцентные.
+      // При наведении закрашивается — частицы белые.
+      color = hovered ? 'rgba(255,255,255,1)' : accent;
     }
 
     ctx.strokeStyle = color;
