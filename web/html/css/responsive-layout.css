@@ -301,3 +301,63 @@ html, body {
     font-size: 11px !important;
   }
 }
+
+/* ── Wall (профиль) на мобилке ── */
+@media (max-width: 640px) {
+
+  /* Модал на весь экран */
+  #wall-overlay {
+    padding: 0 !important;
+    align-items: stretch !important;
+  }
+
+  #wall-modal {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    overflow-y: auto !important;
+  }
+
+  /* Контент: вертикально, без лишнего отступа */
+  #wall-modal > .flex-grow {
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 12px !important;
+    margin-top: 56px !important; /* вместо mt-16 (64px) */
+    gap: 12px !important;
+  }
+
+  /* Левый сайдбар — компактный, не растягивается */
+  #wall-left-sidebar {
+    width: 100% !important;
+    flex-shrink: 0 !important;
+  }
+
+  #wall-info-sidebar-box {
+    padding: 12px !important;
+  }
+
+  /* Правая колонка — занимает всё оставшееся место */
+  #wall-modal > .flex-grow > .flex-grow {
+    overflow-y: visible !important;
+    min-height: 0 !important;
+  }
+
+  /* Scrollable area внутри постов — не обрезать */
+  #wall-modal .scrollbar-hide.overflow-y-auto {
+    overflow-y: visible !important;
+    flex-grow: 0 !important;
+  }
+}
+
+/* ── Скрываем скроллбар у wall-modal на мобилке ── */
+@media (max-width: 640px) {
+  #wall-modal {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  #wall-modal::-webkit-scrollbar {
+    display: none !important;
+  }
+}
