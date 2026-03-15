@@ -1163,23 +1163,3 @@ function openMemberAvatarViewer(member) {
 
   document.getElementById('avatar-viewer-overlay').classList.remove('hidden');
 }
-// ─── Заполняет UI данными текущего пользователя ────────────────────────────
-function loadUserData() {
-  const user = window.app?.currentUser;
-  if (!user) return;
-
-  // Аватар в доке (dock-кнопка профиля)
-  const avatarEl = document.getElementById('current-user-avatar');
-  if (avatarEl) {
-    if (user.avatar_url) {
-      avatarEl.innerHTML = `<img src="${user.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-    } else {
-      avatarEl.innerHTML = '';
-      avatarEl.textContent = (user.username || 'U')[0].toUpperCase();
-    }
-  }
-
-  // Статус-дот — показываем когда залогинен
-  const dot = document.getElementById('my-status-dot');
-  if (dot) dot.style.display = '';
-}

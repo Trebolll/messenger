@@ -33,7 +33,7 @@ var Agents = []AgentInfo{
 	{AgentClaude, "Claude Haiku", "Anthropic · быстрый и точный", false, "✦"},
 	{AgentGroq, "Llama 3.3 70B", "Groq · бесплатно · очень быстро", true, "⚡"},
 	{AgentGemini, "Gemini Flash", "Google · бесплатно · 1500/день", true, "◆"},
-	{AgentOllama, "Ollama (local)", "Локально · полностью бесплатно", true, "🖥"},
+	{AgentOllama, "Ollama", "Локально · полностью бесплатно", true, "🖥"},
 }
 
 // ═══ Сервис ═══════════════════════════════════════════════════════════════════

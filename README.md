@@ -40,7 +40,6 @@ ssh root@193.233.103.158
 
 
 авторизация гит на сервере
-
 ssh -p 9871 root@193.233.103.158
 cd /opt/messenger
 git remote set-url origin git@github.com:Trebolll/messenger.git
@@ -63,3 +62,6 @@ docker network prune -f         # неиспользуемые сети
 
 //логи
 docker compose logs backend --tail=50
+
+
+docker compose -f docker-compose.local.yml up -d --build

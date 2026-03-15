@@ -1127,6 +1127,9 @@ async function sendWallComment() {
 
 function appendComment(comment) {
     const feed = document.getElementById('wall-comments-feed');
+    if (!feed) return;
+    // Дедупликация — если комментарий с таким id уже в DOM, не добавляем
+    if (comment.id && feed.querySelector(`[data-id="${comment.id}"]`)) return;
     const placeholder = feed.querySelector('p');
     if (placeholder) placeholder.remove();
     if (comment.parent_id) {
