@@ -1235,3 +1235,7 @@ function shareToTelegram(postId) {
     const url = encodeURIComponent(`${location.origin}/?post=${postId}`);
     window.open(`https://t.me/share/url?url=${url}`, '_blank', 'width=600,height=500,noopener');
 }
+function setVideoPoster(video) {
+    // Просто перематываем на начало — браузер сам покажет первый кадр
+    video.currentTime = 0.1;
+}
