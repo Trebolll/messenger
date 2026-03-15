@@ -1,7 +1,7 @@
 // Контактная информация для сотрудничества
 const CONTACT_INFO = {
   email:    'trebolll@yandex.ru',
-  telegram: '@treboll777',
+  telegram: 'https://t.me/treboll777',
 };
 
 function openContactModal() {
