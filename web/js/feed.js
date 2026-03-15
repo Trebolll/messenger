@@ -7,6 +7,8 @@ const Feed = (() => {
   let _mediaWheelLocked = false;
   let _renderObserver   = null;
   let _dwellTimers      = new Map();
+  let _loopMode         = false;
+  let _autoNextMode     = true;
 
   // ── Трекинг ──────────────────────────────────────────────────────────
   function _track(postId, eventType, watchSeconds = 0, mime = '') {
@@ -353,22 +355,23 @@ const Feed = (() => {
       if (countEl) countEl.textContent = likesCount;
     }
 
-    // Комментарии — загружаем для всех (авторизованных и гостей)
+    // Комментарии — только для авторизованных пользователей
     const _token = localStorage.getItem('alpha_token');
-    try {
-      const headers = _token ? { 'Authorization': `Bearer ${_token}` } : {};
-      const res = await fetch(`/api/wall/posts/${postId}/chat`, { headers }).then(r => r.json());
-      if (res.chat_id) {
-        _currentPostId = postId;
-        openWallComments(postId, res.chat_id, true, !_token /* гостевой режим */);
-        _showComments();
-      }
-    } catch (e) {}
-
-    if (!_token) {
-      // Гость — скрываем лайк в сайдбаре
-      const likeBtn = document.getElementById('wall-comments-media-like');
-      if (likeBtn) { likeBtn.style.opacity = '0.3'; likeBtn.style.pointerEvents = 'none'; }
+    if (_token) {
+      try {
+        const res = await fetch(`/api/wall/posts/${postId}/chat`, {
+          headers: { 'Authorization': `Bearer ${_token}` }
+        }).then(r => r.json());
+        if (res.chat_id) {
+          _currentPostId = postId;
+          openWallComments(postId, res.chat_id, true, false);
+          _showComments();
+        }
+      } catch (e) {}
+    } else {
+      // Гость — скрываем только кнопку комментариев
+      const commentBtn = document.getElementById('btn-toggle-comments');
+      if (commentBtn) { commentBtn.style.opacity = '0.3'; commentBtn.style.pointerEvents = 'none'; }
     }
 
     // Wheel навигация (вешаем один раз)
@@ -473,7 +476,12 @@ const Feed = (() => {
       const icon = btn.querySelector('span:first-child');
       if (icon) icon.style.background = 'rgba(255,255,255,0.07)';
       btn.style.color = '';
+      btn.style.opacity = '';
+      btn.style.pointerEvents = '';
     }
+    // Восстанавливаем лайк (может быть заблокирован в гостевом режиме)
+    const likeBtn = document.getElementById('wall-comments-media-like');
+    if (likeBtn) { likeBtn.style.opacity = ''; likeBtn.style.pointerEvents = ''; }
   }
 
 

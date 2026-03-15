@@ -688,7 +688,10 @@ function renderMediaGrid(media, isMe = false) {
 // Медиа-навигация перенесена в feed.js — используй Feed.openMedia()
 
 async function toggleMediaPostLike(btn) {
-    if (!requireAuth()) return;
+    if (!window.app?.currentUser) {
+        if (typeof openAuthModal === 'function') openAuthModal('login');
+        return;
+    }
     const postId = btn.dataset.postId;
     if (!postId) return;
     await togglePostLike(postId, btn);
@@ -703,7 +706,10 @@ function calculateAge(birthDate) {
 }
 
 async function togglePostLike(postId, btn) {
-    if (!requireAuth()) return;
+    if (!window.app?.currentUser) {
+        if (typeof openAuthModal === 'function') openAuthModal('login');
+        return;
+    }
     try {
         const res = await fetch(`/api/wall/posts/${postId}/like`, {
             method: 'POST',

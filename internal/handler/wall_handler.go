@@ -142,11 +142,6 @@ func (h *WallHandler) GetPostChat(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "неверный ID поста"})
 		return
 	}
-	_, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "неавторизован"})
-		return
-	}
 
 	chatID, err := h.wallService.GetPostChat(postID)
 	if err != nil {

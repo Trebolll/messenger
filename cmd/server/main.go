@@ -167,13 +167,13 @@ func main() {
 
 			// Комментарии к постам — POST только для авторизованных
 			wall.POST("/chat/:chat_id/comments", wallChatHandler.PostComment)
-			// GET /posts/:post_id/chat и GET /chat/:chat_id/comments — публичные, объявлены ниже
+			wall.GET("/chat/:chat_id/comments", wallChatHandler.GetComments)
+			// GET /posts/:post_id/chat — публичный, объявлен ниже без auth
 		}
 	}
 
-	// Публичные маршруты для комментариев (без авторизации — гости тоже читают)
+	// Публичный маршрут для получения chat_id поста (без авторизации — для шаринга)
 	r.GET("/api/wall/posts/:post_id/chat", wallHandler.GetPostChat)
-	r.GET("/api/wall/chat/:chat_id/comments", wallChatHandler.GetComments)
 
 	r.GET("/api/ws", wsHandler.HandleWebSocket)
 	r.GET("/ws/wall/:chat_id", wallChatHandler.HandleWallWS)
