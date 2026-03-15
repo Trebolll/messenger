@@ -267,3 +267,20 @@ html, body {
     font-size: 0.9rem !important;
   }
 }
+
+/* ── Auth modal на мобилке ── */
+@media (max-width: 640px) {
+  #auth-modal {
+    max-width: 320px !important;
+    border-radius: 20px !important;
+  }
+
+  #auth-modal input {
+    padding: 10px 14px !important;
+    font-size: 0.875rem !important;
+  }
+
+  #auth-modal h2 {
+    font-size: 1.25rem !important;
+  }
+}
