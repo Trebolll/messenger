@@ -31,6 +31,7 @@
 
   // ── Layout ──────────────────────────────────────────────────
   function applyLayout() {
+    var isMobile = window.innerWidth <= 768;
     var mainChat     = el('main-chat');
     var leftPanel    = el('left-panel');
     var chatsSidebar = el('chats-sidebar');
@@ -42,53 +43,75 @@
     var msgContainer = el('messages-container');
     var infoPanel    = el('info-panel');
 
+    if (isMobile) {
+      // На мобилках сбрасываем инлайновые стили и полагаемся на CSS
+      [leftPanel, viewChat, infoPanel].forEach(function(e) {
+        if (e) {
+          e.style.width = '';
+          e.style.minWidth = '';
+          e.style.maxWidth = '';
+          e.style.flex = '';
+          e.style.margin = '';
+          e.style.height = '';
+          e.style.transform = '';
+          e.style.opacity = '';
+        }
+      });
+    }
+
     if (leftPanel) {
-      leftPanel.style.marginTop = '12px';
-      leftPanel.style.height = 'calc(100% - 12px)';
+      if (!isMobile) {
+        leftPanel.style.marginTop = '12px';
+        leftPanel.style.height = 'calc(100% - 12px)';
 
-      // Ширина левой панели зависит от режима: чаты уже, лента шире
-      var panelWidth = state.chatsVisible ? '533px' : '800px';
-      leftPanel.style.flex = '0 0 ' + panelWidth;
-      leftPanel.style.width = panelWidth;
-      leftPanel.style.minWidth = panelWidth;
+        // Ширина левой панели зависит от режима: чаты уже, лента шире
+        var panelWidth = state.chatsVisible ? '533px' : '800px';
+        leftPanel.style.flex = '0 0 ' + panelWidth;
+        leftPanel.style.width = panelWidth;
+        leftPanel.style.minWidth = panelWidth;
 
-      leftPanel.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease, width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), flex-basis 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), min-width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
-      if (!state.chatsVisible && !state.feedVisible) {
-        leftPanel.style.transform = 'translateY(30px)';
-        leftPanel.style.opacity   = '0';
+        leftPanel.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease, width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), flex-basis 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), min-width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
+        if (!state.chatsVisible && !state.feedVisible) {
+          leftPanel.style.transform = 'translateY(30px)';
+          leftPanel.style.opacity   = '0';
+        }
       }
     }
 
     if (viewChat) {
-      viewChat.style.marginTop = '12px';
-      viewChat.style.marginLeft = '12px';
-      viewChat.style.marginRight = '12px';
-      viewChat.style.height = 'calc(100% - 12px)';
+      if (!isMobile) {
+        viewChat.style.marginTop = '12px';
+        viewChat.style.marginLeft = '12px';
+        viewChat.style.marginRight = '12px';
+        viewChat.style.height = 'calc(100% - 12px)';
 
-      // Чат занимает фиксированные 59%
-      viewChat.style.flex = '0 0 59%';
-      viewChat.style.width = '59%';
-      viewChat.style.maxWidth = '59%';
+        // Чат занимает фиксированные 59%
+        viewChat.style.flex = '0 0 59%';
+        viewChat.style.width = '59%';
+        viewChat.style.maxWidth = '59%';
 
-      viewChat.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease';
+        viewChat.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease';
 
-      if (!state.chatOpen) {
-        viewChat.style.transform = 'translateY(40px)';
-        viewChat.style.opacity   = '0';
+        if (!state.chatOpen) {
+          viewChat.style.transform = 'translateY(40px)';
+          viewChat.style.opacity   = '0';
+        }
       }
     }
 
     if (infoPanel) {
-      infoPanel.style.marginTop = '12px';
-      infoPanel.style.marginRight = '12px';
-      infoPanel.style.height = 'calc(100% - 12px)';
+      if (!isMobile) {
+        infoPanel.style.marginTop = '12px';
+        infoPanel.style.marginRight = '12px';
+        infoPanel.style.height = 'calc(100% - 12px)';
 
-      // Инфо-панель занимает ровно то, что осталось от чата (примерно 32% с учетом отступов)
-      infoPanel.style.flex = '0 0 32%';
-      infoPanel.style.width = '32%';
-      infoPanel.style.marginLeft = 'auto';
+        // Инфо-панель занимает ровно то, что осталось от чата (примерно 32% с учетом отступов)
+        infoPanel.style.flex = '0 0 32%';
+        infoPanel.style.width = '32%';
+        infoPanel.style.marginLeft = 'auto';
 
-      infoPanel.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s ease';
+        infoPanel.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s ease';
+      }
     }
 
     // 1. Управление окном чата
@@ -383,6 +406,8 @@
       state.chatOpen     = false;
       applyLayout();
     }
+
+    window.addEventListener('resize', applyLayout);
 
     // Показываем dock сразу если уже авторизован
     if (window.app && window.app.currentUser) {

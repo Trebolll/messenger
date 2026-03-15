@@ -1,0 +1,181 @@
+/* ═══════════════════════════════════════════════════════════
+   responsive-layout.css
+   Адаптивность для основного интерфейса мессенджера
+   ═══════════════════════════════════════════════════════════ */
+
+/* 1. Общие исправления для мобильных */
+@media (max-width: 768px) {
+  #main-chat {
+    padding: 0 !important; /* Убираем отступы на мобилках */
+    gap: 0 !important;
+  }
+
+  .left-panel, #view-chat, #info-panel {
+    border-radius: 0 !important; /* На фулл-скрине не нужны скругления */
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* 2. Логика переключения панелей (Чаты vs Сообщения) */
+@media (max-width: 768px) {
+  /* По умолчанию на мобилках показываем только одну панель */
+  
+  /* Если открыт чат (есть класс body.chat-open) */
+  body.chat-open #left-panel {
+    display: none !important;
+  }
+  
+  body:not(.chat-open) #view-chat {
+    display: none !important;
+  }
+
+  #left-panel {
+    width: 100% !important;
+    flex-basis: 100% !important;
+  }
+
+  #view-chat {
+    width: 100% !important;
+    flex-basis: 100% !important;
+  }
+  
+  /* Инфо-панель на мобилках должна быть поверх или на весь экран */
+  #info-panel:not(.hidden) {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100%;
+    z-index: 100;
+    flex-basis: 100% !important;
+  }
+}
+
+/* 3. Landing Page Исправления */
+@media (max-width: 640px) {
+  #logo-wrap {
+    width: 280px !important;
+    height: 280px !important;
+    margin-left: -110px !important;
+    margin-top: -110px !important;
+  }
+
+  .home-hero-title {
+    font-size: 1.5rem !important;
+  }
+
+  #landing-page .p-12 {
+    padding: 1.5rem !important;
+  }
+}
+
+/* 4. Bottom Dock Адаптация */
+@media (max-width: 640px) {
+  #bottom-dock {
+    bottom: 10px;
+    padding: 4px 8px;
+    border-radius: 16px;
+    gap: 0;
+  }
+  
+  .dock-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* 5. Убираем горизонтальный скролл везде */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+}
+
+/* Исправляем слишком широкие элементы в чате */
+#messages-container {
+  padding: 1rem !important;
+}
+
+.message-bubble {
+  max-width: 85% !important;
+}
+
+/* 6. Адаптация кнопок и инпутов */
+@media (max-width: 480px) {
+  .nc-result-item {
+    padding: 10px !important;
+  }
+  
+  #chat-header {
+    padding: 0.75rem !important;
+  }
+  
+  #active-chat-name {
+    font-size: 0.95rem !important;
+  }
+
+  /* Лента активности в 1 колонку на мобилках */
+  #activity-feed-container {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+}
+
+/* 7. Исправление media-sidebar в просмотре медиа */
+@media (min-width: 641px) {
+  #media-sidebar {
+    height: 100% !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .wall-comments-panel {
+    flex-direction: column !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+  }
+
+  #media-sidebar {
+    width: 100% !important;
+    height: auto !important;
+    flex-direction: row !important;
+    padding: 8px !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+    justify-content: space-around !important;
+    gap: 0 !important;
+  }
+
+  .media-sidebar-btn {
+    width: auto !important;
+    padding: 0 4px !important;
+  }
+
+  .media-sidebar-btn span:last-child {
+    display: none !important; /* Прячем подписи на мобилках */
+  }
+
+  #wall-comments-media-container {
+    height: 60vh !important;
+  }
+
+  /* Скрываем разделители в горизонтальном режиме */
+  #media-sidebar div[style*="height:0.5px"] {
+    display: none !important;
+  }
+
+  /* Компактный лайк */
+  .like-sidebar-count {
+    min-height: 0 !important;
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    background: var(--accent-color);
+    color: white;
+    padding: 1px 4px;
+    border-radius: 6px;
+    font-size: 8px !important;
+  }
+}
