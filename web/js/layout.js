@@ -4,7 +4,7 @@
 (function () {
 
   var state = {
-    chatsVisible:   true,
+    chatsVisible:   false,
     feedVisible:    false,
     chatOpen:       false,
     infoOpen:       false,

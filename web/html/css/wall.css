@@ -9,6 +9,13 @@
     background: rgba(var(--bg-sidebar-rgb), 0.4) !important;
     backdrop-filter: blur(40px) saturate(180%);
     -webkit-backdrop-filter: blur(40px) saturate(180%);
+    overflow-y: auto !important;
+}
+
+@media (min-width: 641px) {
+    #wall-modal {
+        overflow-y: hidden !important;
+    }
 }
 
 #wall-banner {
