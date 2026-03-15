@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAISuggest_Success(t *testing.T) {
@@ -32,12 +33,13 @@ func TestAISuggest_Success(t *testing.T) {
 	req := service.AISuggestRequest{
 		Text:   "Hello world",
 		Action: service.AIActionImprove,
+		Agent:  service.AgentClaude,
 	}
 
 	result, err := aiService.Suggest(req)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
+	require.NoError(t, err)
+	require.NotNil(t, result)
 	assert.Equal(t, "Improved message content", result.Result)
 	assert.False(t, result.IsAdvice)
 }
@@ -61,6 +63,7 @@ func TestAISuggest_APIError(t *testing.T) {
 	req := service.AISuggestRequest{
 		Text:   "Hello world",
 		Action: service.AIActionImprove,
+		Agent:  service.AgentClaude,
 	}
 
 	result, err := aiService.Suggest(req)
@@ -88,11 +91,12 @@ func TestAISuggest_ToneAction(t *testing.T) {
 	req := service.AISuggestRequest{
 		Text:   "Hello world",
 		Action: service.AIActionTone,
+		Agent:  service.AgentClaude,
 	}
 
 	result, err := aiService.Suggest(req)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
+	require.NoError(t, err)
+	require.NotNil(t, result)
 	assert.True(t, result.IsAdvice)
 }
