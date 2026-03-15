@@ -601,22 +601,22 @@
   <div id="wall-modal" class="w-full h-full sm:h-[92vh] max-w-5xl relative overflow-hidden transform scale-95 transition-all duration-500 flex flex-col shadow-2xl">
 
     <!-- Top Banner & Header -->
-    <div class="wall-header-section relative flex-shrink-0 h-48 sm:h-64">
+    <div class="wall-header-section relative flex-shrink-0 h-48 sm:h-64" style="height:120px;">
       <div id="wall-banner" class="absolute inset-0 bg-gradient-to-r from-blue-600/40 to-purple-600/40 overflow-hidden">
       </div>
 
       <!-- Close Button -->
-      <button onclick="closeWall()" class="absolute top-6 right-6 z-20 p-2 bg-black/20 backdrop-blur-md rounded-full text-white hover:bg-black/40 transition">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      <button onclick="closeWall()" class="absolute top-4 left-4 z-20 p-2 bg-black/30 backdrop-blur-md rounded-full text-white hover:bg-black/50 transition sm:top-6 sm:left-auto sm:right-6">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
 
       <!-- Profile Header Info -->
-      <div class="absolute -bottom-12 left-8 flex items-end gap-6 z-10">
+      <div class="absolute -bottom-12 left-8 flex items-end gap-6 z-10" style="bottom:-28px;">
         <div id="wall-avatar-container" class="relative">
-          <div id="wall-avatar" class="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-custom-sidebar border-4 border-custom-main flex items-center justify-center text-4xl font-bold shadow-xl overflow-hidden">?</div>
+          <div id="wall-avatar" class="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-custom-sidebar border-4 border-custom-main flex items-center justify-center text-4xl font-bold shadow-xl overflow-hidden" style="width:60px;height:60px;">?</div>
         </div>
-        <div class="mb-4">
-          <h2 id="wall-username" class="text-2xl sm:text-3xl font-extrabold text-custom-main tracking-tight drop-shadow-md">User Name</h2>
+        <div class="mb-4" style="margin-bottom:8px;">
+          <h2 id="wall-username" class="text-2xl sm:text-3xl font-extrabold text-custom-main tracking-tight drop-shadow-md" style="font-size:1.1rem;">User Name</h2>
           <div id="wall-status-wrap" class="mt-1">
             <p id="wall-status" class="text-sm text-custom-muted cursor-pointer hover:text-custom-accent transition-colors" title="Нажмите чтобы изменить статус">...</p>
             <div id="wall-status-editor" class="hidden flex items-center gap-2 mt-1">
@@ -637,7 +637,7 @@
     </div>
 
     <!-- Wall Content Area -->
-    <div class="flex-grow flex flex-col sm:flex-row gap-6 p-6 mt-16 overflow-y-auto sm:overflow-hidden">
+    <div class="flex-grow flex flex-col sm:flex-row gap-6 p-6 mt-16 overflow-y-auto sm:overflow-hidden" style="margin-top:32px;">
       <!-- Left: Sidebar Info -->
       <div id="wall-left-sidebar" class="w-full sm:w-64 flex-shrink-0 space-y-4">
         <div id="wall-info-sidebar-box" class="p-5 wall-glass-box space-y-3">

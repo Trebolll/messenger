@@ -73,6 +73,7 @@ async function openWall(userId = null) {
     }
 
     overlay.classList.remove('hidden');
+    overlay.scrollTop = 0;
     document.body.classList.add('wall-open');
     const dockBtn = document.getElementById('profile-dock-btn');
     if (dockBtn && isMe) dockBtn.classList.add('active');
@@ -199,6 +200,15 @@ async function loadWallPosts(userId) {
             }
 
             renderMediaGrid(result.media || [], isMe);
+
+            // Скрываем info-box на мобилке если нет данных
+            if (window.innerWidth <= 640) {
+                const infoBox = document.getElementById('wall-info-sidebar-box');
+                if (infoBox) {
+                    const hasVisible = infoBox.querySelectorAll('.space-y-2 > div:not(.hidden)').length > 0;
+                    infoBox.style.display = hasVisible ? '' : 'none';
+                }
+            }
 
             // Счётчик медиа на кнопке в сайдбаре
             const mediaCount = (result.media || []).length;

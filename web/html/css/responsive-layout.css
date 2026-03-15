@@ -308,55 +308,104 @@ html, body {
   /* Модал на весь экран */
   #wall-overlay {
     padding: 0 !important;
-    align-items: stretch !important;
+    align-items: flex-start !important;
+    overflow-y: auto !important;
   }
 
   #wall-modal {
-    height: 100dvh !important;
-    max-height: 100dvh !important;
+    height: auto !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
     border-radius: 0 !important;
-    overflow-y: auto !important;
+    overflow: visible !important;
   }
 
   /* Контент: вертикально, без лишнего отступа */
   #wall-modal > .flex-grow {
     flex-direction: column !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
+    overflow: visible !important;
     padding: 12px !important;
-    margin-top: 56px !important; /* вместо mt-16 (64px) */
+    margin-top: 36px !important;
     gap: 12px !important;
   }
 
-  /* Левый сайдбар — компактный, не растягивается */
-  #wall-left-sidebar {
-    width: 100% !important;
+  /* Уменьшаем баннер на мобилке */
+  .wall-header-section {
+    height: 120px !important;
     flex-shrink: 0 !important;
   }
 
+  /* Аватарка + имя — подтягиваем */
+  .wall-header-section .absolute.-bottom-12 {
+    bottom: -32px !important;
+  }
+
+  #wall-avatar {
+    width: 64px !important;
+    height: 64px !important;
+  }
+
+  #wall-username {
+    font-size: 1.2rem !important;
+  }
+
+  /* Левый сайдбар — компактный, показывается над постами */
+  #wall-left-sidebar {
+    display: block !important;
+    width: 100% !important;
+    order: 0 !important;
+  }
+
   #wall-info-sidebar-box {
-    padding: 12px !important;
+    padding: 8px 12px !important;
   }
 
-  /* Правая колонка — занимает всё оставшееся место */
-  #wall-modal > .flex-grow > .flex-grow {
-    overflow-y: visible !important;
-    min-height: 0 !important;
+  #wall-left-sidebar.wall-sidebar-hidden {
+    display: none !important;
   }
-
-  /* Scrollable area внутри постов — не обрезать */
-  #wall-modal .scrollbar-hide.overflow-y-auto {
-    overflow-y: visible !important;
-    flex-grow: 0 !important;
-  }
+  display: none !important;
 }
 
-/* ── Скрываем скроллбар у wall-modal на мобилке ── */
+/* Кнопка Медиа — скрываем, она есть в табах */
+#wall-media-preview-box {
+  display: none !important;
+}
+
+/* Bio и инфо-строки — мелкий шрифт в одну строку */
+#wall-info-sidebar-box .space-y-2 {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 4px 12px !important;
+}
+
+#wall-info-sidebar-box .space-y-2 > div {
+  margin: 0 !important;
+}
+
+#wall-info-sidebar-box {
+  padding: 12px !important;
+}
+
+/* Правая колонка — занимает всё оставшееся место */
+#wall-modal > .flex-grow > .flex-grow {
+  overflow: visible !important;
+  min-height: 0 !important;
+}
+
+/* Scrollable area внутри постов — не обрезать */
+#wall-modal .scrollbar-hide {
+  overflow: visible !important;
+  flex-grow: 0 !important;
+}
+
+/* ── Скрываем скроллбар у wall на мобилке ── */
 @media (max-width: 640px) {
+  #wall-overlay,
   #wall-modal {
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
   }
+  #wall-overlay::-webkit-scrollbar,
   #wall-modal::-webkit-scrollbar {
     display: none !important;
   }
