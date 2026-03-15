@@ -117,31 +117,47 @@
     // 1. Управление окном чата
     if (state.chatOpen) {
       document.body.classList.add('chat-open');
+      if (isMobile) {
+        if (leftPanel) hide(leftPanel);
+        if (infoPanel && !state.infoOpen) hide(infoPanel);
+      }
       if (viewChat) {
-        viewChat.style.transform = 'translateY(40px)';
-        viewChat.style.opacity   = '0';
+        if (!isMobile) {
+          viewChat.style.transform = 'translateY(40px)';
+          viewChat.style.opacity   = '0';
+        }
         show(viewChat, 'flex');
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-          viewChat.style.transform = 'translateY(0)';
-          viewChat.style.opacity   = '1';
-        }));
+        if (!isMobile) {
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            viewChat.style.transform = 'translateY(0)';
+            viewChat.style.opacity   = '1';
+          }));
+        }
       }
       if (inputArea) show(inputArea, 'flex');
       if (noChat)    hide(noChat);
     } else {
       // Нет активного чата: панель чата скрыта, ничего не открыто заранее
       document.body.classList.remove('chat-open');
+      if (isMobile) {
+        if (leftPanel) show(leftPanel, 'flex');
+      }
       if (viewChat) {
-        viewChat.style.transform = 'translateY(40px)';
-        viewChat.style.opacity   = '0';
-        // Убираем из потока после анимации
-        if (viewChat._hideTimer) clearTimeout(viewChat._hideTimer);
-        viewChat._hideTimer = setTimeout(() => {
-          if (!state.chatOpen) viewChat.style.display = 'none';
-        }, 500);
+        if (!isMobile) {
+          viewChat.style.transform = 'translateY(40px)';
+          viewChat.style.opacity   = '0';
+          // Убираем из потока после анимации
+          if (viewChat._hideTimer) clearTimeout(viewChat._hideTimer);
+          viewChat._hideTimer = setTimeout(() => {
+            if (!state.chatOpen) viewChat.style.display = 'none';
+          }, 500);
+        } else {
+          hide(viewChat);
+        }
       }
       if (inputArea) hide(inputArea);
-      if (noChat)    show(noChat);
+      if (noChat && !isMobile) show(noChat);
+      else if (noChat) hide(noChat);
     }
 
     // 2. Управление инфо-панелью (независимо от чата)

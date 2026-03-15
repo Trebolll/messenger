@@ -258,7 +258,7 @@
 
   // ═══ Выбор агента ИИ ═══════════════════════════════════════════════════════
 
-  let currentAgent = localStorage.getItem('ai_agent') || 'claude';
+  let currentAgent = localStorage.getItem('ai_agent') || 'deepseek';
   let agentsList   = [];
 
   // Загружаем список агентов с сервера
@@ -273,6 +273,7 @@
         { id: 'claude',  name: 'Claude Haiku',   description: 'Anthropic · быстрый и точный',    free: false, icon: '✦' },
         { id: 'groq',    name: 'Llama 3.3 70B',  description: 'Groq · бесплатно · очень быстро', free: true,  icon: '⚡' },
         { id: 'gemini',  name: 'Gemini Flash',   description: 'Google · бесплатно · 1500/день',  free: true,  icon: '◆' },
+        { id: 'deepseek', name: 'DeepSeek V3',    description: 'DeepSeek · дёшево · умный',        free: false, icon: '🔮' },
         { id: 'ollama',  name: 'Ollama (local)', description: 'Локально · полностью бесплатно',  free: true,  icon: '🖥' },
       ];
       updateAgentLabel();

@@ -65,3 +65,7 @@ docker compose logs backend --tail=50
 
 
 docker compose -f docker-compose.local.yml up -d --build
+
+
+//пушнуть строку в env
+echo "DEEPSEEK_API_KEY=..." >> .env

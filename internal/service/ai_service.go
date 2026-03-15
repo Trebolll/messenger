@@ -15,10 +15,11 @@ import (
 type AIAgent string
 
 const (
-	AgentClaude AIAgent = "claude" // Anthropic Claude Haiku — платный
-	AgentGroq   AIAgent = "groq"   // Groq llama-3.3-70b — бесплатный tier
-	AgentGemini AIAgent = "gemini" // Google Gemini Flash — бесплатный tier
-	AgentOllama AIAgent = "ollama" // Ollama локальный — полностью бесплатный
+	AgentClaude   AIAgent = "claude"   // Anthropic Claude Haiku — платный
+	AgentGroq     AIAgent = "groq"     // Groq llama-3.3-70b — бесплатный tier
+	AgentGemini   AIAgent = "gemini"   // Google Gemini Flash — бесплатный tier
+	AgentOllama   AIAgent = "ollama"   // Ollama локальный — полностью бесплатный
+	AgentDeepSeek AIAgent = "deepseek" // DeepSeek — дёшево и мощно
 )
 
 type AgentInfo struct {
@@ -33,6 +34,7 @@ var Agents = []AgentInfo{
 	{AgentClaude, "Claude Haiku", "Anthropic · быстрый и точный", false, "✦"},
 	{AgentGroq, "Llama 3.3 70B", "Groq · бесплатно · очень быстро", true, "⚡"},
 	{AgentGemini, "Gemini Flash", "Google · бесплатно · 1500/день", true, "◆"},
+	{AgentDeepSeek, "DeepSeek V3", "DeepSeek · дёшево · умный", false, "🔮"},
 	{AgentOllama, "Ollama", "Локально · полностью бесплатно", true, "🖥"},
 }
 
@@ -46,6 +48,8 @@ type AIService struct {
 	geminiKey    string
 	geminiURL    string
 	ollamaURL    string
+	deepseekKey  string
+	deepseekURL  string
 	httpClient   *http.Client
 }
 
@@ -62,6 +66,8 @@ func NewAIService() *AIService {
 		geminiKey:    os.Getenv("GEMINI_API_KEY"),
 		geminiURL:    "https://ai-proxy.trebollllllll.workers.dev/v1beta/models/gemini-2.0-flash-lite:generateContent?target=gemini",
 		ollamaURL:    ollamaURL,
+		deepseekKey:  os.Getenv("DEEPSEEK_API_KEY"),
+		deepseekURL:  "https://api.deepseek.com/v1/chat/completions",
 		httpClient:   &http.Client{},
 	}
 }
@@ -104,7 +110,7 @@ type AISuggestResponse struct {
 func (s *AIService) Suggest(req AISuggestRequest) (*AISuggestResponse, error) {
 	agent := req.Agent
 	if agent == "" {
-		agent = AgentClaude
+		agent = AgentDeepSeek
 	}
 	log.Printf("[AI] agent=%s action=%s", agent, req.Action)
 
@@ -118,6 +124,8 @@ func (s *AIService) Suggest(req AISuggestRequest) (*AISuggestResponse, error) {
 		result, err = s.callGroq(prompt)
 	case AgentGemini:
 		result, err = s.callGemini(prompt)
+	case AgentDeepSeek:
+		result, err = s.callDeepSeek(prompt)
 	case AgentOllama:
 		result, err = s.callOllama(prompt)
 	default:
@@ -275,6 +283,35 @@ func (s *AIService) callGemini(prompt string) (string, error) {
 		return "", fmt.Errorf("gemini: empty response")
 	}
 	return r.Candidates[0].Content.Parts[0].Text, nil
+}
+
+// ═══ DeepSeek ════════════════════════════════════════════════════════════════
+
+func (s *AIService) callDeepSeek(prompt string) (string, error) {
+	body, _ := json.Marshal(openAIRequest{
+		Model:    "deepseek-chat",
+		Messages: []openAIMessage{{Role: "user", Content: prompt}},
+	})
+	req, _ := http.NewRequest("POST", s.deepseekURL, bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+s.deepseekKey)
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("deepseek request failed: %w", err)
+	}
+	defer resp.Body.Close()
+	data, _ := io.ReadAll(resp.Body)
+
+	var r openAIResponse
+	json.Unmarshal(data, &r)
+	if r.Error != nil {
+		return "", fmt.Errorf("deepseek error: %s", r.Error.Message)
+	}
+	if len(r.Choices) == 0 {
+		return "", fmt.Errorf("deepseek: empty response")
+	}
+	return r.Choices[0].Message.Content, nil
 }
 
 // ═══ Ollama (local) ═══════════════════════════════════════════════════════════
