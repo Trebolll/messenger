@@ -122,7 +122,7 @@ func GetLinkPreview(c *gin.Context) {
 	}
 
 	// Фавикон
-	favicon := parsed.Scheme + "://" + parsed.Host + "/favicon1.ico"
+	favicon := parsed.Scheme + "://" + parsed.Host + "/favicon.ico"
 
 	// Название сайта из хоста если не нашли
 	if siteName == "" {
