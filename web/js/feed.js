@@ -373,7 +373,11 @@ const Feed = (() => {
         if (res.chat_id) {
           _currentPostId = postId;
           openWallComments(postId, res.chat_id, true, false);
-          _showComments();
+          // На мобилке комментарии скрыты по умолчанию — откроются по кнопке
+          // На десктопе показываем сразу
+          if (!_isMobile()) {
+            _showComments();
+          }
         }
       } catch (e) {}
     } else {
@@ -385,6 +389,8 @@ const Feed = (() => {
     // Wheel навигация (вешаем один раз)
     if (overlay && !overlay._mediaWheelAdded) {
       overlay._mediaWheelAdded = true;
+
+      // Колесо мыши (десктоп)
       overlay.addEventListener('wheel', (e) => {
         if (_mediaList.length < 2) return;
         e.preventDefault();
@@ -396,6 +402,35 @@ const Feed = (() => {
         if (next) _showMedia(next.postId, next.url, next.isVideo, dir);
         setTimeout(() => { _mediaWheelLocked = false; }, 500);
       }, { passive: false });
+
+      // Свайп пальцем (мобилка)
+      let _touchStartY = null;
+      let _touchStartX = null;
+
+      overlay.addEventListener('touchstart', (e) => {
+        _touchStartY = e.touches[0].clientY;
+        _touchStartX = e.touches[0].clientX;
+      }, { passive: true });
+
+      overlay.addEventListener('touchend', (e) => {
+        if (_touchStartY === null) return;
+        const dy = _touchStartY - e.changedTouches[0].clientY;
+        const dx = Math.abs(_touchStartX - e.changedTouches[0].clientX);
+        _touchStartY = null;
+        _touchStartX = null;
+
+        // Игнорируем горизонтальные свайпы и короткие касания
+        if (dx > Math.abs(dy) || Math.abs(dy) < 40) return;
+        if (_mediaList.length < 2) return;
+        if (_mediaWheelLocked) return;
+
+        _mediaWheelLocked = true;
+        const dir = dy > 0 ? 1 : -1; // вверх = следующее, вниз = предыдущее
+        _mediaIndex = Math.max(0, Math.min(_mediaList.length - 1, _mediaIndex + dir));
+        const next = _mediaList[_mediaIndex];
+        if (next) _showMedia(next.postId, next.url, next.isVideo, dir);
+        setTimeout(() => { _mediaWheelLocked = false; }, 500);
+      }, { passive: true });
     }
 
     // Индикатор — только если медиа больше 1
@@ -432,16 +467,40 @@ const Feed = (() => {
     }
   }
 
+  function _isMobile() {
+    return window.innerWidth <= 768;
+  }
+
   function _showComments() {
-    const panel = document.getElementById('comments-right-panel');
-    const btn   = document.getElementById('btn-toggle-comments');
+    const panel    = document.getElementById('comments-right-panel');
+    const mediaBox = document.getElementById('wall-comments-media-container');
+    const btn      = document.getElementById('btn-toggle-comments');
     if (!panel) return;
     _commentsOpen = true;
 
-    // Открываем панель — анимация через width + opacity
-    panel.style.width   = '300px';
-    panel.style.minWidth = '220px';
-    panel.style.opacity = '1';
+    if (_isMobile()) {
+      // Мобилка: комментарии снизу, медиа уменьшается
+      panel.style.width     = '100%';
+      panel.style.minWidth  = '100%';
+      panel.style.height    = '45vh';
+      panel.style.maxHeight = '45vh';
+      panel.style.opacity   = '1';
+      if (mediaBox) {
+        mediaBox.style.maxHeight = 'calc(100vh - 60px - 45vh)';
+        mediaBox.style.flex      = '0 0 auto';
+      }
+    } else {
+      // Десктоп: комментарии справа
+      panel.style.width     = '300px';
+      panel.style.minWidth  = '220px';
+      panel.style.height    = '';
+      panel.style.maxHeight = '';
+      panel.style.opacity   = '1';
+      if (mediaBox) {
+        mediaBox.style.maxHeight = '';
+        mediaBox.style.flex      = '';
+      }
+    }
 
     // Подсвечиваем кнопку
     if (btn) {
@@ -455,14 +514,23 @@ const Feed = (() => {
   }
 
   function _hideComments() {
-    const panel = document.getElementById('comments-right-panel');
-    const btn   = document.getElementById('btn-toggle-comments');
+    const panel    = document.getElementById('comments-right-panel');
+    const mediaBox = document.getElementById('wall-comments-media-container');
+    const btn      = document.getElementById('btn-toggle-comments');
     if (!panel) return;
     _commentsOpen = false;
 
-    panel.style.width    = '0';
-    panel.style.minWidth = '0';
-    panel.style.opacity  = '0';
+    panel.style.width     = '0';
+    panel.style.minWidth  = '0';
+    panel.style.height    = '';
+    panel.style.maxHeight = '';
+    panel.style.opacity   = '0';
+
+    // Восстанавливаем медиа
+    if (mediaBox) {
+      mediaBox.style.maxHeight = '';
+      mediaBox.style.flex      = '';
+    }
 
     // Сбрасываем подсветку кнопки
     if (btn) {
@@ -477,7 +545,9 @@ const Feed = (() => {
     _commentsOpen = false;
     _currentPostId = null;
     const panel = document.getElementById('comments-right-panel');
-    if (panel) { panel.style.width = '0'; panel.style.minWidth = '0'; panel.style.opacity = '0'; }
+    if (panel) { panel.style.width = '0'; panel.style.minWidth = '0'; panel.style.height = ''; panel.style.maxHeight = ''; panel.style.opacity = '0'; }
+    const mediaBox = document.getElementById('wall-comments-media-container');
+    if (mediaBox) { mediaBox.style.maxHeight = ''; mediaBox.style.flex = ''; }
     const btn = document.getElementById('btn-toggle-comments');
     if (btn) {
       const icon = btn.querySelector('span:first-child');

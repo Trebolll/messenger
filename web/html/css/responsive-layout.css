@@ -20,14 +20,14 @@
 /* 2. Логика переключения панелей (Чаты vs Сообщения) */
 @media (max-width: 768px) {
   /* По умолчанию на мобилках показываем только одну панель */
-  
+
   /* Если открыт чат, стена или просмотр медиа (есть соответствующие классы у body) */
   body.chat-open #left-panel,
   body.wall-open #left-panel,
   body.comments-view-open #left-panel {
     display: none !important;
   }
-  
+
   body:not(.chat-open):not(.wall-open):not(.comments-view-open):not(.feed-open) #view-chat {
     display: none !important;
   }
@@ -47,7 +47,7 @@
     width: 100% !important;
     flex-basis: 100% !important;
   }
-  
+
   /* Инфо-панель на мобилках должна быть поверх или на весь экран */
   #info-panel:not(.hidden) {
     position: fixed;
@@ -87,7 +87,7 @@
     border-radius: 16px;
     gap: 0;
   }
-  
+
   .dock-btn {
     width: 40px;
     height: 40px;
@@ -115,11 +115,11 @@ html, body {
   .nc-result-item {
     padding: 10px !important;
   }
-  
+
   #chat-header {
     padding: 0.75rem !important;
   }
-  
+
   #active-chat-name {
     font-size: 0.95rem !important;
   }
@@ -137,6 +137,11 @@ html, body {
 }
 
 @media (max-width: 768px) {
+  #wall-comments-overlay {
+    padding: 0 !important;
+    align-items: stretch !important;
+  }
+
   .wall-comments-panel {
     display: flex !important;
     flex-direction: column !important;
@@ -145,6 +150,7 @@ html, body {
     border-radius: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
+    overflow: hidden !important;
   }
 
   #media-sidebar {
@@ -152,6 +158,7 @@ html, body {
     width: 100% !important;
     height: auto !important;
     min-height: 60px !important;
+    flex-shrink: 0 !important;
     display: flex !important;
     flex-direction: row !important;
     padding: 8px !important;
@@ -180,9 +187,10 @@ html, body {
 
   #wall-comments-media-container {
     order: 1 !important;
-    flex: 1 !important;
+    flex: 1 1 0% !important;
     height: auto !important;
-    min-height: 40vh !important;
+    min-height: 0 !important;
+    max-height: calc(100vh - 60px);
     display: flex !important;
   }
 
@@ -190,13 +198,15 @@ html, body {
     order: 3 !important;
     width: 100% !important;
     min-width: 100% !important;
-    flex: 1 !important;
+    flex: 0 0 auto !important;
     display: flex !important;
-    height: auto !important;
-    max-height: 40vh !important;
-    opacity: 1 !important;
+    height: 0;
+    max-height: none !important;
+    opacity: 0;
+    overflow: hidden !important;
     border-left: none !important;
     border-top: 1px solid rgba(255,255,255,0.1) !important;
+    transition: height 0.3s ease, opacity 0.3s ease !important;
   }
 
   /* Скрываем разделители в горизонтальном режиме */
@@ -211,16 +221,15 @@ html, body {
   }
 }
 
-  /* Компактный лайк */
-  .like-sidebar-count {
-    min-height: 0 !important;
-    position: absolute;
-    bottom: -2px;
-    right: -2px;
-    background: var(--accent-color);
-    color: white;
-    padding: 1px 4px;
-    border-radius: 6px;
-    font-size: 8px !important;
-  }
-
+/* Компактный лайк */
+.like-sidebar-count {
+  min-height: 0 !important;
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: var(--accent-color);
+  color: white;
+  padding: 1px 4px;
+  border-radius: 6px;
+  font-size: 8px !important;
+}
