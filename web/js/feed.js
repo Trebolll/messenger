@@ -275,6 +275,14 @@ const Feed = (() => {
     if (indicator) indicator.remove();
 
     mediaContainer.classList.remove('hidden');
+    const overlay = document.getElementById('wall-comments-overlay');
+    if (overlay) {
+      overlay.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        overlay.classList.add('comments-open');
+        document.body.classList.add('comments-view-open');
+      });
+    }
 
     if (direction !== null && mediaContent) {
       mediaContent.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
@@ -375,7 +383,6 @@ const Feed = (() => {
     }
 
     // Wheel навигация (вешаем один раз)
-    const overlay = document.getElementById('wall-comments-overlay');
     if (overlay && !overlay._mediaWheelAdded) {
       overlay._mediaWheelAdded = true;
       overlay.addEventListener('wheel', (e) => {

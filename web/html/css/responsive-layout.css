@@ -21,12 +21,20 @@
 @media (max-width: 768px) {
   /* По умолчанию на мобилках показываем только одну панель */
   
-  /* Если открыт чат (есть класс body.chat-open) */
-  body.chat-open #left-panel {
+  /* Если открыт чат, стена или просмотр медиа (есть соответствующие классы у body) */
+  body.chat-open #left-panel,
+  body.wall-open #left-panel,
+  body.comments-view-open #left-panel {
     display: none !important;
   }
   
-  body:not(.chat-open) #view-chat {
+  body:not(.chat-open):not(.wall-open):not(.comments-view-open):not(.feed-open) #view-chat {
+    display: none !important;
+  }
+
+  body.wall-open #view-chat,
+  body.comments-view-open #view-chat,
+  body.feed-open #view-chat {
     display: none !important;
   }
 
@@ -115,27 +123,28 @@ html, body {
   #active-chat-name {
     font-size: 0.95rem !important;
   }
+}
 
-  /* Лента активности в 1 колонку на мобилках */
-  #activity-feed-container {
-    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
-  }
+@media (max-width: 400px) {
+  /* Мелкие правки для очень узких экранов */
 }
 
 /* 7. Исправление media-sidebar в просмотре медиа */
-@media (min-width: 641px) {
+@media (min-width: 769px) {
   #media-sidebar {
     height: 100% !important;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .wall-comments-panel {
     display: flex !important;
     flex-direction: column !important;
     height: 100vh !important;
     max-height: 100vh !important;
     border-radius: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   #media-sidebar {
@@ -173,7 +182,7 @@ html, body {
     order: 1 !important;
     flex: 1 !important;
     height: auto !important;
-    min-height: 50vh !important;
+    min-height: 40vh !important;
     display: flex !important;
   }
 
@@ -184,7 +193,7 @@ html, body {
     flex: 1 !important;
     display: flex !important;
     height: auto !important;
-    max-height: 50vh !important;
+    max-height: 40vh !important;
     opacity: 1 !important;
     border-left: none !important;
     border-top: 1px solid rgba(255,255,255,0.1) !important;
@@ -194,6 +203,13 @@ html, body {
   #media-sidebar div[style*="height:0.5px"] {
     display: none !important;
   }
+}
+
+@media (max-width: 640px) {
+  .wall-comments-panel {
+    /* Уже обработано выше в 768px, но можно добавить специфику если надо */
+  }
+}
 
   /* Компактный лайк */
   .like-sidebar-count {
@@ -207,4 +223,4 @@ html, body {
     border-radius: 6px;
     font-size: 8px !important;
   }
-}
+

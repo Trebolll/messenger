@@ -4,11 +4,11 @@
 (function () {
 
   var state = {
-    chatsVisible:   false,
+    chatsVisible:   true,
     feedVisible:    false,
     chatOpen:       false,
     infoOpen:       false,
-    feedWasVisible: true
+    feedWasVisible: false
   };
 
   function el(id) { return document.getElementById(id); }
@@ -115,8 +115,10 @@
     }
 
     // 1. Управление окном чата
+    document.body.classList.toggle('chat-open', !!state.chatOpen);
+    document.body.classList.toggle('feed-open', !!(state.feedVisible && !state.chatOpen));
+
     if (state.chatOpen) {
-      document.body.classList.add('chat-open');
       if (isMobile) {
         if (leftPanel) hide(leftPanel);
         if (infoPanel && !state.infoOpen) hide(infoPanel);
@@ -140,7 +142,10 @@
       // Нет активного чата: панель чата скрыта, ничего не открыто заранее
       document.body.classList.remove('chat-open');
       if (isMobile) {
-        if (leftPanel) show(leftPanel, 'flex');
+        if (leftPanel) {
+          if (state.chatsVisible || state.feedVisible) show(leftPanel, 'flex');
+          else hide(leftPanel);
+        }
       }
       if (viewChat) {
         if (!isMobile) {
@@ -177,11 +182,13 @@
 
     // 3. Управление левой панелью (список чатов / лента)
     if (state.chatsVisible || state.feedVisible) {
-      show(leftPanel, 'flex');
-      requestAnimationFrame(() => {
-        leftPanel.style.transform = 'translateY(0)';
-        leftPanel.style.opacity   = '1';
-      });
+      if (!(isMobile && state.chatOpen)) {
+        show(leftPanel, 'flex');
+        requestAnimationFrame(() => {
+          leftPanel.style.transform = 'translateY(0)';
+          leftPanel.style.opacity   = '1';
+        });
+      }
 
       if (state.chatsVisible) {
         if (viewHome) {
@@ -270,28 +277,30 @@
   window.switchLeftTab = function (tab) {
     var wallOverlay = document.getElementById('wall-overlay');
     var wallIsOpen  = wallOverlay && !wallOverlay.classList.contains('hidden');
+    var isMobile    = window.innerWidth <= 768;
 
     function doSwitch() {
       if (tab === 'chats') {
-        state.chatsVisible = !state.chatsVisible;
-        if (state.chatsVisible) {
-          state.feedVisible = false;
-          if (typeof renderChats === 'function' && window.app && window.app.chats) {
-            renderChats();
-          }
+        if (isMobile && state.chatOpen) {
+          closeChat(false, true); // true = skip applyLayout
+          state.chatsVisible = true;
+          state.feedVisible  = false;
+        } else {
+          state.chatsVisible = !state.chatsVisible;
+          if (state.chatsVisible) state.feedVisible = false;
+        }
+        if (state.chatsVisible && typeof renderChats === 'function' && window.app && window.app.chats) {
+          renderChats();
         }
       } else if (tab === 'home') {
         if (state.chatOpen) {
-          closeChat(true);
-          state.feedVisible = true;
+          closeChat(true, true); // true = skip applyLayout
         } else {
           state.feedVisible = !state.feedVisible;
-          if (state.feedVisible) {
-            state.chatsVisible = false;
-            if (typeof loadActivityFeed === 'function') {
-              loadActivityFeed();
-            }
-          }
+          if (state.feedVisible) state.chatsVisible = false;
+        }
+        if (state.feedVisible && typeof loadActivityFeed === 'function') {
+          loadActivityFeed();
         }
       }
       applyLayout();
@@ -330,7 +339,7 @@
     applyLayout();
   };
 
-  function closeChat(showFeed) {
+  function closeChat(showFeed, skipApply) {
     state.chatOpen = false;
     document.querySelectorAll('.chat-list-item').forEach(function (i) {
       i.classList.remove('active');
@@ -340,7 +349,7 @@
     if (state.feedVisible && typeof loadActivityFeed === 'function') {
       loadActivityFeed();
     }
-    applyLayout();
+    if (!skipApply) applyLayout();
   }
 
   // ── Dock ────────────────────────────────────────────────────
@@ -348,7 +357,7 @@
     var dockHome  = el('dock-home');
     var dockChats = el('dock-chats');
     if (dockHome)  dockHome.classList.toggle('dock-active',  state.feedVisible && !state.chatOpen);
-    if (dockChats) dockChats.classList.toggle('dock-active', state.chatsVisible);
+    if (dockChats) dockChats.classList.toggle('dock-active', state.chatsVisible && !state.chatOpen);
   }
 
   var TRIGGER_PX  = 80;
@@ -400,9 +409,7 @@
     var origShowChat = app.showChat.bind(app);
     app.showChat = function () {
       origShowChat();
-      state.chatsVisible = false;
-      state.feedVisible  = false;
-      state.chatOpen     = false;
+      // Убираем принудительное открытие чатов при логине
       applyLayout();
       // Показываем dock сразу при входе
       showDock();
@@ -417,9 +424,6 @@
 
     // Применить layout сразу если уже в чат-режиме
     if (isMainChatVisible()) {
-      state.chatsVisible = false;
-      state.feedVisible  = false;
-      state.chatOpen     = false;
       applyLayout();
     }
 

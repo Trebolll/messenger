@@ -925,7 +925,10 @@ function openWallComments(postId, chatId, keepMediaVisible = false, guestMode = 
         document.getElementById('wall-comments-media-container').classList.add('hidden');
     }
     overlay.classList.remove('hidden');
-    requestAnimationFrame(() => overlay.classList.add('comments-open'));
+    requestAnimationFrame(() => {
+        overlay.classList.add('comments-open');
+        document.body.classList.add('comments-view-open');
+    });
     document.getElementById('wall-comments-input').value = '';
     document.getElementById('wall-comments-input').dataset.parentId = '';
     document.getElementById('wall-comments-reply-to').classList.add('hidden');
@@ -972,6 +975,7 @@ function openWallComments(postId, chatId, keepMediaVisible = false, guestMode = 
 function closeWallComments() {
     const overlay = document.getElementById('wall-comments-overlay');
     overlay.classList.remove('comments-open');
+    document.body.classList.remove('comments-view-open');
     setTimeout(() => {
         overlay.classList.add('hidden');
         document.getElementById('wall-comments-media-container').classList.add('hidden');
