@@ -145,30 +145,32 @@ html, body {
   .wall-comments-panel {
     display: flex !important;
     flex-direction: column !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
+    height: 100dvh !important;        /* dynamic viewport — iOS Safari учитывает адресную строку */
+    height: 100vh !important;         /* fallback для старых браузеров */
+    max-height: 100dvh !important;
     border-radius: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
     overflow: hidden !important;
   }
 
+  /* Панель кнопок — ВВЕРХУ на мобилке */
   #media-sidebar {
-    order: 2 !important; /* Переносим вниз под медиа */
+    order: 1 !important;
     width: 100% !important;
     height: auto !important;
-    min-height: 60px !important;
+    min-height: 52px !important;
     flex-shrink: 0 !important;
     display: flex !important;
     flex-direction: row !important;
-    padding: 8px !important;
+    padding: 6px 8px !important;
     border-right: none !important;
-    border-top: 1px solid rgba(255,255,255,0.1) !important;
-    border-bottom: none !important;
+    border-top: none !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
     justify-content: space-around !important;
     align-items: center !important;
     gap: 0 !important;
-    background: rgba(0,0,0,0.8) !important;
+    background: rgba(0,0,0,0.85) !important;
     z-index: 10 !important;
   }
 
@@ -186,11 +188,11 @@ html, body {
   }
 
   #wall-comments-media-container {
-    order: 1 !important;
+    order: 2 !important;
     flex: 1 1 0% !important;
     height: auto !important;
     min-height: 0 !important;
-    max-height: calc(100vh - 60px);
+    max-height: calc(100dvh - 52px);
     display: flex !important;
   }
 
@@ -232,4 +234,36 @@ html, body {
   padding: 1px 4px;
   border-radius: 6px;
   font-size: 8px !important;
+}
+
+
+/* ── iOS Safari safe-area (навигационная панель снизу) ── */
+@supports (padding: env(safe-area-inset-bottom)) {
+  @media (max-width: 768px) {
+
+    /* Инпут в чате — поднимаем над панелью Safari */
+    #input-area {
+      padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+    }
+
+    /* Bottom dock — тоже поднимаем */
+    #bottom-dock {
+      bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+    }
+
+    /* Заголовок чата — отступ сверху (notch/dynamic island) */
+    #chat-header {
+      padding-top: calc(0.75rem + env(safe-area-inset-top)) !important;
+    }
+  }
+}
+
+/* ── Кнопки лендинга на мобилке ── */
+@media (max-width: 640px) {
+  #btn-register,
+  #btn-login {
+    width: auto !important;
+    padding: 10px 32px !important;
+    font-size: 0.9rem !important;
+  }
 }

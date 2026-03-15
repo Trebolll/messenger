@@ -412,6 +412,13 @@ const Feed = (() => {
         _touchStartX = e.touches[0].clientX;
       }, { passive: true });
 
+      overlay.addEventListener('touchmove', (e) => {
+        // Блокируем системный скролл/pull-to-refresh внутри оверлея
+        // но только если свайп вертикальный (не внутри панели комментариев)
+        const inComments = e.target.closest('#comments-right-panel');
+        if (!inComments) e.preventDefault();
+      }, { passive: false });
+
       overlay.addEventListener('touchend', (e) => {
         if (_touchStartY === null) return;
         const dy = _touchStartY - e.changedTouches[0].clientY;
@@ -486,7 +493,7 @@ const Feed = (() => {
       panel.style.maxHeight = '45vh';
       panel.style.opacity   = '1';
       if (mediaBox) {
-        mediaBox.style.maxHeight = 'calc(100vh - 60px - 45vh)';
+        mediaBox.style.maxHeight = 'calc(100dvh - 52px - 45vh)';
         mediaBox.style.flex      = '0 0 auto';
       }
     } else {
