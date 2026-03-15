@@ -410,3 +410,113 @@ html, body {
     display: none !important;
   }
 }
+
+/* ── iOS Safari: фикс высоты основного layout ── */
+@media (max-width: 768px) {
+
+  /* body и html на полный динамический viewport */
+  html, body {
+    height: 100dvh !important;
+    height: 100vh !important; /* fallback */
+    overflow: hidden !important;
+  }
+
+  /* Корневой контейнер приложения */
+  #main-chat {
+    height: 100dvh !important;
+    height: 100vh !important;
+    max-height: 100dvh !important;
+  }
+
+  /* left-panel и view-chat — полная высота */
+  .left-panel,
+  #view-chat {
+    height: 100dvh !important;
+    height: 100vh !important;
+    max-height: 100dvh !important;
+  }
+
+  #messages-container {
+    width: 100% !important;
+    padding: 12px 10px !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Все строки сообщений — не шире контейнера, но не обрезаем кнопки голосования */
+  #messages-container [data-msg-id] {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Пузырьки */
+  .message-bubble {
+    max-width: 65vw !important;
+    min-width: 60px !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+  }
+}
+
+/* ── iOS клавиатура и input area ── */
+@media (max-width: 768px) {
+
+  /* Убираем overflow:hidden с body — иначе iOS не поднимает экран при клавиатуре */
+  html, body {
+    overflow: hidden auto !important;
+  }
+
+  /* Input area — компактнее */
+  #input-area {
+    padding: 8px 10px !important;
+  }
+
+  #message-form {
+    gap: 6px !important;
+    align-items: center !important;
+  }
+
+  /* AI кнопка — меньше на мобилке */
+  #ai-btn {
+    transform: scale(0.75) !important;
+    flex-shrink: 0 !important;
+    margin: 0 -4px !important;
+  }
+
+  /* Кнопка прикрепить — меньше */
+  #attach-btn {
+    padding: 8px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Кнопка отправить — меньше, не обрезается */
+  #send-btn {
+    padding: 8px 12px !important;
+    flex-shrink: 0 !important;
+    border-radius: 14px !important;
+  }
+
+  #send-btn svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+}
+
+/* ── Кнопки голосования на мобилке — не вылезают за экран ── */
+@media (max-width: 768px) {
+  [data-msg-id]:hover .msg-votes:not(.msg-votes-hidden),
+  .msg-votes.has-active:not(.msg-votes-hidden) {
+    right: -36px !important;
+  }
+
+  .vote-btn {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 13px !important;
+  }
+}
+
+.gooey-vote-container {
+  filter: none !important;
+  inset: 0 !important;
+}
