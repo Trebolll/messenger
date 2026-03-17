@@ -59,93 +59,104 @@
       });
     }
 
-    if (leftPanel) {
-      if (!isMobile) {
-        leftPanel.style.marginTop = '12px';
-        leftPanel.style.height = 'calc(100% - 12px)';
+    // ── Десктоп: ширина панелей ──────────────────────────────
+    if (!isMobile) {
+      var TRANSITION = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease, width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), flex-basis 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), min-width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
 
-        // Ширина левой панели зависит от режима: чаты уже, лента шире
-        var panelWidth = state.chatsVisible ? '533px' : '800px';
-        leftPanel.style.flex = '0 0 ' + panelWidth;
-        leftPanel.style.width = panelWidth;
-        leftPanel.style.minWidth = panelWidth;
+      if (leftPanel) {
+        leftPanel.style.height = '100%';
+        leftPanel.style.transition = TRANSITION;
 
-        leftPanel.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease, width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), flex-basis 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), min-width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)';
-        if (!state.chatsVisible && !state.feedVisible) {
-          leftPanel.style.transform = 'translateY(30px)';
-          leftPanel.style.opacity   = '0';
+        if (state.chatOpen) {
+          // Чат открыт — список сжимается до боковой колонки
+          leftPanel.style.flex = '0 0 280px';
+          leftPanel.style.width = '280px';
+          leftPanel.style.minWidth = '280px';
+          leftPanel.style.maxWidth = '280px';
+          leftPanel.style.transform = 'translateX(0)';
+          leftPanel.style.opacity = '1';
+        } else {
+          // Чата нет — левая панель занимает весь #main-chat
+          leftPanel.style.flex = '1 1 0';
+          leftPanel.style.width = '100%';
+          leftPanel.style.minWidth = '0';
+          leftPanel.style.maxWidth = '100%';
+
+          if (!state.chatsVisible && !state.feedVisible) {
+            leftPanel.style.transform = 'translateY(30px)';
+            leftPanel.style.opacity   = '0';
+          }
         }
       }
-    }
 
-    if (viewChat) {
-      if (!isMobile) {
-        viewChat.style.marginTop = '12px';
-        viewChat.style.marginLeft = '12px';
-        viewChat.style.marginRight = '12px';
-        viewChat.style.height = 'calc(100% - 12px)';
-
-        // Чат занимает фиксированные 59%
-        viewChat.style.flex = '0 0 59%';
-        viewChat.style.width = '59%';
-        viewChat.style.maxWidth = '59%';
-
+      if (viewChat) {
+        viewChat.style.height = '100%';
+        viewChat.style.marginLeft = state.chatOpen ? '12px' : '0';
         viewChat.style.transition = 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease';
-
-        if (!state.chatOpen) {
-          viewChat.style.transform = 'translateY(40px)';
-          viewChat.style.opacity   = '0';
-        }
+        viewChat.style.flex = '1 1 0';
+        viewChat.style.minWidth = '0';
+        viewChat.style.maxWidth = '';
       }
-    }
 
-    if (infoPanel) {
-      if (!isMobile) {
-        infoPanel.style.marginTop = '12px';
-        infoPanel.style.marginRight = '12px';
-        infoPanel.style.height = 'calc(100% - 12px)';
-
-        // Инфо-панель занимает ровно то, что осталось от чата (примерно 32% с учетом отступов)
-        infoPanel.style.flex = '0 0 32%';
-        infoPanel.style.width = '32%';
-        infoPanel.style.marginLeft = 'auto';
-
+      if (infoPanel) {
+        infoPanel.style.height = '100%';
+        infoPanel.style.flex = '0 0 280px';
+        infoPanel.style.width = '280px';
+        infoPanel.style.marginLeft = '12px';
         infoPanel.style.transition = 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s ease';
       }
     }
 
-    // 1. Управление окном чата
+    // ── body классы ─────────────────────────────────────────
+    var anyPanelOpen = !!(state.chatOpen || state.chatsVisible || state.feedVisible);
     document.body.classList.toggle('chat-open', !!state.chatOpen);
     document.body.classList.toggle('feed-open', !!(state.feedVisible && !state.chatOpen));
+    document.body.classList.toggle('panel-open', anyPanelOpen);
 
+    // 1. Управление окном чата
     if (state.chatOpen) {
       if (isMobile) {
-        if (leftPanel) hide(leftPanel);
+        // Мобильный: слайд управляется через CSS (body.chat-open) — сбрасываем JS-стили
+        if (leftPanel) { leftPanel.style.display = ''; leftPanel.style.transform = ''; leftPanel.style.opacity = ''; }
+        if (viewChat)  { viewChat.style.display  = 'flex'; viewChat.style.transform = ''; viewChat.style.opacity = ''; }
         if (infoPanel && !state.infoOpen) hide(infoPanel);
+      } else {
+        // Десктоп: левая панель сжимается (не скрывается) — список чатов уезжает влево
+        if (leftPanel) {
+          if (!state.chatsVisible && !state.feedVisible) {
+            // Если ни лента ни чаты не открыты — скрыть левую панель
+            leftPanel.style.transform = 'translateX(-40px)';
+            leftPanel.style.opacity = '0';
+            setTimeout(function() { if (state.chatOpen && !state.chatsVisible && !state.feedVisible) hide(leftPanel); }, 400);
+          }
+        }
       }
       if (viewChat) {
         if (!isMobile) {
-          viewChat.style.transform = 'translateY(40px)';
+          viewChat.style.transform = 'translateY(20px)';
           viewChat.style.opacity   = '0';
         }
         show(viewChat, 'flex');
         if (!isMobile) {
-          requestAnimationFrame(() => requestAnimationFrame(() => {
+          requestAnimationFrame(function() { requestAnimationFrame(function() {
             viewChat.style.transform = 'translateY(0)';
             viewChat.style.opacity   = '1';
-          }));
+          }); });
         }
       }
       if (inputArea) show(inputArea, 'flex');
       if (noChat)    hide(noChat);
+
+      // Dok всегда виден — показываем его
+      showDock();
+      scheduleHide();
     } else {
       // Нет активного чата: панель чата скрыта, ничего не открыто заранее
       document.body.classList.remove('chat-open');
       if (isMobile) {
-        if (leftPanel) {
-          if (state.chatsVisible || state.feedVisible) show(leftPanel, 'flex');
-          else hide(leftPanel);
-        }
+        // Мобильный: сброс JS-стилей, CSS вернёт панели на место
+        if (leftPanel) { leftPanel.style.display = ''; leftPanel.style.transform = ''; leftPanel.style.opacity = ''; }
+        if (viewChat)  { viewChat.style.display  = ''; viewChat.style.transform  = ''; viewChat.style.opacity  = ''; }
       }
       if (viewChat) {
         if (!isMobile) {
@@ -153,11 +164,14 @@
           viewChat.style.opacity   = '0';
           // Убираем из потока после анимации
           if (viewChat._hideTimer) clearTimeout(viewChat._hideTimer);
-          viewChat._hideTimer = setTimeout(() => {
+          viewChat._hideTimer = setTimeout(function() {
             if (!state.chatOpen) viewChat.style.display = 'none';
           }, 500);
         } else {
-          hide(viewChat);
+          // На мобильном — CSS slide анимация через body.chat-open, не прячем через JS
+          viewChat.style.display = '';
+          viewChat.style.transform = '';
+          viewChat.style.opacity = '';
         }
       }
       if (inputArea) hide(inputArea);
@@ -169,14 +183,14 @@
     if (infoPanel) {
       if (state.infoOpen) {
         show(infoPanel, 'flex');
-        requestAnimationFrame(() => {
+        requestAnimationFrame(function() {
           infoPanel.style.transform = 'translateX(0)';
           infoPanel.style.opacity   = '1';
         });
       } else {
         infoPanel.style.transform = 'translateX(40px)';
         infoPanel.style.opacity   = '0';
-        setTimeout(() => { if (!state.infoOpen) hide(infoPanel); }, 500);
+        setTimeout(function() { if (!state.infoOpen) hide(infoPanel); }, 500);
       }
     }
 
@@ -184,7 +198,7 @@
     if (state.chatsVisible || state.feedVisible) {
       if (!(isMobile && state.chatOpen)) {
         show(leftPanel, 'flex');
-        requestAnimationFrame(() => {
+        requestAnimationFrame(function() {
           leftPanel.style.transform = 'translateY(0)';
           leftPanel.style.opacity   = '1';
         });
@@ -195,13 +209,13 @@
           viewHome.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
           viewHome.style.opacity = '0';
           viewHome.style.transform = 'translateX(-16px)';
-          setTimeout(() => { hide(viewHome); viewHome.style.transform = ''; }, 250);
+          setTimeout(function() { hide(viewHome); viewHome.style.transform = ''; }, 250);
         }
         if (chatsSidebar) {
           chatsSidebar.style.opacity = '0';
           chatsSidebar.style.transform = 'translateX(16px)';
           show(chatsSidebar, 'flex');
-          requestAnimationFrame(() => {
+          requestAnimationFrame(function() {
             chatsSidebar.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
             chatsSidebar.style.opacity = '1';
             chatsSidebar.style.transform = 'translateX(0)';
@@ -212,13 +226,13 @@
           chatsSidebar.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
           chatsSidebar.style.opacity = '0';
           chatsSidebar.style.transform = 'translateX(16px)';
-          setTimeout(() => { hide(chatsSidebar); chatsSidebar.style.transform = ''; }, 250);
+          setTimeout(function() { hide(chatsSidebar); chatsSidebar.style.transform = ''; }, 250);
         }
         if (viewHome) {
           viewHome.style.opacity = '0';
           viewHome.style.transform = 'translateX(-16px)';
           show(viewHome, 'flex');
-          requestAnimationFrame(() => {
+          requestAnimationFrame(function() {
             viewHome.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
             viewHome.style.opacity = '1';
             viewHome.style.transform = 'translateX(0)';
@@ -226,10 +240,23 @@
         }
       }
     } else {
+      // Фиксируем текущую ширину чтобы не было расширения при скрытии
+      var currentWidth = leftPanel.offsetWidth;
+      leftPanel.style.flex = '0 0 ' + currentWidth + 'px';
+      leftPanel.style.width = currentWidth + 'px';
+      leftPanel.style.minWidth = currentWidth + 'px';
+      leftPanel.style.maxWidth = currentWidth + 'px';
       leftPanel.style.transform = 'translateY(30px)';
       leftPanel.style.opacity   = '0';
-      setTimeout(() => {
-        if (!state.chatsVisible && !state.feedVisible) hide(leftPanel);
+      setTimeout(function() {
+        if (!state.chatsVisible && !state.feedVisible) {
+          hide(leftPanel);
+          // Сбрасываем инлайн-стили после скрытия
+          leftPanel.style.flex = '';
+          leftPanel.style.width = '';
+          leftPanel.style.minWidth = '';
+          leftPanel.style.maxWidth = '';
+        }
       }, 400);
     }
     // Удаляем или скрываем правую панель ленты (она мешает анимации)

@@ -386,3 +386,147 @@ body.theme-ocean .dock-divider { background: rgba(255,255,255,0.15); opacity:1; 
 
 /* Кнопка назад в шапке чата */
 #back-btn { display: flex; }
+
+/* ══════════════════════════════════════════════════════
+   ══ Центрирование всех окон над Bottom Dock
+══════════════════════════════════════════════════════ */
+
+:root {
+  --dock-bottom: 20px;
+  --dock-height: 60px;
+  --dock-gap: 16px;
+  --panel-bottom: calc(var(--dock-bottom) + var(--dock-height) + var(--dock-gap)); /* ~96px */
+  --panel-top: 20px;
+  --panel-max-h: calc(100vh - var(--panel-bottom) - var(--panel-top));
+}
+
+/* ── #main-chat: центрирован над доком, без рамки ── */
+#main-chat {
+  position: fixed !important;
+  left: 50% !important;
+  top: var(--panel-top) !important;
+  bottom: var(--panel-bottom) !important;
+  width: min(1100px, calc(100vw - 32px)) !important;
+  transform: translateX(-50%) !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+
+/* ── Dok остаётся виден в чате — убираем правило скрытия ── */
+body.chat-open #bottom-dock {
+  display: flex !important;
+}
+
+/* ── Wall overlay: по центру над доком ── */
+#wall-overlay:not(.hidden) {
+  align-items: center !important;
+  justify-content: center !important;
+  padding: var(--panel-top) 16px var(--panel-bottom) !important;
+}
+
+#wall-modal {
+  width: 100% !important;
+  max-width: 1100px !important;
+  height: 100% !important;
+  max-height: var(--panel-max-h) !important;
+  border-radius: 20px !important;
+  margin: 0 auto !important;
+}
+
+/* ── New chat overlay: по центру над доком ── */
+#new-chat-overlay:not(.hidden) {
+  align-items: center !important;
+  justify-content: center !important;
+  padding: var(--panel-top) 16px var(--panel-bottom) !important;
+}
+
+.new-chat-modal-card {
+  max-height: var(--panel-max-h) !important;
+  width: 100% !important;
+  max-width: 480px !important;
+  border-radius: 24px !important;
+  margin: 0 auto !important;
+}
+
+/* ── Auth overlay: по центру (не прижат ко дну) ── */
+#auth-overlay:not(.hidden) {
+  align-items: center !important;
+  justify-content: center !important;
+  padding: var(--panel-top) 16px var(--panel-bottom) !important;
+}
+
+#auth-modal {
+  max-height: var(--panel-max-h) !important;
+  border-radius: 24px !important;
+  margin: 0 auto !important;
+  overflow-y: auto !important;
+}
+
+/* ── Profile modal: учитываем dok снизу ── */
+#profile-modal {
+  top: var(--panel-top) !important;
+  bottom: var(--panel-bottom) !important;
+  height: auto !important;
+  border-radius: 20px !important;
+}
+
+/* ── Мобильная адаптация ── */
+@media (max-width: 640px) {
+  :root {
+    --panel-top: 0px;
+    --dock-bottom: 10px;
+    --dock-height: 52px;
+    --dock-gap: 12px;
+  }
+
+  #main-chat {
+    transform: none !important;
+  }
+
+  /* Все оверлеи — bottom sheet над доком */
+  #wall-overlay:not(.hidden),
+  #new-chat-overlay:not(.hidden) {
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 0 0 var(--panel-bottom) !important;
+  }
+
+  /* Auth overlay — по центру на мобильном, не bottom sheet */
+  #auth-overlay:not(.hidden) {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 16px 16px var(--panel-bottom) !important;
+  }
+
+  #auth-modal {
+    border-radius: 20px !important;
+    max-height: calc(100vh - var(--panel-bottom) - 32px) !important;
+    width: 100% !important;
+    max-width: 400px !important;
+  }
+
+  #wall-modal {
+    border-radius: 20px 20px 0 0 !important;
+    max-width: 100% !important;
+    /* Фиксированная высота — чтобы overflow-y: auto работал */
+    height: calc(100vh - var(--panel-bottom)) !important;
+    max-height: calc(100vh - var(--panel-bottom)) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .new-chat-modal-card {
+    border-radius: 20px 20px 0 0 !important;
+    max-width: 100% !important;
+    max-height: calc(100vh - var(--panel-bottom)) !important;
+  }
+
+
+  #profile-modal {
+    border-radius: 20px 20px 0 0 !important;
+    top: auto !important;
+    bottom: var(--panel-bottom) !important;
+    height: calc(100vh - var(--panel-bottom)) !important;
+  }
+}

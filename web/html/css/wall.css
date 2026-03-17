@@ -1,146 +1,196 @@
-/* ══ Wall Modal — iOS profile style ══ */
+/* ══ Wall Modal ══ */
+
+/* ── Цвета текста на стене: только чёрный или белый ──
+   Светлые темы → чёрный, тёмные → белый
+   Переопределяем text-custom-main и text-custom-muted внутри #wall-modal */
+
+/* Светлые темы (default, dawn, sunset, coral, mint, glacier, desert) */
+:root,
+body.theme-dawn,
+body.theme-sunset,
+body.theme-coral,
+body.theme-mint,
+body.theme-glacier,
+body.theme-desert {
+    --wall-text: #111111;
+    --wall-text-muted: rgba(0, 0, 0, 0.5);
+}
+
+/* Тёмные темы */
+body.theme-gray,
+body.theme-twilight,
+body.theme-ocean,
+body.theme-dark-gold,
+body.theme-jungle,
+body.theme-blood,
+body.theme-cyberpunk,
+body.theme-cosmos,
+body.theme-amethyst,
+body.theme-volcano {
+    --wall-text: #f0f0f0;
+    --wall-text-muted: rgba(255, 255, 255, 0.5);
+}
+
+/* Применяем переменные ко всему внутри #wall-modal */
+#wall-modal {
+    --text-main: var(--wall-text) !important;
+    --text-muted: var(--wall-text-muted) !important;
+}
+
 
 #wall-overlay {
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
 }
 
+/* Modal — glassmorphism как у всех окон */
 #wall-modal {
-    background: rgba(var(--bg-sidebar-rgb), 0.4) !important;
-    backdrop-filter: blur(40px) saturate(180%);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
-    overflow-y: auto !important;
+    background: rgba(var(--bg-sidebar-rgb), calc(var(--glass-bg-opacity, 0.35) + 0.08)) !important;
+    backdrop-filter: blur(36px) saturate(180%);
+    -webkit-backdrop-filter: blur(36px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px !important;
+    box-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.18),
+        0 1px 0 rgba(255, 255, 255, 0.08) inset;
+    /* overflow управляется внутренними контейнерами, не модалом */
+    overflow: hidden !important;
+    animation: wallFadeUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-@media (min-width: 641px) {
-    #wall-modal {
-        overflow-y: hidden !important;
-    }
-}
-
+/* Баннер */
 #wall-banner {
-    border-radius: 0 0 32px 32px;
+    border-radius: 24px 24px 0 0;
 }
 
+/* Аватар */
 #wall-avatar {
     border-radius: 9999px !important;
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-
-#wall-post-input {
-    border-radius: 20px !important;
-}
-
 #wall-avatar-container:hover #wall-avatar {
     transform: scale(1.05);
 }
 
-/* Glassy containers for posts */
+/* Инпут поста */
+#wall-post-input {
+    border-radius: 20px !important;
+}
+#wall-post-input:focus {
+    min-height: 80px;
+}
+
+/* ── Посты ── */
 .wall-post-card {
     background: rgba(var(--bg-sidebar-rgb), 0.2);
     backdrop-filter: blur(16px) saturate(140%);
     -webkit-backdrop-filter: blur(16px) saturate(140%);
     border: 0.5px solid var(--glass-border);
-    border-radius: 28px;
-    padding: 24px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    border-radius: 20px;
+    padding: 20px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
-
 .wall-post-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.08);
     background: rgba(var(--bg-sidebar-rgb), 0.3);
 }
-
-/* Анимации и плавные переходы для всех модалок */
-#wall-modal, #profile-modal, #auth-modal, .new-chat-modal-card {
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), 
-                opacity 0.4s ease, 
-                filter 0.4s ease !important;
+.wall-post-card:hover .wall-post-delete-btn {
+    opacity: 1 !important;
 }
 
-/* Если открыто поверх стены, раздвигаем окна side-by-side (iOS Split View style) */
-body.wall-open.profile-open #wall-modal {
-    transform: translateX(210px) scale(0.96) !important;
-    opacity: 0.95;
-    /* Убираем блюр и возвращаем кликабельность по просьбе пользователя */
-    filter: none;
-    pointer-events: auto !important;
+/* ── Glass boxes — сайдбар ── */
+.wall-glass-box {
+    background: rgba(var(--bg-sidebar-rgb), 0.15);
+    backdrop-filter: blur(10px);
+    border: 0.5px solid var(--glass-border);
+    border-radius: 20px;
 }
 
-body.wall-open #profile-overlay {
-    background: transparent !important;
-    backdrop-filter: none !important;
-    /* Позволяем кликать по стене сквозь оверлей */
-    pointer-events: none;
-    z-index: 210; /* Выше стены */
+/* ── Скролл внутри правой колонки ── */
+/* Десктоп: только правая колонка скроллится */
+@media (min-width: 641px) {
+    #wall-modal {
+        overflow: hidden !important;
+    }
+    /* Внутренний скроллируемый блок (flex-grow overflow-y-auto) */
+    #wall-modal .flex-grow.overflow-y-auto {
+        overflow-y: auto !important;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    #wall-modal .flex-grow.overflow-y-auto::-webkit-scrollbar {
+        display: none;
+    }
 }
 
-body.wall-open #profile-modal {
-    pointer-events: auto !important;
-    transform: translateX(-100%) !important;
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+/* Мобильный: весь модал скроллится */
+@media (max-width: 640px) {
+    #wall-modal {
+        overflow-y: auto !important;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        border-radius: 20px 20px 0 0 !important;
+    }
+    #wall-modal::-webkit-scrollbar {
+        display: none;
+    }
 }
 
-body.wall-open.profile-open #profile-modal {
-    /* Side panel appears at left edge */
-    transform: translateX(0) !important;
-    box-shadow: 20px 40px 100px rgba(0,0,0,0.3) !important;
-    z-index: 220;
-}
-
-/* Эффект для кнопки шестеренки */
-#wall-settings-btn:active {
-    transform: scale(0.9);
-}
-
-.wall-post-card:hover {
-    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-}
-
-#wall-post-input:focus {
-    min-height: 80px;
-}
-
-/* Custom Scrollbar for wall */
-.scrollbar-hide::-webkit-scrollbar {
-    display: none;
-}
-.scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-/* Animations */
+/* ── Анимации ── */
 @keyframes wallFadeUp {
-    from { opacity: 0; transform: translateY(20px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-#wall-modal {
-    animation: wallFadeUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-/* ─── Wall Tab Mode Transitions ─── */
-@keyframes wallTabFadeIn {
-    from { opacity: 0; transform: translateY(10px) scale(0.99); }
+    from { opacity: 0; transform: translateY(16px) scale(0.98); }
     to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+@keyframes wallTabFadeIn {
+    from { opacity: 0; transform: translateY(8px) scale(0.99); }
+    to   { opacity: 1; transform: translateY(0)   scale(1); }
 }
 
 #wall-feed, #wall-media-container {
     transition: opacity 0.18s ease, transform 0.18s ease;
 }
-
 .wall-tab-enter {
     animation: wallTabFadeIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-.wall-post-card:hover .wall-post-delete-btn {
-    opacity: 1 !important;
+/* ── Переходы модалок ── */
+#wall-modal, #profile-modal, #auth-modal, .new-chat-modal-card {
+    transition:
+        transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.35s ease !important;
 }
 
-/* Кнопка удаления медиа — скрыта, появляется при наведении на ячейку */
+/* ── Profile поверх стены (iOS Split View) ── */
+body.wall-open.profile-open #wall-modal {
+    transform: translateX(210px) scale(0.96) !important;
+    opacity: 0.95;
+    filter: none;
+    pointer-events: auto !important;
+}
+body.wall-open #profile-overlay {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    pointer-events: none;
+    z-index: 210;
+}
+body.wall-open #profile-modal {
+    pointer-events: auto !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+body.wall-open.profile-open #profile-modal {
+    transform: translateX(0) !important;
+    box-shadow: 20px 40px 100px rgba(0,0,0,0.3) !important;
+    z-index: 220;
+}
+
+/* ── Settings btn ── */
+#wall-settings-btn:active { transform: scale(0.9); }
+
+/* ── Медиа ── */
 .wall-media-item .wall-media-delete-btn {
     opacity: 0;
     transition: opacity 0.2s ease;
@@ -149,28 +199,19 @@ body.wall-open.profile-open #profile-modal {
     opacity: 1;
 }
 
-/* ─── Bio block ─── */
-.wall-glass-box {
-    background: rgba(var(--bg-sidebar-rgb), 0.15);
-    backdrop-filter: blur(10px);
-    border: 0.5px solid var(--glass-border);
-    border-radius: 24px;
-}
-
-#wall-bio-text {
-    transition: color 0.2s ease;
-}
-
+/* ── Bio ── */
+#wall-bio-text { transition: color 0.2s ease; }
 #wall-bio-input:focus {
-    box-shadow: 0 0 0 1px rgba(var(--color-accent-rgb, 99, 102, 241), 0.3);
+    box-shadow: 0 0 0 1px rgba(var(--accent-color-rgb, 59, 130, 246), 0.3);
 }
+
+/* ── Left sidebar collapse ── */
 #wall-left-sidebar {
-    transition: opacity 0.25s ease, max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-                margin 0.3s ease, padding 0.3s ease;
+    transition: opacity 0.25s ease, max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    margin 0.3s ease, padding 0.3s ease;
     overflow: hidden;
     max-width: 256px;
 }
-
 #wall-left-sidebar.wall-sidebar-hidden {
     opacity: 0;
     max-width: 0;
@@ -179,10 +220,8 @@ body.wall-open.profile-open #profile-modal {
     pointer-events: none;
 }
 
-/* ── Wall Comments Panel ── */
-#wall-comments-overlay.comments-open .wall-comments-backdrop {
-    opacity: 1;
-}
+/* ── Comments overlay ── */
+#wall-comments-overlay.comments-open .wall-comments-backdrop { opacity: 1; }
 #wall-comments-overlay.comments-open .wall-comments-panel {
     transform: scale(1);
     opacity: 1;
@@ -192,15 +231,23 @@ body.wall-open.profile-open #profile-modal {
     border-top: 1px solid rgba(255,255,255,0.04);
 }
 
-/* ── Activity Feed ── */
+/* ── Activity Feed карточки ── */
 .activity-post-card {
     background: rgba(var(--bg-sidebar-rgb), 0.2);
     backdrop-filter: blur(10px);
     border: 0.5px solid var(--glass-border);
+    border-radius: 16px;
     transition: all 0.2s ease;
 }
 .activity-post-card:hover {
     background: rgba(var(--bg-sidebar-rgb), 0.3);
-    border-color: rgba(var(--color-accent-rgb), 0.3);
+    border-color: rgba(var(--accent-color-rgb, 59, 130, 246), 0.3);
     transform: translateY(-1px);
+}
+
+/* ── Scrollbar hide utility ── */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }

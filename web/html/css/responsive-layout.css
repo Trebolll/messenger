@@ -520,3 +520,87 @@ html, body {
   filter: none !important;
   inset: 0 !important;
 }
+
+/* ══════════════════════════════════════════════════════
+   ══ МОБИЛЬНЫЙ LAYOUT НАД ДОКОМ — переопределяет выше
+══════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* main-chat заканчивается над доком, не на весь экран */
+  #main-chat {
+    height: auto !important;
+    max-height: none !important;
+    top: 12px !important;
+    bottom: var(--panel-bottom, 96px) !important;
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    overflow: hidden !important;
+  }
+
+  /* left-panel и view-chat — полная высота внутри main-chat */
+  .left-panel,
+  #view-chat {
+    height: 100% !important;
+    max-height: 100% !important;
+    /* НЕ 100dvh — высота берётся от родителя */
+  }
+
+  /* ── Слайд-анимация: список чатов и чат ── */
+  /* Список чатов: по центру (занимает весь main-chat) */
+  #left-panel {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    transform: translateX(0);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease;
+    z-index: 2;
+  }
+
+  /* При открытом чате список уезжает влево */
+  body.chat-open #left-panel {
+    transform: translateX(-100%) !important;
+    pointer-events: none;
+  }
+
+  /* Чат: изначально спрятан вправо */
+  #view-chat {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease;
+    z-index: 3;
+  }
+
+  /* При открытом чате — чат въезжает по центру */
+  body.chat-open #view-chat {
+    transform: translateX(0) !important;
+    display: flex !important;
+  }
+
+  /* display:none от JS не должен перебивать анимацию */
+  body.chat-open #view-chat[style*="display: none"] {
+    display: flex !important;
+  }
+}
+
+/* ══ ФИНАЛЬНЫЙ ОВЕРРАЙД: высоты на мобильном ══ */
+@media (max-width: 768px) {
+  /* Перебиваем height: 100dvh у left-panel и view-chat */
+  #main-chat > #left-panel,
+  #main-chat > #view-chat,
+  #main-chat .left-panel,
+  #main-chat #view-chat {
+    height: 100% !important;
+    max-height: 100% !important;
+    width: 100% !important;
+  }
+}
