@@ -43,24 +43,45 @@ body.theme-volcano {
     -webkit-backdrop-filter: blur(20px) saturate(160%);
 }
 
-/* Modal — glassmorphism как у всех окон */
+/* Modal — iOS полированное стекло, единый стиль */
 #wall-modal {
-    background: rgba(var(--bg-sidebar-rgb), calc(var(--glass-bg-opacity, 0.35) + 0.08)) !important;
-    backdrop-filter: blur(36px) saturate(180%);
-    -webkit-backdrop-filter: blur(36px) saturate(180%);
-    border: 1px solid var(--glass-border);
-    border-radius: 24px !important;
+    background: rgba(var(--bg-main-rgb), 0.72) !important;
+    backdrop-filter: blur(48px) saturate(200%) brightness(1.04) !important;
+    -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(1.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-radius: 28px !important;
     box-shadow:
-        0 24px 80px rgba(0, 0, 0, 0.18),
-        0 1px 0 rgba(255, 255, 255, 0.08) inset;
-    /* overflow управляется внутренними контейнерами, не модалом */
+        0 32px 80px rgba(0, 0, 0, 0.20),
+        0 1px 0 rgba(255, 255, 255, 0.40) inset,
+        0 -1px 0 rgba(0, 0, 0, 0.06) inset !important;
+    /* Перебиваем Tailwind overflow-hidden, но сохраняем скругления */
     overflow: hidden !important;
+    /* clip-path обеспечивает реальное скругление контента */
+    clip-path: inset(0 round 28px) !important;
     animation: wallFadeUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Тёмные темы */
+body.theme-gray #wall-modal,
+body.theme-twilight #wall-modal,
+body.theme-ocean #wall-modal,
+body.theme-dark-gold #wall-modal,
+body.theme-jungle #wall-modal,
+body.theme-blood #wall-modal,
+body.theme-cyberpunk #wall-modal,
+body.theme-cosmos #wall-modal,
+body.theme-amethyst #wall-modal,
+body.theme-volcano #wall-modal {
+    background: rgba(var(--bg-main-rgb), 0.60) !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    box-shadow:
+        0 32px 80px rgba(0, 0, 0, 0.50),
+        0 1px 0 rgba(255, 255, 255, 0.05) inset !important;
 }
 
 /* Баннер */
 #wall-banner {
-    border-radius: 24px 24px 0 0;
+    border-radius: 28px 28px 0 0;
 }
 
 /* Аватар */
@@ -129,12 +150,23 @@ body.theme-volcano {
 @media (max-width: 640px) {
     #wall-modal {
         overflow-y: auto !important;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        border-radius: 20px 20px 0 0 !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+        border-radius: 28px 28px 0 0 !important;
+        clip-path: inset(0 round 28px 28px 0 0) !important;
+        height: calc(100vh - var(--panel-bottom, 74px)) !important;
+        max-height: calc(100vh - var(--panel-bottom, 74px)) !important;
+        min-height: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
     #wall-modal::-webkit-scrollbar {
-        display: none;
+        display: none !important;
+    }
+    #wall-modal > * {
+        flex-shrink: 0;
     }
 }
 
