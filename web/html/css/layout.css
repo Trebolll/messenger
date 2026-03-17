@@ -530,3 +530,22 @@ body.chat-open #bottom-dock {
     height: calc(100vh - var(--panel-bottom)) !important;
   }
 }
+/* ── Скрываем рамку #main-chat когда нет контента ── */
+body:not(.panel-open) #main-chat {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── На десктопе #main-chat всегда без фона/рамки — панели сами рисуют себя ── */
+@media (min-width: 769px) {
+  #main-chat {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}

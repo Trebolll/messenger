@@ -389,6 +389,7 @@
 
   var TRIGGER_PX  = 80;
   var HIDE_DELAY  = 5000;
+  var HIDE_DELAY_MOBILE = 3000;
   var hideTimer   = null;
   var dockHovered = false;
 
@@ -401,21 +402,50 @@
   function scheduleHide() {
     if (dockHovered) return;
     clearTimeout(hideTimer);
+    var delay = window.innerWidth <= 768 ? HIDE_DELAY_MOBILE : HIDE_DELAY;
     hideTimer = setTimeout(function () {
       var dock = el('bottom-dock');
       if (dock) dock.classList.remove('visible');
-    }, HIDE_DELAY);
+    }, delay);
   }
 
   function initDock() {
     var dock = el('bottom-dock');
     if (!dock) return;
 
+    // Десктоп: триггер по краю экрана мышкой
     document.addEventListener('mousemove', function (e) {
       if (!isMainChatVisible()) return;
-      if (state.chatOpen) return;
       if (window.innerHeight - e.clientY <= TRIGGER_PX) showDock();
     });
+
+    // Мобильный: триггер по касанию нижней зоны
+    document.addEventListener('touchstart', function (e) {
+      if (!isMainChatVisible()) return;
+      var touch = e.touches[0];
+      if (touch && window.innerHeight - touch.clientY <= TRIGGER_PX) {
+        showDock();
+        scheduleHide();
+      }
+    }, { passive: true });
+
+    // Мобильный: свайп вверх снизу показывает dok
+    var touchStartY = 0;
+    document.addEventListener('touchstart', function (e) {
+      touchStartY = e.touches[0] ? e.touches[0].clientY : 0;
+    }, { passive: true });
+
+    document.addEventListener('touchend', function (e) {
+      if (!isMainChatVisible()) return;
+      var touch = e.changedTouches[0];
+      if (!touch) return;
+      var deltaY = touchStartY - touch.clientY;
+      // Свайп вверх от низа экрана — показываем dok
+      if (deltaY < -30 && touch.clientY > window.innerHeight - 150) {
+        showDock();
+        scheduleHide();
+      }
+    }, { passive: true });
 
     dock.addEventListener('mouseenter', function () {
       dockHovered = true;
@@ -425,6 +455,16 @@
       dockHovered = false;
       scheduleHide();
     });
+
+    // Тап по доку — не скрываем сразу
+    dock.addEventListener('touchstart', function () {
+      dockHovered = true;
+      showDock();
+    }, { passive: true });
+    dock.addEventListener('touchend', function () {
+      dockHovered = false;
+      scheduleHide();
+    }, { passive: true });
   }
 
   // ── Патч AlphaApp ───────────────────────────────────────────
@@ -454,7 +494,20 @@
       applyLayout();
     }
 
-    window.addEventListener('resize', applyLayout);
+    var _lastMobile = null;
+    window.addEventListener('resize', function() {
+      var nowMobile = window.innerWidth <= 768;
+      // При переходе мобильный↔десктоп сбрасываем все инлайн-стили панелей
+      if (_lastMobile !== null && _lastMobile !== nowMobile) {
+        var panels = ['left-panel', 'view-chat', 'info-panel'];
+        panels.forEach(function(id) {
+          var el = document.getElementById(id);
+          if (el) el.removeAttribute('style');
+        });
+      }
+      _lastMobile = nowMobile;
+      applyLayout();
+    });
 
     // Показываем dock сразу если уже авторизован
     if (window.app && window.app.currentUser) {

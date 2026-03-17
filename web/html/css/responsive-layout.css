@@ -605,30 +605,18 @@ html, body {
   }
 }
 
-
-/* ══ iOS-style полированное стекло на мобильном ══ */
+/* ══ iOS-style скругления на мобильном (без изменения фона) ══ */
 @media (max-width: 768px) {
 
-  /* Пустой main-chat (нет panel-open) — прозрачный, без фона */
-  body:not(.panel-open) #main-chat {
-    background: transparent !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
+  /* Скругления всегда, но рамка — только когда есть контент */
+  #main-chat {
+    border-radius: 28px !important;
+    overflow: hidden !important;
     border: none !important;
-    box-shadow: none !important;
   }
 
-  /* Основной контейнер — скруглённые края + стекло (только когда есть контент) */
   body.panel-open #main-chat {
-    border-radius: 28px !important;
-    background: rgba(var(--bg-main-rgb), 0.72) !important;
-    backdrop-filter: blur(40px) saturate(200%) brightness(1.05) !important;
-    -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.18) !important;
-    box-shadow:
-        0 32px 64px rgba(0, 0, 0, 0.22),
-        0 1px 0 rgba(255, 255, 255, 0.35) inset,
-        0 -1px 0 rgba(0, 0, 0, 0.08) inset !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
   }
 
   /* Тёмные темы */
@@ -642,41 +630,44 @@ html, body {
   body.panel-open.theme-cosmos #main-chat,
   body.panel-open.theme-amethyst #main-chat,
   body.panel-open.theme-volcano #main-chat {
-    background: rgba(var(--bg-main-rgb), 0.55) !important;
-    border: 1px solid rgba(255, 255, 255, 0.07) !important;
-    box-shadow:
-        0 32px 64px rgba(0, 0, 0, 0.45),
-        0 1px 0 rgba(255, 255, 255, 0.06) inset !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
   }
 
-  /* Панели внутри */
+  /* Панели внутри — скруглённые */
   #main-chat #left-panel,
-  #main-chat .left-panel,
+  #main-chat .left-panel {
+    border-radius: 28px !important;
+  }
+
   #main-chat #view-chat {
     border-radius: 28px !important;
   }
 
+  /* Шапка чата — скруглена сверху */
   #chat-header {
     border-radius: 28px 28px 0 0 !important;
   }
 
+  /* Поле ввода — скруглено снизу */
   #input-area {
     border-radius: 0 0 28px 28px !important;
   }
 
-  /* Wall и оверлеи */
+  /* Wall и другие оверлеи */
   #wall-modal {
     border-radius: 28px 28px 0 0 !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
   }
 
   .new-chat-modal-card {
     border-radius: 28px 28px 0 0 !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
   }
 
   #auth-modal {
     border-radius: 28px !important;
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    backdrop-filter: blur(40px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
   }
 }

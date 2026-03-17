@@ -600,7 +600,7 @@
 
 <!-- Wall Modal (iOS-style Profile Wall) -->
 <div id="wall-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[150] hidden opacity-0 transition-opacity duration-400 flex items-center justify-center p-0 sm:p-4">
-  <div id="wall-modal" class="w-full h-full sm:h-[92vh] max-w-5xl relative overflow-hidden transform scale-95 transition-all duration-500 flex flex-col shadow-2xl">
+  <div id="wall-modal" class="w-full sm:h-[92vh] max-w-5xl relative transform scale-95 transition-all duration-500 flex flex-col shadow-2xl">
 
     <!-- Top Banner & Header -->
     <div class="wall-header-section relative flex-shrink-0 h-48 sm:h-64" style="height:120px;">
@@ -639,7 +639,7 @@
     </div>
 
     <!-- Wall Content Area -->
-    <div class="flex-grow flex flex-col sm:flex-row gap-6 p-6 mt-16 overflow-y-auto sm:overflow-hidden" style="margin-top:32px;">
+    <div class="flex-grow flex flex-col sm:flex-row gap-6 p-6 mt-16 overflow-y-auto sm:overflow-hidden" style="margin-top:32px; overflow-y:auto; -webkit-overflow-scrolling:touch;">
       <!-- Left: Sidebar Info -->
       <div id="wall-left-sidebar" class="w-full sm:w-64 flex-shrink-0 space-y-4">
         <div id="wall-info-sidebar-box" class="p-5 wall-glass-box space-y-3">

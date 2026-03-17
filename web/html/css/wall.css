@@ -43,40 +43,15 @@ body.theme-volcano {
     -webkit-backdrop-filter: blur(20px) saturate(160%);
 }
 
-/* Modal — iOS полированное стекло, единый стиль */
+/* Modal — glassmorphism как у всех окон */
 #wall-modal {
-    background: rgba(var(--bg-main-rgb), 0.72) !important;
-    backdrop-filter: blur(48px) saturate(200%) brightness(1.04) !important;
-    -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(1.04) !important;
-    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    /* Фон как у чатов — берём цвет страницы */
+    background: var(--bg-main) !important;
+    border: 1px solid var(--glass-border);
     border-radius: 28px !important;
-    box-shadow:
-        0 32px 80px rgba(0, 0, 0, 0.20),
-        0 1px 0 rgba(255, 255, 255, 0.40) inset,
-        0 -1px 0 rgba(0, 0, 0, 0.06) inset !important;
-    /* Перебиваем Tailwind overflow-hidden, но сохраняем скругления */
-    overflow: hidden !important;
-    /* clip-path обеспечивает реальное скругление контента */
-    clip-path: inset(0 round 28px) !important;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
     animation: wallFadeUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-/* Тёмные темы */
-body.theme-gray #wall-modal,
-body.theme-twilight #wall-modal,
-body.theme-ocean #wall-modal,
-body.theme-dark-gold #wall-modal,
-body.theme-jungle #wall-modal,
-body.theme-blood #wall-modal,
-body.theme-cyberpunk #wall-modal,
-body.theme-cosmos #wall-modal,
-body.theme-amethyst #wall-modal,
-body.theme-volcano #wall-modal {
-    background: rgba(var(--bg-main-rgb), 0.60) !important;
-    border: 1px solid rgba(255, 255, 255, 0.07) !important;
-    box-shadow:
-        0 32px 80px rgba(0, 0, 0, 0.50),
-        0 1px 0 rgba(255, 255, 255, 0.05) inset !important;
 }
 
 /* Баннер */
@@ -146,27 +121,52 @@ body.theme-volcano #wall-modal {
     }
 }
 
-/* Мобильный: весь модал скроллится */
+/* Мобильный: скролл */
 @media (max-width: 640px) {
+    #wall-overlay {
+        align-items: flex-end !important;
+        justify-content: center !important;
+        padding: 0 !important;
+    }
+
+    /* Модал — flex-col с фиксированной высотой */
     #wall-modal {
+        width: 100% !important;
+        height: calc(100vh - var(--panel-bottom, 74px)) !important;
+        max-height: calc(100vh - var(--panel-bottom, 74px)) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        border-radius: 28px 28px 0 0 !important;
+    }
+
+    /* Шапка — не растягивается */
+    #wall-modal .wall-header-section {
+        flex-shrink: 0 !important;
+    }
+
+    /* Контент-зона — занимает остаток и скроллится */
+    #wall-modal > .flex-grow {
+        flex: 1 1 0 !important;
+        min-height: 0 !important;
         overflow-y: auto !important;
         overflow-x: hidden !important;
         -webkit-overflow-scrolling: touch !important;
         scrollbar-width: none !important;
         -ms-overflow-style: none !important;
-        border-radius: 28px 28px 0 0 !important;
-        clip-path: inset(0 round 28px 28px 0 0) !important;
-        height: calc(100vh - var(--panel-bottom, 74px)) !important;
-        max-height: calc(100vh - var(--panel-bottom, 74px)) !important;
-        min-height: 0 !important;
-        display: flex !important;
+        /* На мобильном — колонка, не строка */
         flex-direction: column !important;
     }
-    #wall-modal::-webkit-scrollbar {
+    #wall-modal > .flex-grow::-webkit-scrollbar {
         display: none !important;
     }
-    #wall-modal > * {
-        flex-shrink: 0;
+
+    /* Вложенные скролл-контейнеры — отдают скролл наружу */
+    #wall-modal > .flex-grow .overflow-y-auto {
+        overflow-y: visible !important;
+    }
+    #wall-modal > .flex-grow .overflow-hidden {
+        overflow: visible !important;
     }
 }
 
