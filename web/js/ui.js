@@ -279,6 +279,17 @@ function openProfileModal() {
     _set('profile-location',    user.location);
     _set('profile-profession',  user.profession);
 
+    // Инициализируем ползунок вихря
+    const glowSlider = document.getElementById('vortex-glow-radius');
+    const glowValue  = document.getElementById('vortex-glow-value');
+    const savedRadius = parseInt(localStorage.getItem('vortex_glow_radius') ?? '24', 10);
+    if (glowSlider) {
+      glowSlider.value = savedRadius;
+      const pct = savedRadius + '%';
+      glowSlider.style.background = `linear-gradient(to right, var(--accent-color) 0%, var(--accent-color) ${pct}, rgba(128,128,128,0.2) ${pct}, rgba(128,128,128,0.2) 100%)`;
+    }
+    if (glowValue) glowValue.textContent = savedRadius;
+
 
     // Обновляем аватар в модалке профиля
     const profileAvatarEl = document.getElementById('profile-avatar');
@@ -1163,3 +1174,31 @@ function openMemberAvatarViewer(member) {
 
   document.getElementById('avatar-viewer-overlay').classList.remove('hidden');
 }
+
+// ── Настройка Вихря ─────────────────────────────────────────
+function handleVortexGlowChange(val) {
+  const v = parseInt(val, 10);
+  const label = document.getElementById('vortex-glow-value');
+  if (label) label.textContent = v;
+  // Обновляем градиент трека через JS
+  const slider = document.getElementById('vortex-glow-radius');
+  if (slider) {
+    const pct = v + '%';
+    slider.style.background = `linear-gradient(to right, var(--accent-color) 0%, var(--accent-color) ${pct}, rgba(128,128,128,0.2) ${pct}, rgba(128,128,128,0.2) 100%)`;
+  }
+  if (typeof window.setVortexGlowRadius === 'function') {
+    window.setVortexGlowRadius(v);
+  }
+}
+
+// Обновляем градиент трека ползунка
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.id === 'vortex-glow-radius') {
+    e.target.style.setProperty('--val', e.target.value);
+  }
+});
+// Инит при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+  const s = document.getElementById('vortex-glow-radius');
+  if (s) s.style.setProperty('--val', s.value);
+});

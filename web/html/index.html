@@ -558,6 +558,25 @@
       </div>
 
 
+      <!-- Vortex Settings -->
+      <div class="space-y-5">
+        <h4 class="text-[11px] uppercase tracking-[0.2em] font-bold text-custom-muted/60 px-1">⚙ Настройка Вихря</h4>
+
+        <div class="profile-field">
+          <label class="profile-label">Радиус свечения</label>
+          <div class="flex items-center gap-4 mt-1">
+            <input
+                type="range"
+                id="vortex-glow-radius"
+                min="0" max="100" step="1"
+                class="vortex-slider flex-grow"
+                oninput="handleVortexGlowChange(this.value)"
+            >
+            <span id="vortex-glow-value" class="text-sm font-bold text-custom-accent w-8 text-right"></span>
+          </div>
+        </div>
+      </div>
+
       <!-- Verification Section -->
       <div class="profile-verify-block bg-white/5 border border-white/5 rounded-2xl p-5 space-y-3">
         <div class="flex items-center gap-2">

@@ -25,8 +25,14 @@
     return `rgba(${_accentR},${_accentG},${_accentB},${alpha})`;
   }
 
-  const DISK_TILT = 0.33; 
-  const MOUSE_DIST_SQ = 100 * 100;
+  const DISK_TILT = 0.33;
+  let _glowR = parseInt(localStorage.getItem('vortex_glow_radius') ?? '24', 10);
+  let MOUSE_DIST_SQ = _glowR * _glowR;
+  window.setVortexGlowRadius = function(r) {
+    _glowR = Math.max(0, Math.min(100, r));
+    MOUSE_DIST_SQ = _glowR * _glowR;
+    localStorage.setItem('vortex_glow_radius', _glowR);
+  };
 
   // ── Класс анимации ───────────────────────────────────────────────────
   class LambdaAnimation {
