@@ -6,15 +6,7 @@
         <canvas id="logo-canvas" style="width:100%; height:100%; pointer-events:none;"></canvas>
       </div>
     </div>
-    <div class="flex items-center gap-3 pointer-events-auto">
-      <a href="https://github.com/Trebolll/lambda-electron/releases/download/v1.0.0/Lambda.Setup.1.0.0.exe" download         id="download-btn-landing"
-         title="Скачать приложение"
-         class="p-3 rounded-2xl bg-custom-main/50 backdrop-blur-md border border-custom hover:bg-custom-sidebar transition duration-300 flex items-center justify-center">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-        </svg>
-      </a>
-      <button id="theme-btn-landing" onclick="handleToggleTheme()" title="Сменить тему" class="p-3 rounded-2xl bg-custom-main/50 backdrop-blur-md border border-custom hover:bg-custom-sidebar transition duration-300">
+    <button id="theme-btn-landing" onclick="handleToggleTheme()" title="Сменить тему" class="p-3 rounded-2xl bg-custom-main/50 backdrop-blur-md border border-custom hover:bg-custom-sidebar transition duration-300 pointer-events-auto">
         <span class="theme-icon-wrap flex items-center justify-center">
             <svg class="theme-icon theme-sun w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
             <svg class="theme-icon theme-moon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
@@ -25,8 +17,7 @@
             <svg class="theme-icon theme-ocean-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15s1.5-2 4.5-2 4.5 2 4.5 2 1.5-2 4.5-2 4.5 2 4.5 2M3 9s1.5-2 4.5-2 4.5 2 4.5 2 1.5-2 4.5-2 4.5 2 4.5 2"/></svg>
             <svg class="theme-icon theme-mint-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/></svg><svg class="theme-icon theme-dark-gold-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 16L3 6l5.5 5.5L12 4l3.5 7.5L21 6l-2 10H5zm0 0h14v2H5v-2z"/></svg><svg class="theme-icon theme-jungle-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2C8 2 4 6 4 11c0 3.5 2 6.5 5 8 0-2 .5-5 3-7-1 3-.5 5.5 0 7 3-1.5 5-4.5 5-8 0-5-4-9-5-9z"/></svg><svg class="theme-icon theme-blood-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg><svg class="theme-icon theme-cyberpunk-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg><svg class="theme-icon theme-glacier-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg><svg class="theme-icon theme-cosmos-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg><svg class="theme-icon theme-amethyst-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 3h12l4 6-10 12L2 9z"/></svg><svg class="theme-icon theme-desert-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v8m0 0c0-2 2-4 4-3m-4 3c0-2-2-4-4-3m4 3v12M8 22h8"/></svg><svg class="theme-icon theme-volcano-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 20h18L13 7l-2 4-2-2-6 11zM9 3c0 2 1 3 3 3s3-1 3-3"/></svg>
         </span>
-      </button>
-    </div>
+    </button>
   </div>
   <main class="flex-grow flex items-center justify-center relative overflow-hidden">
     <canvas id="lambda-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;"></canvas>
