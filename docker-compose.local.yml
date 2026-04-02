@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: messenger
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
@@ -24,8 +24,8 @@ services:
     image: minio/minio
     container_name: messenger-minio
     environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: password123
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-password123}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -65,12 +65,12 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: messenger
       MINIO_ENDPOINT: minio:9000
       MINIO_PUBLIC_ENDPOINT: localhost:9000
-      MINIO_ACCESS_KEY: admin
-      MINIO_SECRET_KEY: password123
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-admin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-password123}
       MINIO_BUCKET: messenger
     ports:
       - "8080:8080"

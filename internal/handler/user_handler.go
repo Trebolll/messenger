@@ -19,15 +19,17 @@ type UserHandler struct {
 	hub            *websocket.Hub
 	wallHub        *websocket.WallHub
 	storageService service.Storage
+	jwtSecret      string
 }
 
-func NewUserHandler(userService *service.UserService, wallService *service.WallService, hub *websocket.Hub, wallHub *websocket.WallHub, storageService service.Storage) *UserHandler {
+func NewUserHandler(userService *service.UserService, wallService *service.WallService, hub *websocket.Hub, wallHub *websocket.WallHub, storageService service.Storage, jwtSecret string) *UserHandler {
 	return &UserHandler{
 		userService:    userService,
 		wallService:    wallService,
 		hub:            hub,
 		wallHub:        wallHub,
 		storageService: storageService,
+		jwtSecret:      jwtSecret,
 	}
 }
 
@@ -62,7 +64,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := utils.GenerateJWT(user.ID, "your_secret_key", 24*time.Hour)
+	token, err := utils.GenerateJWT(user.ID, h.jwtSecret, 24*time.Hour)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate token"})
 		return

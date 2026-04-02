@@ -53,18 +53,27 @@ func main() {
 		log.Fatalf("Ошибка инициализации хранилища: %v", err)
 	}
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "your_secret_key" // fallback for development
+	}
+	confirmSecret := os.Getenv("CONFIRM_SECRET")
+	if confirmSecret == "" {
+		confirmSecret = "confirm_secret" // fallback for development
+	}
+
 	wallRepository := repository.NewWallRepository(database)
 	wallService := service.NewWallService(wallRepository)
 	wallHandler := handler.NewWallHandler(wallService, storageService, wallHub)
 
 	userRepository := repository.NewUserRepository(database)
 	userService := service.NewUserService(userRepository, wallService)
-	userHandler := handler.NewUserHandler(userService, wallService, hub, wallHub, storageService)
+	userHandler := handler.NewUserHandler(userService, wallService, hub, wallHub, storageService, jwtSecret)
 
 	// Умная авторизация: email без верификации + phone через SMS (Twilio)
 	notifyService := service.NewNotifyServiceFromEnv()
 	otpStore := service.NewOTPStore()
-	smartHandler := handler.NewSmartAuthHandler(userService, notifyService, otpStore)
+	smartHandler := handler.NewSmartAuthHandler(userService, notifyService, otpStore, jwtSecret, confirmSecret)
 
 	chatRepository := repository.NewChatRepository(database)
 	chatService := service.NewChatService(chatRepository, userRepository, hub)
@@ -90,8 +99,8 @@ func main() {
 	feedService := service.NewFeedService(feedRepository, wallRepository)
 	feedHandler := handler.NewFeedHandler(feedService)
 
-	wsHandler := handler.NewWebSocketHandler(hub, "your_secret_key")
-	wallChatHandler := handler.NewWallChatHandler(wallHub, messageRepository, "your_secret_key")
+	wsHandler := handler.NewWebSocketHandler(hub, jwtSecret)
+	wallChatHandler := handler.NewWallChatHandler(wallHub, messageRepository, jwtSecret)
 
 	r := gin.Default()
 	r.LoadHTMLGlob("web/html/*.html")
@@ -123,7 +132,7 @@ func main() {
 	r.POST("/api/auth/reset/confirm", smartHandler.ResetConfirm) // сброс: установить новый пароль
 
 	api := r.Group("/api")
-	api.Use(middleware.AuthMiddleware("your_secret_key"))
+	api.Use(middleware.AuthMiddleware(jwtSecret))
 	{
 		api.POST("/chats/private", chatHandler.CreatePrivateChat)
 		api.POST("/chats/group", chatHandler.CreateGroupChat)

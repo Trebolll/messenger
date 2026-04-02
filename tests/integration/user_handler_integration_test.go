@@ -166,7 +166,7 @@ func setupTestRouter(t *testing.T, db *sql.DB) *gin.Engine {
 	wallRepo := repository.NewWallRepository(db)
 	wallService := service.NewWallService(wallRepo)
 	userService := service.NewUserService(userRepo, wallService)
-	userHandler := handler.NewUserHandler(userService, wallService, websocket.NewHub(), websocket.NewWallHub(), nil)
+	userHandler := handler.NewUserHandler(userService, wallService, websocket.NewHub(), websocket.NewWallHub(), nil, "your_secret_key")
 
 	router.POST("/register", userHandler.Register)
 	router.POST("/login", userHandler.Login)

@@ -22,10 +22,18 @@ type SmartAuthHandler struct {
 	userService   *service.UserService
 	notifyService *service.NotifyService
 	otpStore      *service.OTPStore
+	jwtSecret     string
+	confirmSecret string
 }
 
-func NewSmartAuthHandler(us *service.UserService, ns *service.NotifyService, otp *service.OTPStore) *SmartAuthHandler {
-	return &SmartAuthHandler{userService: us, notifyService: ns, otpStore: otp}
+func NewSmartAuthHandler(us *service.UserService, ns *service.NotifyService, otp *service.OTPStore, jwtSecret, confirmSecret string) *SmartAuthHandler {
+	return &SmartAuthHandler{
+		userService:   us,
+		notifyService: ns,
+		otpStore:      otp,
+		jwtSecret:     jwtSecret,
+		confirmSecret: confirmSecret,
+	}
 }
 
 // SendCode — POST /api/auth/send
@@ -97,7 +105,7 @@ func (h *SmartAuthHandler) VerifyCode(c *gin.Context) {
 	}
 
 	// Код верный — выдаём временный токен подтверждения (15 минут) для шага заполнения профиля
-	confirmToken, err := utils.GenerateConfirmToken(dest, "confirm_secret")
+	confirmToken, err := utils.GenerateConfirmToken(dest, h.confirmSecret)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "внутренняя ошибка"})
 		return
@@ -134,7 +142,7 @@ func (h *SmartAuthHandler) Register(c *gin.Context) {
 	}
 
 	// Проверяем confirm_token
-	loginFromToken, err := utils.ParseConfirmToken(req.ConfirmToken, "confirm_secret")
+	loginFromToken, err := utils.ParseConfirmToken(req.ConfirmToken, h.confirmSecret)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "токен подтверждения недействителен или истёк"})
 		return
@@ -180,7 +188,7 @@ func (h *SmartAuthHandler) Register(c *gin.Context) {
 		_ = h.userService.SetBirthDate(u.ID, bd)
 	}
 
-	token, err := utils.GenerateJWT(u.ID, "your_secret_key", 24*time.Hour)
+	token, err := utils.GenerateJWT(u.ID, h.jwtSecret, 24*time.Hour)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "не удалось создать токен"})
 		return
@@ -218,7 +226,7 @@ func (h *SmartAuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := utils.GenerateJWT(user.ID, "your_secret_key", 24*time.Hour)
+	token, err := utils.GenerateJWT(user.ID, h.jwtSecret, 24*time.Hour)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "не удалось создать токен"})
 		return

@@ -111,7 +111,7 @@ func setupTestRouter(mockRepo *MockUserRepository, mockWall *MockWallManager) *g
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 	userService := service.NewUserService(mockRepo, mockWall)
-	userHandler := handler.NewUserHandler(userService, nil, nil, nil, nil)
+	userHandler := handler.NewUserHandler(userService, nil, nil, nil, nil, "your_secret_key")
 
 	router.POST("/register", userHandler.Register)
 	router.POST("/login", userHandler.Login)

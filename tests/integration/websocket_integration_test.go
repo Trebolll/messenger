@@ -5,6 +5,7 @@ import (
 	"messenger/internal/utils"
 	_ "net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -45,7 +46,10 @@ func TestWebSocketConnectionAndMessage(t *testing.T) {
 
 	chat := &model.Chat{ID: chatID, Type: model.TypePrivate, CreatorID: &user1.ID}
 
-	jwtSecret := "your_secret_key"
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "your_secret_key"
+	}
 	token, err := utils.GenerateJWT(user1.ID, jwtSecret, time.Hour)
 	require.NoError(t, err)
 
@@ -125,7 +129,10 @@ func TestWebSocketTypingStatus(t *testing.T) {
 	user1 := &model.User{ID: uuid.New(), Username: "user1", Email: "user1@test.com", Password: "password"}
 	userRepo.Create(user1)
 
-	jwtSecret := "your_secret_key"
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "your_secret_key"
+	}
 	token, err := utils.GenerateJWT(user1.ID, jwtSecret, time.Hour)
 	require.NoError(t, err)
 

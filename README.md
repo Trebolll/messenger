@@ -105,9 +105,6 @@ go test ./...
 ```
 
 Интеграционные тесты используют testcontainers — PostgreSQL поднимается автоматически в Docker.
-
-
-cat ~/.ssh/id_ed25519Значит в репо всё ещё старый docker-compose.yml с DB_PASSWORD: postgres. Проверь локально в репо — есть ли там DB_PASSWORD в секции бэкенда?
 docker exec -it messenger-db psql -U postgres -d messenger
 
 
@@ -117,7 +114,6 @@ docker-compose logs -f backend
 docker compose -f docker-compose.local.yml up -d --build
 
 ssh root@193.233.103.158
-
 
 
 авторизация гит на сервере

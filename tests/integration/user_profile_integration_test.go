@@ -30,7 +30,7 @@ func setupUserTestRouter(t *testing.T, db *sql.DB) (*gin.Engine, *websocket.Hub)
 	userService := service.NewUserService(userRepo, wallService)
 	wallHub := websocket.NewWallHub()
 	go wallHub.Run()
-	userHandler := handler.NewUserHandler(userService, wallService, hub, wallHub, nil)
+	userHandler := handler.NewUserHandler(userService, wallService, hub, wallHub, nil, "your_secret_key")
 
 	authMiddleware := func(c *gin.Context) {
 		userIDStr := c.GetHeader("X-User-ID")
