@@ -134,6 +134,24 @@ func (m *MockStorageForChat) Upload(ctx context.Context, objectName string, file
 	return args.String(0), args.Error(1)
 }
 
+func (m *MockStorageForChat) Download(ctx context.Context, objectName string) (io.ReadCloser, int64, string, error) {
+	args := m.Called(ctx, objectName)
+	if args.Get(0) == nil {
+		return nil, 0, "", args.Error(3)
+	}
+	return args.Get(0).(io.ReadCloser), int64(args.Int(1)), args.String(2), args.Error(3)
+}
+
+func (m *MockStorageForChat) Delete(ctx context.Context, objectName string) error {
+	args := m.Called(ctx, objectName)
+	return args.Error(0)
+}
+
+func (m *MockStorageForChat) GetURL(objectName string) string {
+	args := m.Called(objectName)
+	return args.String(0)
+}
+
 func setupChatTestRouter(mockRepo *MockChatRepository, mockUserRepo *MockUserRepositoryForChat, mockHub *MockHubForChat, mockStorage *MockStorageForChat) (*gin.Engine, *handler.ChatHandler) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()

@@ -11,6 +11,8 @@ import (
 
 type AttachmentRepository interface {
 	Create(a *model.Attachment) error
+	GetByID(id uuid.UUID) (*model.Attachment, error)
+	Delete(id uuid.UUID) error
 }
 type AttachmentService struct {
 	attachmentRepo AttachmentRepository
@@ -58,4 +60,35 @@ func (s *AttachmentService) Upload(
 
 	return attachment, nil
 
+}
+
+func (s *AttachmentService) Download(ctx context.Context, attachmentID uuid.UUID) (io.ReadCloser, int64, string, string, error) {
+	attachment, err := s.attachmentRepo.GetByID(attachmentID)
+	if err != nil {
+		return nil, 0, "", "", err
+	}
+
+	// Извлекаем имя объекта из URL
+	objectName := filepath.Base(attachment.Url)
+
+	content, size, contentType, err := s.storageService.Download(ctx, objectName)
+	if err != nil {
+		return nil, 0, "", "", err
+	}
+
+	return content, size, contentType, attachment.Filename, nil
+}
+
+func (s *AttachmentService) Delete(ctx context.Context, attachmentID uuid.UUID) error {
+	attachment, err := s.attachmentRepo.GetByID(attachmentID)
+	if err != nil {
+		return err
+	}
+
+	objectName := filepath.Base(attachment.Url)
+	if err := s.storageService.Delete(ctx, objectName); err != nil {
+		return err
+	}
+
+	return s.attachmentRepo.Delete(attachmentID)
 }
