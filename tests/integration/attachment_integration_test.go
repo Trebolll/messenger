@@ -29,6 +29,18 @@ func (m *mockStorage) Upload(ctx context.Context, objectName string, file io.Rea
 	return fmt.Sprintf("http://mock-storage/%s", objectName), nil
 }
 
+func (m *mockStorage) Download(ctx context.Context, objectName string) (io.ReadCloser, int64, string, error) {
+	return io.NopCloser(bytes.NewReader([]byte("mock content"))), 12, "application/octet-stream", nil
+}
+
+func (m *mockStorage) Delete(ctx context.Context, objectName string) error {
+	return nil
+}
+
+func (m *mockStorage) GetURL(objectName string) string {
+	return fmt.Sprintf("http://mock-storage/%s", objectName)
+}
+
 func TestUploadAttachmentSuccess(t *testing.T) {
 	db := setupTestDB(t)
 	createTestTables(t, db)
@@ -134,4 +146,93 @@ func TestUploadAttachmentInvalidChat(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestDownloadAttachmentSuccess(t *testing.T) {
+	db := setupTestDB(t)
+	createTestTables(t, db)
+	defer cleanupTestTables(t, db)
+
+	userRepo := repository.NewUserRepository(db)
+	attachRepo := repository.NewAttachmentRepository(db)
+	mockStorage := &mockStorage{}
+	attachService := service.NewAttachmentService(attachRepo, mockStorage)
+
+	user1 := &model.User{ID: uuid.New(), Username: "user1", Email: "user1@test.com", Password: "password"}
+	err := userRepo.Create(user1)
+	require.NoError(t, err)
+
+	chatID := uuid.New()
+	_, err = db.Exec("INSERT INTO chats (id, type, creator_id) VALUES ($1, $2, $3)", chatID, model.TypePrivate, user1.ID)
+	require.NoError(t, err)
+
+	attachment := &model.Attachment{
+		ChatID:    chatID,
+		SenderID:  user1.ID,
+		Url:       "http://mock-storage/test-file.png",
+		Filename:  "test-file.png",
+		MimeType:  "image/png",
+		SizeBytes: 12,
+	}
+	err = attachRepo.Create(attachment)
+	require.NoError(t, err)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	attachHandler := handler.NewAttachmentHandler(attachService)
+	router.GET("/api/attachments/:id", attachHandler.Download)
+
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/api/attachments/%s", attachment.ID), nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "application/octet-stream", w.Header().Get("Content-Type"))
+	assert.Equal(t, "attachment; filename=test-file.png", w.Header().Get("Content-Disposition"))
+	assert.Equal(t, "mock content", w.Body.String())
+}
+
+func TestDeleteAttachmentSuccess(t *testing.T) {
+	db := setupTestDB(t)
+	createTestTables(t, db)
+	defer cleanupTestTables(t, db)
+
+	userRepo := repository.NewUserRepository(db)
+	attachRepo := repository.NewAttachmentRepository(db)
+	mockStorage := &mockStorage{}
+	attachService := service.NewAttachmentService(attachRepo, mockStorage)
+
+	user1 := &model.User{ID: uuid.New(), Username: "user1", Email: "user1@test.com", Password: "password"}
+	err := userRepo.Create(user1)
+	require.NoError(t, err)
+
+	chatID := uuid.New()
+	_, err = db.Exec("INSERT INTO chats (id, type, creator_id) VALUES ($1, $2, $3)", chatID, model.TypePrivate, user1.ID)
+	require.NoError(t, err)
+
+	attachment := &model.Attachment{
+		ChatID:    chatID,
+		SenderID:  user1.ID,
+		Url:       "http://mock-storage/test-file.png",
+		Filename:  "test-file.png",
+		MimeType:  "image/png",
+		SizeBytes: 12,
+	}
+	err = attachRepo.Create(attachment)
+	require.NoError(t, err)
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	attachHandler := handler.NewAttachmentHandler(attachService)
+	router.DELETE("/api/attachments/:id", attachHandler.Delete)
+
+	req, _ := http.NewRequest("DELETE", fmt.Sprintf("/api/attachments/%s", attachment.ID), nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Verify it's deleted from DB
+	_, err = attachRepo.GetByID(attachment.ID)
+	assert.Error(t, err)
 }

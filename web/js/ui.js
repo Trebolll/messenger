@@ -468,6 +468,21 @@ function handleToggleTheme() {
   window.app.toggleTheme();
 }
 
+function handleDownloadSetup() {
+  const btn = document.getElementById('setup-download-btn-landing');
+  if (btn) {
+    btn.classList.add('animating');
+    setTimeout(() => btn.classList.remove('animating'), 600);
+  }
+
+  const link = document.createElement('a');
+  link.href = '/api/storage/download/Lambda Setup 1.0.0.exe';
+  link.download = 'Lambda Setup 1.0.0.exe';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 // ── Logout ─────────────────────────────────────────────────────────────────
 
 function handleLogout() {

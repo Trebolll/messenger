@@ -85,3 +85,38 @@ func (h *AttachmentHandler) Upload(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, attachment)
 }
+
+func (h *AttachmentHandler) Download(c *gin.Context) {
+	attachmentIDStr := c.Param("id")
+	attachmentID, err := uuid.Parse(attachmentIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "неверный ID вложения"})
+		return
+	}
+
+	content, size, contentType, filename, err := h.attachmentService.Download(c.Request.Context(), attachmentID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer content.Close()
+
+	c.Header("Content-Disposition", "attachment; filename="+filename)
+	c.DataFromReader(http.StatusOK, size, contentType, content, nil)
+}
+
+func (h *AttachmentHandler) Delete(c *gin.Context) {
+	attachmentIDStr := c.Param("id")
+	attachmentID, err := uuid.Parse(attachmentIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "неверный ID вложения"})
+		return
+	}
+
+	if err := h.attachmentService.Delete(c.Request.Context(), attachmentID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "вложение удалено"})
+}
