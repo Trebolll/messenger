@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type StorageHandler struct {
@@ -31,9 +30,7 @@ func (h *StorageHandler) Upload(c *gin.Context) {
 	}
 	defer file.Close()
 
-	// Генерируем уникальное имя (UUID + оригинальное имя)
-	// Префикс UUID гарантирует уникальность, а оригинальное имя в конце сохраняет расширение
-	objectName := fmt.Sprintf("%s_%s", uuid.New().String(), fileHeader.Filename)
+	objectName := fileHeader.Filename
 
 	url, err := h.storageService.Upload(
 		c.Request.Context(),
