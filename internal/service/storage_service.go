@@ -11,6 +11,9 @@ import (
 
 type Storage interface {
 	Upload(ctx context.Context, objectName string, file io.Reader, size int64, contentType string) (string, error)
+	Download(ctx context.Context, objectName string) (io.ReadCloser, int64, string, error)
+	Delete(ctx context.Context, objectName string) error
+	GetURL(objectName string) string
 }
 
 type StorageService struct {
@@ -18,15 +21,17 @@ type StorageService struct {
 	bucketName     string
 	endpoint       string
 	publicEndpoint string
+	useSSL         bool
 }
 
 // NewStorageService принимает внутренний endpoint для подключения к MinIO
 // и publicEndpoint для генерации публичных URL (например, ngrok или внешний домен).
 // Если publicEndpoint пустой — используется endpoint.
 func NewStorageService(endpoint, accessKey, secretKey, bucket, publicEndpoint string) (*StorageService, error) {
+	useSSL := false // Можно сделать настраиваемым, если нужно
 	client, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
-		Secure: false,
+		Secure: useSSL,
 	})
 	if err != nil {
 		return nil, err
@@ -55,6 +60,7 @@ func NewStorageService(endpoint, accessKey, secretKey, bucket, publicEndpoint st
 		bucketName:     bucket,
 		endpoint:       endpoint,
 		publicEndpoint: pub,
+		useSSL:         useSSL,
 	}, nil
 }
 
@@ -72,7 +78,32 @@ func (s *StorageService) Upload(
 		return "", err
 	}
 
-	url := "https://" + s.publicEndpoint + "/" + s.bucketName + "/" + objectName
+	return s.GetURL(objectName), nil
+}
 
-	return url, nil
+func (s *StorageService) Download(ctx context.Context, objectName string) (io.ReadCloser, int64, string, error) {
+	object, err := s.client.GetObject(ctx, s.bucketName, objectName, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, 0, "", err
+	}
+
+	info, err := object.Stat()
+	if err != nil {
+		return nil, 0, "", err
+	}
+
+	return object, info.Size, info.ContentType, nil
+}
+
+func (s *StorageService) Delete(ctx context.Context, objectName string) error {
+	return s.client.RemoveObject(ctx, s.bucketName, objectName, minio.RemoveObjectOptions{})
+}
+
+func (s *StorageService) GetURL(objectName string) string {
+	schema := "http://"
+	if s.useSSL || (s.publicEndpoint != "localhost" && s.publicEndpoint != "127.0.0.1") {
+		schema = "https://"
+	}
+
+	return schema + s.publicEndpoint + "/" + s.bucketName + "/" + objectName
 }

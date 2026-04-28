@@ -99,6 +99,8 @@ func main() {
 	feedService := service.NewFeedService(feedRepository, wallRepository)
 	feedHandler := handler.NewFeedHandler(feedService)
 
+	storageHandler := handler.NewStorageHandler(storageService)
+
 	wsHandler := handler.NewWebSocketHandler(hub, jwtSecret)
 	wallChatHandler := handler.NewWallChatHandler(wallHub, messageRepository, jwtSecret)
 
@@ -178,6 +180,13 @@ func main() {
 			wall.POST("/chat/:chat_id/comments", wallChatHandler.PostComment)
 			wall.GET("/chat/:chat_id/comments", wallChatHandler.GetComments)
 			// GET /posts/:post_id/chat — публичный, объявлен ниже без auth
+		}
+
+		storage := api.Group("/storage")
+		{
+			storage.POST("/upload", storageHandler.Upload)
+			storage.GET("/download/:object_name", storageHandler.Download)
+			storage.DELETE("/delete/:object_name", storageHandler.Delete)
 		}
 	}
 
