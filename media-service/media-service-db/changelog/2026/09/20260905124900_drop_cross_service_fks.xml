@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+<changeSet author="Morev Mark" id="20260905124900-drop-fk-objects-uploaded-by-user">
+    <preConditions onFail="MARK_RAN">
+      <foreignKeyConstraintExists foreignKeyName="fk_objects_uploaded_by_user"/>
+    </preConditions>
+    <dropForeignKeyConstraint baseTableName="objects" constraintName="fk_objects_uploaded_by_user"/>
+  </changeSet>
+  <changeSet author="Morev Mark" id="20260905124901-drop-fk-attachments-chat">
+    <preConditions onFail="MARK_RAN">
+      <foreignKeyConstraintExists foreignKeyName="fk_attachments_chat"/>
+    </preConditions>
+    <dropForeignKeyConstraint baseTableName="attachments" constraintName="fk_attachments_chat"/>
+  </changeSet>
+  <changeSet author="Morev Mark" id="20260905124902-drop-fk-attachments-message">
+    <preConditions onFail="MARK_RAN">
+      <foreignKeyConstraintExists foreignKeyName="fk_attachments_message"/>
+    </preConditions>
+    <dropForeignKeyConstraint baseTableName="attachments" constraintName="fk_attachments_message"/>
+  </changeSet>
+
+</databaseChangeLog>

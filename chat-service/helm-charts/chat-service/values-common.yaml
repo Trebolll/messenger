@@ -1,0 +1,26 @@
+## base values
+#
+## do not overwrite start
+#
+IMAGE_NAME: chat-service
+APP_VERSION: latest
+REGISTRY_URL: localhost:32500
+#
+## do not overwrite end
+#
+PORT: 8083
+REPLICAS: 2
+CPU_REQUEST: 0.1
+RAM_LIMIT: 665Mi
+RAM_REQUEST: 665Mi
+#
+INGRESS_ENABLED: true
+INGRESS_BASE: example.local
+NAMESPACE: prod
+#
+STORAGE_ENABLED: false
+STORAGE_CLASS: gp2
+STORAGE_CAPACITY: 8
+JAVA_RAM_PERCENTAGE: 70
+JAVA_ADDITIONAL_OPTIONS: -Dfile.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -XX:+CrashOnOutOfMemoryError -XX:+UseContainerSupport
+LOGGING_ROOT: INFO

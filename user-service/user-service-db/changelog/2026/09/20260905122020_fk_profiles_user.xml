@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+<changeSet author="Morev Mark" id="20260905122020-fk-profiles-user">
+    <preConditions onFail="MARK_RAN">
+      <not><foreignKeyConstraintExists foreignKeyName="fk_profiles_user"/></not>
+    </preConditions>
+    <addForeignKeyConstraint
+        baseTableName="profiles"
+        baseColumnNames="user_id"
+        referencedTableName="users"
+        referencedColumnNames="id"
+        constraintName="fk_profiles_user"
+        onDelete="CASCADE"/>
+  </changeSet>
+
+</databaseChangeLog>

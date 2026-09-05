@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+<changeSet author="Morev Mark" id="20260905123020-pk-chat-members">
+    <preConditions onFail="MARK_RAN">
+      <not><primaryKeyExists tableName="chat_members" primaryKeyName="pk_chat_members"/></not>
+    </preConditions>
+    <addPrimaryKey tableName="chat_members" columnNames="chat_id, user_id" constraintName="pk_chat_members"/>
+  </changeSet>
+
+  <changeSet author="Morev Mark" id="20260905123021-fk-chat-members-chat">
+    <preConditions onFail="MARK_RAN">
+      <not><foreignKeyConstraintExists foreignKeyName="fk_chat_members_chat"/></not>
+    </preConditions>
+    <addForeignKeyConstraint
+        baseTableName="chat_members"
+        baseColumnNames="chat_id"
+        referencedTableName="chats"
+        referencedColumnNames="id"
+        constraintName="fk_chat_members_chat"
+        onDelete="CASCADE"/>
+  </changeSet>
+
+</databaseChangeLog>

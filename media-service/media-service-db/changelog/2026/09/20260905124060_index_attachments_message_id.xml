@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+<changeSet author="Morev Mark" id="20260905124060-index-attachments-message-id">
+    <preConditions onFail="MARK_RAN">
+      <not><indexExists indexName="idx_attachments_message_id"/></not>
+    </preConditions>
+    <createIndex tableName="attachments" indexName="idx_attachments_message_id">
+      <column name="message_id"/>
+    </createIndex>
+  </changeSet>
+
+</databaseChangeLog>

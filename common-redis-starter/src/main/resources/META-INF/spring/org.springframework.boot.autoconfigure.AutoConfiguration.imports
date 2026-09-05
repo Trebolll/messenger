@@ -1,0 +1,3 @@
+ru.lambdahub.common.redis.LambdahubRedisAutoConfiguration
+ru.lambdahub.common.redis.cache.RedisCacheConfig
+ru.lambdahub.common.redis.cache.DisableCacheConfig

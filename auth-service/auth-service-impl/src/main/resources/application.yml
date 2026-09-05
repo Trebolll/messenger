@@ -1,0 +1,69 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+  config:
+    import:
+      - optional:classpath:kafka-stream/kafka.yml
+      - optional:classpath:kafka-stream/kafka-bindings.yml
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lambdahub}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: auth
+        jdbc:
+          time_zone: UTC
+  liquibase:
+    enabled: true
+    change-log: classpath:db.changelog-master.xml
+    default-schema: auth
+    liquibase-schema: auth
+  cloud:
+    openfeign:
+      client:
+        config:
+          user-service:
+            url: ${USER_SERVICE_URL:http://localhost:8082}
+          default:
+            connectTimeout: 10000
+            readTimeout: 30000
+
+app:
+  jwt-secret: ${JWT_SECRET:changeme-jwt-secret-key-32chars-min}
+  confirm-secret: ${CONFIRM_SECRET:changeme-confirm-secret-key-32ch}
+  jwt-ttl-seconds: 86400
+  confirm-ttl-seconds: 900
+  otp-ttl-seconds: 300
+  otp-resend-seconds: 60
+  max-otp-attempts: 5
+  dev-otp: ${AUTH_DEV_OTP:true}
+  internal-key: ${INTERNAL_KEY:internal-dev-key}
+
+cache-config:
+  enabled: true
+  inspection-enabled: ${CACHE_INSPECTION_ENABLED:true}
+  cache-name-prefix: lambdahub:auth.
+  defaults:
+    cache-null-values: false
+  caches:
+    otp:
+      time-to-live: ${AUTH_OTP_CACHE_TTL:5m}
+    otp-cooldown:
+      time-to-live: ${AUTH_OTP_COOLDOWN_TTL:1m}
+    reset-token:
+      time-to-live: ${AUTH_RESET_TOKEN_TTL:15m}
+

@@ -1,0 +1,39 @@
+server:
+  port: 8085
+spring:
+  application:
+    name: realtime-service
+  config:
+    import:
+      - optional:classpath:kafka-stream/kafka.yml
+      - optional:classpath:kafka-stream/kafka-bindings.yml
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  cloud:
+    openfeign:
+      client:
+        config:
+          chat-service:
+            url: ${CHAT_SERVICE_URL:http://localhost:8083}
+          default:
+            connectTimeout: 10000
+            readTimeout: 30000
+
+app:
+  jwt-secret: ${JWT_SECRET:changeme-jwt-secret-key-32chars-min}
+  internal-key: ${INTERNAL_KEY:internal-dev-key}
+
+cache-config:
+  enabled: true
+  inspection-enabled: ${CACHE_INSPECTION_ENABLED:true}
+  cache-name-prefix: lambdahub:realtime.
+  defaults:
+    cache-null-values: false
+  caches:
+    presence:
+      time-to-live: ${REALTIME_PRESENCE_CACHE_TTL:45s}
+

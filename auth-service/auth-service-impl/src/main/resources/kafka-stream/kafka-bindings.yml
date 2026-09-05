@@ -1,0 +1,10 @@
+spring:
+  cloud:
+    stream:
+      bindings:
+        userCreatedOutput-out-0:
+          destination: ${kafka.topic.user-created}
+
+kafka:
+  topic:
+    user-created: user.created

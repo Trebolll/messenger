@@ -1,0 +1,10 @@
+spring:
+  cloud:
+    stream:
+      bindings:
+        attachmentCreatedOutput-out-0:
+          destination: ${kafka.topic.attachment-created}
+
+kafka:
+  topic:
+    attachment-created: attachment.created

@@ -1,0 +1,16 @@
+spring:
+  cloud:
+    stream:
+      bindings:
+        userCreatedInput-in-0:
+          destination: ${kafka.topic.user-created}
+        userProfileUpdatedOutput-out-0:
+          destination: ${kafka.topic.user-profile-updated}
+        userStatusChangedOutput-out-0:
+          destination: ${kafka.topic.user-status-changed}
+
+kafka:
+  topic:
+    user-created: user.created
+    user-profile-updated: user.profile_updated
+    user-status-changed: user.status_changed

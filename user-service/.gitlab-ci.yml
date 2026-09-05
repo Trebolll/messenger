@@ -1,0 +1,13 @@
+image: maven:3.9.11-eclipse-temurin-26
+
+stages:
+  - build
+
+build:
+  stage: build
+  script:
+    - mvn -B -DskipTests package
+  artifacts:
+    paths:
+      - "**/target/*.jar"
+    expire_in: 1 week

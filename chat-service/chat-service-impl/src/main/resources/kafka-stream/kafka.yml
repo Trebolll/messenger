@@ -1,0 +1,47 @@
+spring:
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    template:
+      observation-enabled: true
+    listener:
+      observation-enabled: true
+    consumer:
+      auto-offset-reset: latest
+      group-id: ${spring.application.name}-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: ru.lambdahub.common.events.DomainEvent
+    producer:
+      acks: all
+      retries: 5
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  cloud:
+    stream:
+      default:
+        producer:
+          use-native-encoding: true
+        consumer:
+          maxAttempts: 1
+          defaultRetryable: false
+          useNativeDecoding: false
+        content-type: application/json
+        group: ${spring.application.name}-group
+      kafka:
+        binder:
+          enableObservation: true
+          configuration:
+            enable.auto.commit: false
+            auto.offset.reset: latest
+            spring.json.trusted.packages: "*"
+          consumer-properties:
+            key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value.deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+            spring.json.trusted.packages: "*"
+            spring.json.value.default.type: ru.lambdahub.common.events.DomainEvent
+          producer-properties:
+            key.serializer: org.apache.kafka.common.serialization.StringSerializer
+            value.serializer: org.springframework.kafka.support.serializer.JsonSerializer
+          brokers: ${spring.kafka.bootstrap-servers}

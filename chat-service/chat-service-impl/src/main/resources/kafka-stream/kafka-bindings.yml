@@ -1,0 +1,28 @@
+spring:
+  cloud:
+    stream:
+      bindings:
+        chatCreatedOutput-out-0:
+          destination: ${kafka.topic.chat-created}
+        chatMemberAddedOutput-out-0:
+          destination: ${kafka.topic.chat-member-added}
+        chatMemberRemovedOutput-out-0:
+          destination: ${kafka.topic.chat-member-removed}
+        messageCreatedOutput-out-0:
+          destination: ${kafka.topic.message-created}
+        messageEditedOutput-out-0:
+          destination: ${kafka.topic.message-edited}
+        messageDeletedOutput-out-0:
+          destination: ${kafka.topic.message-deleted}
+        messagesReadOutput-out-0:
+          destination: ${kafka.topic.messages-read}
+
+kafka:
+  topic:
+    chat-created: chat.created
+    chat-member-added: chat.member_added
+    chat-member-removed: chat.member_removed
+    message-created: message.created
+    message-edited: message.edited
+    message-deleted: message.deleted
+    messages-read: messages.read

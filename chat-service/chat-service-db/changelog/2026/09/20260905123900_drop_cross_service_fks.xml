@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+<changeSet author="Morev Mark" id="20260905123900-drop-fk-chats-created-by-user">
+    <preConditions onFail="MARK_RAN">
+      <foreignKeyConstraintExists foreignKeyName="fk_chats_created_by_user"/>
+    </preConditions>
+    <dropForeignKeyConstraint baseTableName="chats" constraintName="fk_chats_created_by_user"/>
+  </changeSet>
+  <changeSet author="Morev Mark" id="20260905123901-drop-fk-chat-members-user">
+    <preConditions onFail="MARK_RAN">
+      <foreignKeyConstraintExists foreignKeyName="fk_chat_members_user"/>
+    </preConditions>
+    <dropForeignKeyConstraint baseTableName="chat_members" constraintName="fk_chat_members_user"/>
+  </changeSet>
+  <changeSet author="Morev Mark" id="20260905123902-drop-fk-messages-sender-user">
+    <preConditions onFail="MARK_RAN">
+      <foreignKeyConstraintExists foreignKeyName="fk_messages_sender_user"/>
+    </preConditions>
+    <dropForeignKeyConstraint baseTableName="messages" constraintName="fk_messages_sender_user"/>
+  </changeSet>
+  <changeSet author="Morev Mark" id="20260905123903-drop-fk-message-reads-user">
+    <preConditions onFail="MARK_RAN">
+      <foreignKeyConstraintExists foreignKeyName="fk_message_reads_user"/>
+    </preConditions>
+    <dropForeignKeyConstraint baseTableName="message_reads" constraintName="fk_message_reads_user"/>
+  </changeSet>
+
+</databaseChangeLog>

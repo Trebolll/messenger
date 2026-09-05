@@ -1,0 +1,2 @@
+{{/* merge values-common + values-{ENV_NAME} + --set; ENV_NAME defaults to prod */}}
+{{- $_ := set . "merged" (include "app.mergedValues" . | fromYaml) -}}

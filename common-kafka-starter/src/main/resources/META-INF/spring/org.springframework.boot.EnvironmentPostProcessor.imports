@@ -1,0 +1,2 @@
+ru.lambdahub.common.kafka.KafkaDefaultsEnvironmentPostProcessor
+ru.lambdahub.common.kafka.EnvironmentConfig

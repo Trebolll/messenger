@@ -1,0 +1,12 @@
+C:\Users\M-or-\GolandProjects\messenger\common-events\src\main\java\ru\lambdahub\common\events\DomainEvent.java
+C:\Users\M-or-\GolandProjects\messenger\common-events\src\main\java\ru\lambdahub\common\events\kafka\DtoKafkaAttachment.java
+C:\Users\M-or-\GolandProjects\messenger\common-events\src\main\java\ru\lambdahub\common\events\kafka\DtoKafkaChatCreated.java
+C:\Users\M-or-\GolandProjects\messenger\common-events\src\main\java\ru\lambdahub\common\events\kafka\DtoKafkaChatMember.java
+C:\Users\M-or-\GolandProjects\messenger\common-events\src\main\java\ru\lambdahub\common\events\kafka\DtoKafkaMessage.java
+C:\Users\M-or-\GolandProjects\messenger\common-events\src\main\java\ru\lambdahub\common\events\kafka\DtoKafkaMessagesRead.java
+C:\Users\M-or-\GolandProjects\messenger\common-events\src\main\java\ru\lambdahub\common\events\kafka\DtoKafkaUserCreated.java
+C:\Users\M-or-\GolandProjects\messenger\common-events\src\main\java\ru\lambdahub\common\events\kafka\DtoKafkaUserProfile.java
+C:\Users\M-or-\GolandProjects\messenger\common-events\src\main\java\ru\lambdahub\common\events\kafka\DtoKafkaUserStatus.java
+C:\Users\M-or-\GolandProjects\messenger\common-events\src\main\java\ru\lambdahub\common\events\kafka\KafkaDto.java
+C:\Users\M-or-\GolandProjects\messenger\common-events\src\main\java\ru\lambdahub\common\events\RedisChannels.java
+C:\Users\M-or-\GolandProjects\messenger\common-events\src\main\java\ru\lambdahub\common\events\Topics.java

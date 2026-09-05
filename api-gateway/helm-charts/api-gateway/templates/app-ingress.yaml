@@ -1,0 +1,19 @@
+{{- $_ := set . "merged" (include "app.mergedValues" . | fromYaml) -}}
+{{- if .merged.INGRESS_ENABLED }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .merged.IMAGE_NAME }}
+spec:
+  rules:
+    - host: {{ .merged.IMAGE_NAME }}-{{ .merged.NAMESPACE | default "prod" }}.{{ .merged.INGRESS_BASE | default "example.local" }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: {{ .merged.IMAGE_NAME }}
+                port:
+                  name: http
+            path: /
+            pathType: Prefix
+{{- end -}}

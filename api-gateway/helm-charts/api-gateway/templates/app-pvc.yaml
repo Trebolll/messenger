@@ -1,0 +1,14 @@
+{{- $_ := set . "merged" (include "app.mergedValues" . | fromYaml) -}}
+{{- if .merged.STORAGE_ENABLED }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .merged.IMAGE_NAME }}
+spec:
+  storageClassName: {{ .merged.STORAGE_CLASS }}
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .merged.STORAGE_CAPACITY }}Gi
+{{- end -}}

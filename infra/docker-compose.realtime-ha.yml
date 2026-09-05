@@ -1,0 +1,29 @@
+# Dual realtime-service instances for Kafka→Redis→WS fan-out smoke:
+#   cd infra
+#   docker compose -f docker-compose.yml -f docker-compose.realtime-ha.yml up -d --build realtime-service realtime-service-2
+#
+# Connect one client WS to ws://localhost:8085/api/ws?token=...
+# and another to ws://localhost:8086/api/ws?token=...
+# Send a message via REST through gateway; both subscribed clients should receive it.
+services:
+  realtime-service:
+    ports:
+      - "8085:8085"
+
+  realtime-service-2:
+    build:
+      context: ..
+      dockerfile: services/realtime-service/Dockerfile
+    ports:
+      - "8086:8085"
+    environment:
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: ${JWT_SECRET:-changeme-jwt-secret-key-32chars-min}
+      CHAT_SERVICE_URL: http://chat-service:8083
+      INTERNAL_KEY: ${INTERNAL_KEY:-internal-dev-key}
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy

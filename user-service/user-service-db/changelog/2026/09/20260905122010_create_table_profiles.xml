@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+<changeSet author="Morev Mark" id="20260905122010-create-table-profiles">
+    <preConditions onFail="MARK_RAN">
+      <not><tableExists tableName="profiles"/></not>
+    </preConditions>
+    <createTable tableName="profiles">
+      <column name="user_id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="username" type="varchar(64)">
+        <constraints nullable="false" unique="true" uniqueConstraintName="ux_profiles_username"/>
+      </column>
+      <column name="display_name" type="varchar(128)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="email" type="varchar(255)"/>
+      <column name="phone" type="varchar(32)"/>
+      <column name="avatar_url" type="text"/>
+      <column name="status_text" type="varchar(255)" defaultValue=""/>
+      <column name="profession" type="varchar(128)" defaultValue=""/>
+      <column name="location" type="varchar(128)" defaultValue=""/>
+
+      <column name="created_at" type="timestamp" defaultValueComputed="NOW()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="timestamp" defaultValueComputed="NOW()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="create_user" type="varchar(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="update_user" type="varchar(255)">
+        <constraints nullable="false"/>
+      </column>
+
+    </createTable>
+  </changeSet>
+
+</databaseChangeLog>

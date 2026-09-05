@@ -1,0 +1,56 @@
+server:
+  port: 8083
+spring:
+  application:
+    name: chat-service
+  config:
+    import:
+      - optional:classpath:kafka-stream/kafka.yml
+      - optional:classpath:kafka-stream/kafka-bindings.yml
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lambdahub}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.default_schema: chat
+      hibernate.jdbc.time_zone: UTC
+  liquibase:
+    enabled: true
+    change-log: classpath:db.changelog-master.xml
+    default-schema: chat
+    liquibase-schema: chat
+  cloud:
+    openfeign:
+      client:
+        config:
+          user-service:
+            url: ${USER_SERVICE_URL:http://localhost:8082}
+          default:
+            connectTimeout: 10000
+            readTimeout: 30000
+
+app:
+  internal-key: ${INTERNAL_KEY:internal-dev-key}
+
+cache-config:
+  enabled: true
+  inspection-enabled: ${CACHE_INSPECTION_ENABLED:true}
+  cache-name-prefix: lambdahub:chat.
+  defaults:
+    cache-null-values: false
+  caches:
+    chat-members:
+      time-to-live: ${CHAT_MEMBERS_CACHE_TTL:10m}
+    user-by-username:
+      time-to-live: ${CHAT_USER_CACHE_TTL:5m}
+

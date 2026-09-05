@@ -1,0 +1,12 @@
+{{- $_ := set . "merged" (include "app.mergedValues" . | fromYaml) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: {{ .merged.IMAGE_NAME }}
+  name: {{ .merged.IMAGE_NAME }}
+data:
+  spring.profiles.active: default
+  logging.level.root: {{ .merged.LOGGING_ROOT | quote }}
+  JAVA_OPTS: "-XX:InitialRAMPercentage={{ .merged.JAVA_RAM_PERCENTAGE }} -XX:MaxRAMPercentage={{ .merged.JAVA_RAM_PERCENTAGE }} {{ .merged.JAVA_ADDITIONAL_OPTIONS }}"
+  SERVER_PORT: {{ .merged.PORT | quote }}

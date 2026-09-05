@@ -1,0 +1,14 @@
+# Connection defaults (standalone local). For cluster like award set spring.data.redis.cluster.nodes.
+spring:
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
+      timeout: 500ms
+      # cluster:
+      #   nodes: host1:6379,host2:6379
+
+lambdahub:
+  redis:
+    enabled: true

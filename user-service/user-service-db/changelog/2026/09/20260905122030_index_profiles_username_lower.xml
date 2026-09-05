@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+<changeSet author="Morev Mark" id="20260905122030-index-profiles-username-lower">
+    <preConditions onFail="MARK_RAN">
+      <not><indexExists indexName="idx_profiles_username_lower"/></not>
+    </preConditions>
+    <sql>
+      CREATE INDEX idx_profiles_username_lower ON profiles (lower(username));
+    </sql>
+    <rollback><sql>DROP INDEX IF EXISTS idx_profiles_username_lower;</sql></rollback>
+  </changeSet>
+
+</databaseChangeLog>

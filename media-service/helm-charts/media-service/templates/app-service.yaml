@@ -1,0 +1,16 @@
+{{- $_ := set . "merged" (include "app.mergedValues" . | fromYaml) -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .merged.IMAGE_NAME }}
+  labels:
+    app: {{ .merged.IMAGE_NAME }}
+spec:
+  ports:
+    - name: http
+      port: {{ .merged.PORT }}
+      protocol: TCP
+      targetPort: {{ .merged.PORT }}
+  selector:
+    app: {{ .merged.IMAGE_NAME }}
+  type: ClusterIP

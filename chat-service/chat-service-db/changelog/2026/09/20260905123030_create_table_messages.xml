@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+<changeSet author="Morev Mark" id="20260905123030-create-table-messages">
+    <preConditions onFail="MARK_RAN">
+      <not><tableExists tableName="messages"/></not>
+    </preConditions>
+    <createTable tableName="messages">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="chat_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="sender_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="content" type="text" defaultValue="">
+        <constraints nullable="false"/>
+      </column>
+      <column name="parent_id" type="uuid"/>
+      <column name="edited_at" type="timestamp"/>
+      <column name="deleted_at" type="timestamp"/>
+
+      <column name="created_at" type="timestamp" defaultValueComputed="NOW()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="updated_at" type="timestamp" defaultValueComputed="NOW()">
+        <constraints nullable="false"/>
+      </column>
+      <column name="create_user" type="varchar(255)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="update_user" type="varchar(255)">
+        <constraints nullable="false"/>
+      </column>
+
+    </createTable>
+  </changeSet>
+
+</databaseChangeLog>

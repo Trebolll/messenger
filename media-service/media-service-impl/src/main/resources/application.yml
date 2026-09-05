@@ -1,0 +1,42 @@
+server:
+  port: 8084
+spring:
+  application:
+    name: media-service
+  config:
+    import:
+      - optional:file:./application-local.yml
+      - optional:file:../application-local.yml
+      - optional:file:../../application-local.yml
+      - optional:classpath:kafka-stream/kafka.yml
+      - optional:classpath:kafka-stream/kafka-bindings.yml
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lambdahub}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.default_schema: media
+      hibernate.jdbc.time_zone: UTC
+  liquibase:
+    enabled: true
+    change-log: classpath:db.changelog-master.xml
+    default-schema: media
+    liquibase-schema: media
+
+# Defaults match existing local messenger-minio (override via env / application-local.yml).
+app:
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:admin}
+    secret-key: ${MINIO_SECRET_KEY:a8XC6bzgLBYxpQ8QpMVupsRgza}
+    bucket: ${MINIO_BUCKET:messenger}

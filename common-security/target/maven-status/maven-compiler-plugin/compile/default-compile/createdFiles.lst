@@ -1,0 +1,7 @@
+ru\lambdahub\common\security\JwtService.class
+ru\lambdahub\common\security\SecurityUtils.class
+ru\lambdahub\common\security\UserPrincipal.class
+ru\lambdahub\common\security\LambdahubSecurityAutoConfiguration.class
+ru\lambdahub\common\security\LambdahubSecurityProperties.class
+ru\lambdahub\common\security\JwtOrHeaderAuthenticationFilter.class
+ru\lambdahub\common\security\AuthHeaders.class

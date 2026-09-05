@@ -1,0 +1,39 @@
+spring:
+  cloud:
+    stream:
+      default:
+        group: realtime-fanout
+      bindings:
+        messageCreatedInput-in-0:
+          destination: ${kafka.topic.message-created}
+        messageEditedInput-in-0:
+          destination: ${kafka.topic.message-edited}
+        messageDeletedInput-in-0:
+          destination: ${kafka.topic.message-deleted}
+        messagesReadInput-in-0:
+          destination: ${kafka.topic.messages-read}
+        chatMemberAddedInput-in-0:
+          destination: ${kafka.topic.chat-member-added}
+        chatMemberRemovedInput-in-0:
+          destination: ${kafka.topic.chat-member-removed}
+        chatCreatedInput-in-0:
+          destination: ${kafka.topic.chat-created}
+        userProfileUpdatedInput-in-0:
+          destination: ${kafka.topic.user-profile-updated}
+        userStatusChangedInput-in-0:
+          destination: ${kafka.topic.user-status-changed}
+        attachmentCreatedInput-in-0:
+          destination: ${kafka.topic.attachment-created}
+
+kafka:
+  topic:
+    message-created: message.created
+    message-edited: message.edited
+    message-deleted: message.deleted
+    messages-read: messages.read
+    chat-member-added: chat.member_added
+    chat-member-removed: chat.member_removed
+    chat-created: chat.created
+    user-profile-updated: user.profile_updated
+    user-status-changed: user.status_changed
+    attachment-created: attachment.created

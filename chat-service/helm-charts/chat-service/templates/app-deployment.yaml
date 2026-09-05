@@ -1,0 +1,110 @@
+{{- $_ := set . "merged" (include "app.mergedValues" . | fromYaml) -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .merged.IMAGE_NAME }}
+  labels:
+    app: {{ .merged.IMAGE_NAME }}
+spec:
+  replicas: {{ .merged.REPLICAS }}
+  selector:
+    matchLabels:
+      app: {{ .merged.IMAGE_NAME }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "{{ .merged.PORT }}"
+      labels:
+        app: {{ .merged.IMAGE_NAME }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - {{ .merged.IMAGE_NAME }}
+                topologyKey: kubernetes.kubernetes.io/hostname
+      serviceAccountName: {{ .merged.IMAGE_NAME }}
+  {{- if .merged.STORAGE_ENABLED }}
+      volumes:
+        - name: {{ .merged.IMAGE_NAME }}
+          persistentVolumeClaim:
+            claimName: {{ .merged.IMAGE_NAME }}
+  {{- end }}
+      containers:
+        - name: {{ .merged.IMAGE_NAME }}
+          image: {{ .merged.REGISTRY_URL }}/{{ .merged.IMAGE_NAME }}:{{ .merged.APP_VERSION }}
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: {{ .merged.IMAGE_NAME }}-postgres-credentials
+                optional: true
+            - secretRef:
+                name: {{ .merged.IMAGE_NAME }}
+            - configMapRef:
+                name: global-config-map
+                optional: true
+            - configMapRef:
+                name: global-technical-config-map
+                optional: true
+            - configMapRef:
+                name: {{ .merged.IMAGE_NAME }}
+          env:
+            - name: pod-namespace
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: pod-name
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - containerPort: {{ .merged.PORT }}
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 1
+            initialDelaySeconds: 80
+            periodSeconds: 20
+            successThreshold: 1
+            httpGet:
+              path: /actuator/health/liveness
+              port: {{ .merged.PORT }}
+            timeoutSeconds: 2
+          readinessProbe:
+            failureThreshold: 1
+            periodSeconds: 5
+            successThreshold: 1
+            httpGet:
+              path: /actuator/health/readiness
+              port: {{ .merged.PORT }}
+            timeoutSeconds: 2
+          resources:
+            requests:
+              memory: {{ .merged.RAM_REQUEST }}
+              cpu: {{ .merged.CPU_REQUEST }}
+            limits:
+              memory: {{ .merged.RAM_LIMIT }}
+      {{- if .merged.STORAGE_ENABLED }}
+          volumeMounts:
+            - mountPath: /data
+              name: {{ .merged.IMAGE_NAME }}
+      {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 185
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
